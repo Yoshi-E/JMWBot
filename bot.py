@@ -38,8 +38,12 @@ async def on_message(message):
                 await processGame(message.channel, True, val)
             else:
                 await processGame(message.channel, True)
-        #else:
-        #    await processGame(message.channel)
+        else:
+            if(" " in message.content):
+                val = int(message.content.split(" ")[1])
+                await processGame(message.channel, False, val)
+            else:
+                await processGame(message.channel, False)
         
 async def processGame(channel, admin=False, gameindex=1):
     games = readLog.readData(admin, gameindex)   
