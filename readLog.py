@@ -65,6 +65,10 @@ def scanfile(name):
                     r = r.rstrip() #remove \n
                     r = r[-5:-1] #get winner
                     lastwinner = r
+                    if(lastwinner == "WEST"): #somehow this was mixed up
+                        lastwinner = "EAST"
+                    else:
+                        lastwinner = "WEST"
                     collected_rows.append([rows.copy(),  lastwinner, timestamp[:-1], date])
                     rows = []
                 else:
