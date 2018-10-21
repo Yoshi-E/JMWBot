@@ -45,3 +45,4 @@ Temporary Items
 mission.sqm
 logs/
 images/
+__pycache__/

@@ -54,7 +54,7 @@ def scanfile(name):
         except:
             line = "Error"
         while line:
-            if(line.find("[") > 0 and "CTI_Mission_Performance" in line):
+            if(line.find("BattlEye") ==-1 and line.find("[") > 0 and "CTI_Mission_Performance" in line):
                 if("CTI_Mission_Performance: GameOver" in line):
                     splitat = line.find("[")
                     r = line[splitat:]  #remove timestamp
