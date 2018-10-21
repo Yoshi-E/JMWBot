@@ -162,7 +162,7 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
         os.makedirs(image_path)
     
     filename = image_path+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+'.png'
-    fig.savefig(filename, dpi=300, pad_inches=3)
+    fig.savefig(filename, dpi=100, pad_inches=3)
     
     return {"date": fdate, "time": timestamp, "lastwinner": lastwinner, "gameduration": gameduration, "filename": filename, "data": data}
 
