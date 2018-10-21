@@ -77,7 +77,7 @@ async def watch_Log():
                 if("CTI_Mission_Performance: GameOver" in line):
                     await processGame(channel)
                 if("CTI_Mission_Performance: Starting Server" in line):
-                    msg="["+timestamp+"] "+"Let the game go on! Server is continuing the mission."
+                    msg="Let the game go on! The Server is now continuing the mission."
                     await client.send_message(channel, msg)
 
    
