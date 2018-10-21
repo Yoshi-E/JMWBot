@@ -35,7 +35,7 @@ def readData(admin, gameindex):
     gamemetadata = []
     c = 1
     for data in reversed(collected_rows):
-        if(gameindex >=c):
+        if(gameindex >c):
             c = c +1
             #generate image and store metadata
             gamemetadata.append(dataToGraph(data[0], data[1], data[2], data[3], admin))  
