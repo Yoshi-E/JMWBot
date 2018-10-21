@@ -71,11 +71,12 @@ async def watch_Log():
                 print("current log: "+current_log)
         else:
             #newline found
-            if("CTI_Mission_Performance: GameOver" in line):
-                await processGame(channel)
-            if("CTI_Mission_Performance: Starting Server" in line):
-                msg="["+timestamp+"] "+"Let the game go on! Server is continuing the mission."
-                await client.send_message(channel, msg)
+            if(line.find("BattlEye") ==-1):
+                if("CTI_Mission_Performance: GameOver" in line):
+                    await processGame(channel)
+                if("CTI_Mission_Performance: Starting Server" in line):
+                    msg="["+timestamp+"] "+"Let the game go on! Server is continuing the mission."
+                    await client.send_message(channel, msg)
 
    
 #async def list_servers():
