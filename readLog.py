@@ -65,10 +65,6 @@ def scanfile(name):
                     r = r.rstrip() #remove \n
                     r = r[-5:-1] #get winner
                     lastwinner = r
-                    if(lastwinner == "WEST"): #somehow this was mixed up
-                        lastwinner = "EAST"
-                    else:
-                        lastwinner = "WEST"
                     collected_rows.append([rows.copy(),  lastwinner, timestamp[:-1], date])
                     rows = []
                 else:
@@ -126,10 +122,10 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
         p2 = fig.add_subplot(3,2,2)
     else:
         p2 = fig.add_subplot(2,2,2)
-    town_count_west = featchValues(data, "town_count_west")
     town_count_east = featchValues(data, "town_count_east")
-    p2.plot(time, town_count_west, color='b')
+    town_count_west = featchValues(data, "town_count_west")
     p2.plot(time, town_count_east, color='r')
+    p2.plot(time, town_count_west, color='b')
     p2.set_xlabel('Time in min')
     p2.set_ylabel('Towns owned')
     p2.set_title('Towns owned')
