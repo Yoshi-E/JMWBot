@@ -5,6 +5,7 @@ from discord.ext.commands import Bot
 import readLog
 import asyncio
 import config
+from collections import Counter
 
 TOKEN = config.discord_token
 BOT_PREFIX = ("?", "!")
@@ -29,10 +30,10 @@ async def on_message(message):
         await client.send_message(message.channel, msg)
     
     if message.content.startswith('!lastgame'):
-        if "Admin" in [y.name.lower() for y in message.author.roles]:
-            print("yes")
-        else:
+        if "admin" in [y.name.lower() for y in message.author.roles]:
             await processGame(message.channel, admin=True)
+        #else:
+        #    await processGame(message.channel)
         
 async def processGame(channel, admin=False):
     games = readLog.readData(admin)    
@@ -56,10 +57,10 @@ async def processGame(channel, admin=False):
         log_graph = filename
         await client.send_file(channel, log_graph, content=msg)
     if(admin == True): #post additional info
-        com_east = str(Counter(featchValues(game["data"], "commander_east")))
-        com_west = str(Counter(featchValues(game["data"], "commander_west")))
-        await client.send_message(message.channel, com_east)
-        await client.send_message(message.channel, com_west)
+        com_east = "EAST_com:"+str(Counter(readLog.featchValues(game["data"], "commander_east")))
+        com_west = "WEST_com:"+str(Counter(readLog.featchValues(game["data"], "commander_west")))
+        await client.send_message(channel, com_east)
+        await client.send_message(channel, com_west)
 
             
 #this will be used for watching for a game end     

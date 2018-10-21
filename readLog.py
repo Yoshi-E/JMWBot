@@ -5,7 +5,6 @@ import ast
 import os
 from datetime import datetime
 #import matplotlib.patches as mpatches
-from collections import Counter
 import config
 
 image_path = config.image_path
