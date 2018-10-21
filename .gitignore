@@ -46,3 +46,4 @@ mission.sqm
 logs/
 images/
 __pycache__/
+config.py
