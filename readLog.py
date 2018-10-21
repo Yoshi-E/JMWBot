@@ -95,7 +95,10 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
     for i in range(len(time)):
         if(time[i] > 0):
             time[i] = time[i]/60 #seconds->min
-    gameduration = round(time[-1])
+    if (len(time) > 0):
+        gameduration = round(time[-1])
+    else:
+        gameduration = 0
     print(timestamp+","+lastwinner+","+str(gameduration))
     fig = plt.figure(figsize = (10,10))
     fig.suptitle("Game end: "+fdate+" "+timestamp+", "+str(gameduration)+"min. Winner: "+lastwinner, fontsize=14)
