@@ -43,7 +43,7 @@ async def on_message(message):
         
 async def processGame(channel, admin=False, gameindex=1):
     games = readLog.readData(admin, gameindex)   
-    if(gameindex <= len(games) and gameindex >0):
+    if(gameindex <= len(games) and gameindex >=0):
         game = games[-1] #most recent game
         
         

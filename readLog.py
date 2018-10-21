@@ -27,22 +27,19 @@ def readData(admin, gameindex):
     while((logindex*-1) < 20 and (logindex*-1) < len(logs) and gameindex >= len(collected_rows)): 
         logindex = logindex -1
         name = getLogs()[logindex] #fetch previous log file
-        p = scanfile(name)
-        
+        p = scanfile(name)[:-1]
         collected_rows[0][0] = (p[-1][0]) + (collected_rows[0][0])#combine data from previous 
-        print(len(collected_rows))
         collected_rows = collected_rows + p[:-1]
-        print(len(collected_rows))
-        
+    
+    
     gamemetadata = []
     c = 1
+    gamemetadata.append(dataToGraph(collected_rows[-1][0], collected_rows[-1][1], collected_rows[-1][2], collected_rows[-1][3], admin))
     for data in collected_rows:
         if(gameindex >=c):
             c = c +1
             #generate image and store metadata
             gamemetadata.append(dataToGraph(data[0], data[1], data[2], data[3], admin))  
-    #data = collected_rows[-1] #fetch last game
-    #gamemetadata.append(dataToGraph(data[0], data[1], data[2], data[3], admin))  
     
     
     return gamemetadata
@@ -67,7 +64,7 @@ def scanfile(name):
                     r = line[splitat:]  #remove timestamp
                     timestamp = line[:splitat] #time stamp of game end
                     r = r.rstrip() #remove \n
-                    r = r[-5:-1]
+                    r = r[-5:-1] #get winner
                     lastwinner = r
                     collected_rows.append([rows.copy(),  lastwinner, timestamp[:-1], date])
                     rows = []
@@ -83,7 +80,7 @@ def scanfile(name):
                 line = fp.readline()
             except:
                 line = "Error"
-
+        collected_rows.append([rows.copy(),  "::currentGame::", timestamp[:-1], date]) #get rows from current game
     return collected_rows.copy()
     
 def featchValues(data,field):
