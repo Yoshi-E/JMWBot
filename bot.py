@@ -27,8 +27,7 @@ async def on_message(message):
         await client.send_message(message.channel, msg)
     
     if message.content.startswith('!lastgame'):
-        channel = client.get_channel('503285457019207690')
-        await processGame(channel)
+        await processGame(message.channel)
         
 async def processGame(channel):
     games = readLog.readData()
