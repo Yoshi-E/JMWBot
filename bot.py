@@ -1,7 +1,7 @@
 
 # Work with Python 3.6
 import discord
-from discord.ext.commands import Bot
+from discord.ext import commands
 import readLog
 import asyncio
 import config
@@ -10,13 +10,14 @@ from collections import Counter
 TOKEN = config.discord_token
 BOT_PREFIX = ("?", "!")
 
-client = Bot(command_prefix=BOT_PREFIX)
+client = commands.Bot(command_prefix=BOT_PREFIX)
 
 
-#@client.command()
-#async def square(number):
-#    squared_value = int(number) * int(number)
-#    await client.say(str(number) + " squared is " + str(squared_value))
+@client.command()
+async def square(number):
+    squared_value = int(number) * int(number)
+    await client.say(str(number) + " squared is " + str(squared_value))
+
 
 
 @client.event
@@ -26,41 +27,49 @@ async def on_message(message):
         return
 
     if message.content.startswith('!ping'):
+        
         msg = 'Pong!'
         await client.send_message(message.channel, msg)
     
     if message.content.startswith('!lastgame'):
         if "admin" in [y.name.lower() for y in message.author.roles]:
-            await processGame(message.channel, admin=True)
+            if(" " in message.content):
+                val = int(message.content.split(" ")[1])
+                await processGame(message.channel, True, val)
+            else:
+                await processGame(message.channel, True)
         #else:
         #    await processGame(message.channel)
         
-async def processGame(channel, admin=False):
-    games = readLog.readData(admin)    
-    game = games[-1] #most recent game
-    
-    
-    timestamp = game["date"]+" "+game["time"]
-    msg="Sorry, I could not find any games"
-    if(game["gameduration"]<30):
-        if(game["gameduration"]<10):
-            game["gameduration"] = 10
-        if(game["lastwinner"] == "WEST"):
-            loser = "EAST"
+async def processGame(channel, admin=False, gameindex=1):
+    games = readLog.readData(admin, gameindex)   
+    if(gameindex <= len(games) and gameindex >0):
+        game = games[-1] #most recent game
+        
+        
+        timestamp = game["date"]+" "+game["time"]
+        msg="Sorry, I could not find any games"
+        if(game["gameduration"]<30):
+            if(game["gameduration"]<10):
+                game["gameduration"] = 10
+            if(game["lastwinner"] == "WEST"):
+                loser = "EAST"
+            else:
+                loser = "WEST"
+            msg="["+timestamp+"] "+"A "+str(game["gameduration"])+"min game was just finished because "+loser+" lost their HQ."
+            await client.send_message(channel, msg)
         else:
-            loser = "WEST"
-        msg="["+timestamp+"] "+"A "+str(game["gameduration"])+"min game was just finished because "+loser+" lost their HQ."
-        await client.send_message(channel, msg)
+            msg="["+timestamp+"] Congratulation, "+game["lastwinner"]+"! You beat the other team after "+str(game["gameduration"])+"min of intense fighting. A new game is about to start, time to join!"
+            filename = game["filename"]
+            log_graph = filename
+            await client.send_file(channel, log_graph, content=msg)
+        if(admin == True): #post additional info
+            com_east = "EAST_com:"+str(Counter(readLog.featchValues(game["data"], "commander_east")))
+            com_west = "WEST_com:"+str(Counter(readLog.featchValues(game["data"], "commander_west")))
+            await client.send_message(channel, com_east)
+            await client.send_message(channel, com_west)
     else:
-        msg="["+timestamp+"] Congratulation, "+game["lastwinner"]+"! You beat the other team after "+str(game["gameduration"])+"min of intense fighting. A new game is about to start, time to join!"
-        filename = game["filename"]
-        log_graph = filename
-        await client.send_file(channel, log_graph, content=msg)
-    if(admin == True): #post additional info
-        com_east = "EAST_com:"+str(Counter(readLog.featchValues(game["data"], "commander_east")))
-        com_west = "WEST_com:"+str(Counter(readLog.featchValues(game["data"], "commander_west")))
-        await client.send_message(channel, com_east)
-        await client.send_message(channel, com_west)
+        await client.send_message(channel, "Index to big. Not enoguh games found: has to be >0 and <"+str(len(games)))
 
             
 #this will be used for watching for a game end     
@@ -101,14 +110,15 @@ async def watch_Log():
 #        for server in client.servers:
 #            print(server.name)
 #        await asyncio.sleep(600)        
-        
-        
+           
 @client.event
 async def on_ready():
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
     print('------')
+    #client.add_command(square)   
 
 client.loop.create_task(watch_Log())
 client.run(TOKEN)
+

@@ -16,26 +16,33 @@ def getLogs():
     return files
 
 #preconditon: GameOver was called
-def readData(admin):
+def readData(admin, gameindex):
     global log_path
-
+    print("scanning...")
     logindex = -1
     logs = getLogs()
     name = logs[logindex] #fetch last log file
     collected_rows = scanfile(name)
     #if data is also in previous logs, search there, until 2 game ends are found
-    while((logindex*-1) < len(logs) and len(collected_rows)<=1): 
+    while((logindex*-1) < 20 and (logindex*-1) < len(logs) and gameindex >= len(collected_rows)): 
         logindex = logindex -1
         name = getLogs()[logindex] #fetch previous log file
         p = scanfile(name)
-        collected_rows[0][0].insert(0,p[-1][0]) #combine data from previous 
-
+        
+        collected_rows[0][0] = (p[-1][0]) + (collected_rows[0][0])#combine data from previous 
+        print(len(collected_rows))
+        collected_rows = collected_rows + p[:-1]
+        print(len(collected_rows))
+        
     gamemetadata = []
-    #for data in collected_rows:
-    #    #generate image and store metadata
-    #    gamemetadata.append(dataToGraph(data[0], data[1], data[2], data[3]))  
-    data = collected_rows[-1] #fetch last game
-    gamemetadata.append(dataToGraph(data[0], data[1], data[2], data[3], admin))  
+    c = 1
+    for data in collected_rows:
+        if(gameindex >=c):
+            c = c +1
+            #generate image and store metadata
+            gamemetadata.append(dataToGraph(data[0], data[1], data[2], data[3], admin))  
+    #data = collected_rows[-1] #fetch last game
+    #gamemetadata.append(dataToGraph(data[0], data[1], data[2], data[3], admin))  
     
     
     return gamemetadata
@@ -77,7 +84,7 @@ def scanfile(name):
             except:
                 line = "Error"
 
-    return collected_rows
+    return collected_rows.copy()
     
 def featchValues(data,field):
     return [item[field] for item in data]
