@@ -5,10 +5,11 @@ import ast
 import os
 from datetime import datetime
 #import matplotlib.patches as mpatches
+from collections import Counter
+import config
 
-
-path = "images/"
-log_path = "logs/"
+image_path = config.image_path
+log_path = config.log_path
 
 def getLogs():
     global log_path
@@ -16,7 +17,7 @@ def getLogs():
     return files
 
 #preconditon: GameOver was called
-def readData():
+def readData(admin):
     global log_path
 
     logindex = -1
@@ -35,7 +36,7 @@ def readData():
     #    #generate image and store metadata
     #    gamemetadata.append(dataToGraph(data[0], data[1], data[2], data[3]))  
     data = collected_rows[-1] #fetch last game
-    gamemetadata.append(dataToGraph(data[0], data[1], data[2], data[3]))  
+    gamemetadata.append(dataToGraph(data[0], data[1], data[2], data[3], admin))  
     
     
     return gamemetadata
@@ -82,8 +83,8 @@ def scanfile(name):
 def featchValues(data,field):
     return [item[field] for item in data]
     
-def dataToGraph(data, lastwinner, timestamp, date):
-    global path
+def dataToGraph(data, lastwinner, timestamp, date, admin):
+    global image_path
     
     fdate = datetime.utcfromtimestamp(date).strftime('%Y-%m-%d')
     #Team Scores
@@ -99,7 +100,11 @@ def dataToGraph(data, lastwinner, timestamp, date):
     #plt.legend(bbox_to_anchor=(0, 0), handles=[red_patch])
     fig.subplots_adjust(hspace=0.3)
     
-    p1 = fig.add_subplot(3,2,1)
+    
+    if(admin==True):
+        p1 = fig.add_subplot(3,2,1)
+    else:
+        p1 = fig.add_subplot(2,2,1)
     score_east = featchValues(data, "score_east")
     score_west = featchValues(data, "score_west")
     p1.plot(time, score_east, color='r')
@@ -108,43 +113,50 @@ def dataToGraph(data, lastwinner, timestamp, date):
     p1.set_ylabel('Team Score')
     p1.set_title('Team Score')
 
-    p2 = fig.add_subplot(3,2,2)
-    fps = featchValues(data, "fps")
-    p2.plot(time, fps, color='g')
-    p2.set_xlabel('Time in min')
-    p2.set_ylabel('Server FPS')
-    p2.set_title('Server FPS')
-
-    p3 = fig.add_subplot(3,2,3)
+    if(admin==True):
+        p2 = fig.add_subplot(3,2,2)
+    else:
+        p2 = fig.add_subplot(2,2,2)
     town_count_west = featchValues(data, "town_count_west")
     town_count_east = featchValues(data, "town_count_east")
-    p3.plot(time, town_count_west, color='b')
-    p3.plot(time, town_count_east, color='r')
-    p3.set_xlabel('Time in min')
-    p3.set_ylabel('Towns owned')
-    p3.set_title('Towns owned')
+    p2.plot(time, town_count_west, color='b')
+    p2.plot(time, town_count_east, color='r')
+    p2.set_xlabel('Time in min')
+    p2.set_ylabel('Towns owned')
+    p2.set_title('Towns owned')
 
-    p4 = fig.add_subplot(3,2,4)
-    active_SQF_count = featchValues(data, "active_SQF_count")
-    p4.plot(time, active_SQF_count, color='g')
-    p4.set_xlabel('Time in min')
-    p4.set_ylabel('Active SQF')
-    p4.set_title('Active Server SQF')
-
-    
-    p5 = fig.add_subplot(3,2,5)
+    if(admin==True):
+        p3 = fig.add_subplot(3,2,3)
+    else:
+        p3 = fig.add_subplot(2,2,3)
     player_count_east = featchValues(data, "player_count_east")
     player_count_west = featchValues(data, "player_count_west")
-    p5.plot(time, player_count_east, color='r')
-    p5.plot(time, player_count_west, color='b')
-    p5.set_xlabel('Time in min')
-    p5.set_ylabel('Players')
-    p5.set_title('Players on Server')
+    p3.plot(time, player_count_east, color='r')
+    p3.plot(time, player_count_west, color='b')
+    p3.set_xlabel('Time in min')
+    p3.set_ylabel('Players')
+    p3.set_title('Players on Server')
     
-    if not os.path.exists(path):
-        os.makedirs(path)
     
-    filename = path+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+'.png'
+    if(admin==True):
+        p4 = fig.add_subplot(3,2,4)
+        fps = featchValues(data, "fps")
+        p4.plot(time, fps, color='g')
+        p4.set_xlabel('Time in min')
+        p4.set_ylabel('Server FPS')
+        p4.set_title('Server FPS')
+    
+        p5 = fig.add_subplot(3,2,5)
+        active_SQF_count = featchValues(data, "active_SQF_count")
+        p5.plot(time, active_SQF_count, color='g')
+        p5.set_xlabel('Time in min')
+        p5.set_ylabel('Active SQF')
+        p5.set_title('Active Server SQF')
+
+    if not os.path.exists(image_path):
+        os.makedirs(image_path)
+    
+    filename = image_path+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+'.png'
     fig.savefig(filename, dpi=300, pad_inches=3)
     
     return {"date": fdate, "time": timestamp, "lastwinner": lastwinner, "gameduration": gameduration, "filename": filename, "data": data}
