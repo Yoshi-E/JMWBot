@@ -22,12 +22,11 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    #if message.content.startswith('!help'):
-    #    msg = 'Only commands are: \n !hello and !lastgame'.format(message)
-    #    await client.send_message(message.channel, msg)
+    if message.content.startswith('!ping'):
+        msg = 'Pong!'
+        await client.send_message(message.channel, msg)
         
 async def processGame(channel):
-    
     games = readLog.readData()
     game = games[-1] #most recent game
     timestamp = game["date"]+" "+game["time"]
