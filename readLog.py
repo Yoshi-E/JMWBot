@@ -34,7 +34,9 @@ def readData(admin, gameindex):
         p = scanfile(name)[:-1]
         if(logindex == -2 and p[-1][0][-1]["time"] < collected_rows[-1][0][-1]["time"]): #add time from before crash onto new log
             for data in collected_rows[-1][0]:
+                print(data["time"])
                 data["time"] = data["time"]+p[-1][0][-1]["time"]
+                print(data["time"])
         collected_rows[0][0] = (p[-1][0]) + (collected_rows[0][0]) #combine data from previous 
         collected_rows = p[:-1] + collected_rows  
     
