@@ -33,7 +33,7 @@ def readData(admin, gameindex):
     
     gameindex += 1
     data = collected_rows[-gameindex]
-    return dataToGraph([0], data[1], data[2], data[3], admin)
+    return dataToGraph(data[0], data[1], data[2], data[3], admin)
 
     
 def scanfile(name):
