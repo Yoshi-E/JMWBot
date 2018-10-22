@@ -18,11 +18,13 @@ def getLogs():
 #preconditon: GameOver was called
 def readData(admin, gameindex):
     global log_path
-    print("scanning...")
     logindex = -1
     logs = getLogs()
     name = logs[logindex] #fetch last log file
+    print("scanning: "+name)
     collected_rows = scanfile(name)
+    for row in collected_rows:
+        print(row[2])
     #if data is also in previous logs, search there, until 2 game ends are found
     while((logindex*-1) < 10 and (logindex*-1) < len(logs) and (gameindex+1) >= len(collected_rows)): 
         logindex = logindex -1
