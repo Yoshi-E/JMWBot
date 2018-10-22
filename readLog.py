@@ -32,6 +32,8 @@ def readData(admin, gameindex):
         collected_rows[0][0] = (p[-1][0]) + (collected_rows[0][0])#combine data from previous 
         collected_rows = collected_rows + p[:-1]
     
+    for row in collected_rows:
+        print(row[3])
     gameindex += 1
     print(len(collected_rows))
     data = collected_rows[-gameindex]
