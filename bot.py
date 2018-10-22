@@ -32,18 +32,18 @@ async def on_message(message):
         await client.send_message(message.channel, msg)
     
     if message.content.startswith('!lastgame'):
-        if "admin" in [y.name.lower() for y in message.author.roles]:
-            if(" " in message.content):
-                val = int(message.content.split(" ")[1])
-                await processGame(message.channel, True, val)
+        if(" " in message.content):
+            val = message.content.split(" ")[1]
+            if(val.isdigit()):
+                val = int(val)
             else:
-                await processGame(message.channel, True)
+                val = 1
         else:
-            if(" " in message.content):
-                val = int(message.content.split(" ")[1])
-                await processGame(message.channel, False, val)
-            else:
-                await processGame(message.channel, False)
+            val = 1
+        if "admin" in [y.name.lower() for y in message.author.roles]:
+            await processGame(message.channel, True, val)
+        else:
+            await processGame(message.channel, False, val)
         
 async def processGame(channel, admin=False, gameindex=1):
     games = readLog.readData(admin, gameindex)   

@@ -161,7 +161,10 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
     if not os.path.exists(image_path):
         os.makedirs(image_path)
     
-    filename = image_path+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+'.png'
+    if(lastwinner=="::currentGame::"):
+        filename = image_path+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")ADV"+'.png'
+    else:
+        filename = image_path+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+'.png'
     fig.savefig(filename, dpi=100, pad_inches=3)
     
     return {"date": fdate, "time": timestamp, "lastwinner": lastwinner, "gameduration": gameduration, "filename": filename, "data": data}
