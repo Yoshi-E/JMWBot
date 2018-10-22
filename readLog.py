@@ -19,6 +19,8 @@ def getLogs():
 def readData(admin, gameindex):
     global log_path
     print("scanning...")
+    if(gameindex<=0):
+        gameindex = 1
     logindex = -1
     logs = getLogs()
     name = logs[logindex] #fetch last log file
