@@ -50,25 +50,31 @@ async def processGame(channel, admin=False, gameindex=1):
         game = readLog.readData(admin, gameindex)   
         timestamp = game["date"]+" "+game["time"]
         msg="Sorry, I could not find any games"
-        if(game["gameduration"]<30):
-            if(game["gameduration"]<10):
-                game["gameduration"] = 10
-            if(game["lastwinner"] == "WEST"):
-                loser = "EAST"
-            else:
-                loser = "WEST"
-            msg="["+timestamp+"] "+"A "+str(game["gameduration"])+"min game was just finished because "+loser+" lost their HQ."
-            await client.send_message(channel, msg)
-        else:
-            msg="["+timestamp+"] Congratulation, "+game["lastwinner"]+"! You beat the other team after "+str(game["gameduration"])+"min of intense fighting. A new game is about to start, time to join!"
+        if(admin == True): #post additional info
             filename = game["filename"]
             log_graph = filename
+            msg="["+timestamp+"] "+str(game["gameduration"])+"min game. Winner:"+game["lastwinner"]
             await client.send_file(channel, log_graph, content=msg)
-        if(admin == True): #post additional info
             com_east = "EAST_com:"+str(Counter(readLog.featchValues(game["data"], "commander_east")))
             com_west = "WEST_com:"+str(Counter(readLog.featchValues(game["data"], "commander_west")))
             await client.send_message(channel, com_east)
             await client.send_message(channel, com_west)
+        else: #normal dislay
+            if(game["gameduration"]<30):
+                if(game["gameduration"]<10):
+                    game["gameduration"] = 10
+                if(game["lastwinner"] == "WEST"):
+                    loser = "EAST"
+                else:
+                    loser = "WEST"
+                msg="["+timestamp+"] "+"A "+str(game["gameduration"])+"min game was just finished because "+loser+" lost their HQ."
+                await client.send_message(channel, msg)
+            else:
+                msg="["+timestamp+"] Congratulation, "+game["lastwinner"]+"! You beat the other team after "+str(game["gameduration"])+"min of intense fighting. A new game is about to start, time to join!"
+                filename = game["filename"]
+                log_graph = filename
+                await client.send_file(channel, log_graph, content=msg)
+
     else:
         await client.send_message(channel, "Invalid Index. has to be >0 and <10")
 
