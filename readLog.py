@@ -66,6 +66,11 @@ def scanfile(name):
                     timestamp = line[:splitat] #time stamp of game end
                     r = r.rstrip() #remove \n
                     r = r[-5:-1] #get winner
+                    if("loose" in line): #if loser is found
+                        if(r == "EAST"):
+                            r = "WEST"
+                        else:
+                            r = "EAST"
                     lastwinner = r
                     collected_rows.append([rows.copy(),  lastwinner, timestamp[:-1], date])
                     rows = []
