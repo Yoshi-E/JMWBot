@@ -26,19 +26,21 @@ def readData(admin, gameindex):
     for row in collected_rows:
         print(row[2])
     #if data is also in previous logs, search there, until 2 game ends are found
+
     while((logindex*-1) < 10 and (logindex*-1) < len(logs) and (gameindex+1) >= len(collected_rows)): 
-        logindex = logindex -1
+        logindex -= 1
         name = getLogs()[logindex] #fetch previous log file
         print("next scan: "+name)
         p = scanfile(name)[:-1]
-        collected_rows[0][0] =(collected_rows[0][0]) + (p[-1][0]) #combine data from previous 
+        if(logindex == -2 and p[-1][0]["time"] < collected_rows[-1][0]["time"]): #add time from before crash onto new log
+            for data in collected_rows[-1][0]:
+                data["time"] = data["time"]+p[-1][0][-1]["time"]
+        collected_rows[0][0] = (p[-1][0]) + (collected_rows[0][0]) #combine data from previous 
         collected_rows = collected_rows + p[:-1]
     
-    collected_rows.append(collected_rows.pop(0)) #append current game to the end of list
     for row in collected_rows:
         print(row[2])
     gameindex += 1
-    print(len(collected_rows))
     data = collected_rows[-gameindex]
     return dataToGraph(data[0], data[1], data[2], data[3], admin)
 
