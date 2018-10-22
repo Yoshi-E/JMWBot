@@ -29,13 +29,14 @@ def readData(admin, gameindex):
     print(len(collected_rows)) #1
     print(len(logs)) #175
     print("-----")
-    while((logindex*-1) < 10 and (logindex*-1) < len(logs) and gameindex < len(collected_rows)): 
+    while((logindex*-1) < 10 and (logindex*-1) < len(logs) and gameindex <= len(collected_rows)): 
         logindex = logindex -1
         name = getLogs()[logindex] #fetch previous log file
         print("next scan: "+name)
         p = scanfile(name)[:-1]
         collected_rows[0][0] = (p[-1][0]) + (collected_rows[0][0])#combine data from previous 
         collected_rows = collected_rows + p[:-1]
+        print("len:"+len(collected_rows))
     
     for row in collected_rows:
         print(row[2])
