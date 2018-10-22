@@ -27,6 +27,7 @@ def readData(admin, gameindex):
     print(logindex*-1)
     print(gameindex)
     print(len(collected_rows))
+    print(len(logs))
     print("-----")
     while((logindex*-1) < 10 and (logindex*-1) < len(logs) and gameindex > len(collected_rows)): 
         logindex = logindex -1
