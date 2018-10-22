@@ -46,11 +46,8 @@ async def on_message(message):
             await processGame(message.channel, False, val)
         
 async def processGame(channel, admin=False, gameindex=1):
-    games = readLog.readData(admin, gameindex)   
-    if(gameindex <= len(games) and gameindex >=0):
-        game = games[gameindex] #most recent game (0 = current, 1 last finished....)
-        
-        
+    if(gameindex>=0 and gameindex <= 10):
+        game = readLog.readData(admin, gameindex)   
         timestamp = game["date"]+" "+game["time"]
         msg="Sorry, I could not find any games"
         if(game["gameduration"]<30):
@@ -73,7 +70,7 @@ async def processGame(channel, admin=False, gameindex=1):
             await client.send_message(channel, com_east)
             await client.send_message(channel, com_west)
     else:
-        await client.send_message(channel, "Index to big. Not enoguh games found: has to be >0 and <"+str(len(games)))
+        await client.send_message(channel, "Invalid Index. has to be >0 and <10")
 
             
 #this will be used for watching for a game end     

@@ -19,8 +19,6 @@ def getLogs():
 def readData(admin, gameindex):
     global log_path
     print("scanning...")
-    if(gameindex<=0):
-        gameindex = 1
     logindex = -1
     logs = getLogs()
     name = logs[logindex] #fetch last log file
@@ -33,17 +31,9 @@ def readData(admin, gameindex):
         collected_rows[0][0] = (p[-1][0]) + (collected_rows[0][0])#combine data from previous 
         collected_rows = collected_rows + p[:-1]
     
-    
-    gamemetadata = []
-    c = 0
-    for data in reversed(collected_rows):
-        if(gameindex >=c):
-            c = c +1
-            #generate image and store metadata
-            gamemetadata.append(dataToGraph(data[0], data[1], data[2], data[3], admin))  
-    
-    
-    return gamemetadata
+    gameindex += 1
+    data = collected_rows[-gameindex]
+    return dataToGraph([0], data[1], data[2], data[3], admin)
 
     
 def scanfile(name):
