@@ -37,7 +37,7 @@ def readData(admin, gameindex):
         print(row[2])
     gameindex += 1
     print(len(collected_rows))
-    data = collected_rows[gameindex]
+    data = collected_rows[-gameindex]
     return dataToGraph(data[0], data[1], data[2], data[3], admin)
 
     
