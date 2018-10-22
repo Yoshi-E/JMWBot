@@ -32,11 +32,11 @@ def readData(admin, gameindex):
         name = getLogs()[logindex] #fetch previous log file
         print("next scan: "+name)
         p = scanfile(name)
-        #if(p[-1][0][-1]["time"] > collected_rows[-1][0][-1]["time"]): #add time from before crash onto new log
-        for data in collected_rows[0][0]:
-            data["time"] = data["time"]+p[-1][0][-1]["time"]
-        collected_rows[0][0] = (p[-1][0]) + (collected_rows[0][0]) #combine data from previous 
-        collected_rows = p[:-1] + collected_rows  
+        if(len(p[-1][0]) > 0): #incase p is empty
+            for data in collected_rows[0][0]:
+                data["time"] = data["time"]+p[-1][0][-1]["time"]
+            collected_rows[0][0] = (p[-1][0]) + (collected_rows[0][0]) #combine data from previous 
+            collected_rows = p[:-1] + collected_rows  
     
     #collected_rows.append(collected_rows.pop(0)) #append current game to the end of list
     for row in collected_rows:
