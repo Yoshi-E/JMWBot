@@ -32,11 +32,12 @@ def readData(admin, gameindex):
         collected_rows[0][0] = (p[-1][0]) + (collected_rows[0][0])#combine data from previous 
         collected_rows = collected_rows + p[:-1]
     
+    collected_rows.append(collected_rows.pop(0)) #append current game to the end of list
     for row in collected_rows:
         print(row[2])
     gameindex += 1
     print(len(collected_rows))
-    data = collected_rows[-gameindex]
+    data = collected_rows[gameindex]
     return dataToGraph(data[0], data[1], data[2], data[3], admin)
 
     
