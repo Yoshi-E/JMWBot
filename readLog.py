@@ -34,10 +34,10 @@ def readData(admin, gameindex):
         p = scanfile(name)
         #if(p[-1][0][-1]["time"] > collected_rows[-1][0][-1]["time"]): #add time from before crash onto new log
         print("[")
-        print(collected_rows[-1][0])
+        print(collected_rows[0][0])
         print(p[-1][0][-1]["time"])
         print("]")
-        for data in collected_rows[-1][0]:
+        for data in collected_rows[0][0]:
             data["time"] = data["time"]+p[-1][0][-1]["time"]
         collected_rows[0][0] = (p[-1][0]) + (collected_rows[0][0]) #combine data from previous 
         collected_rows = p[:-1] + collected_rows  
