@@ -6,8 +6,7 @@ import os
 from datetime import datetime
 #import matplotlib.patches as mpatches
 import config
-import numpy as np
-
+import json
 image_path = config.image_path
 log_path = config.log_path
 data_path = config.data_path
@@ -217,7 +216,8 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
     #save image
     fig.savefig(filename+'.png', dpi=100, pad_inches=3)
     #save rawdata
-    np.savetxt(filename+".txt", data)
+    with open(filename+".json", 'w') as outfile:
+        json.dump(data, outfile)
     
     return {"date": fdate, "time": timestamp, "lastwinner": lastwinner, "gameduration": gameduration, "picname": filename+'.png', "dataname": filename+'.txt', "data": data}
 
