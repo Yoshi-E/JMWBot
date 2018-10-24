@@ -52,7 +52,7 @@ def scanfile(name):
     collected_rows = []
     rows = []
     lastwinner = "????"
-    timestamp = "??:??:??"
+    timestamp = "??:??:?? "
     date = os.path.getmtime(log_path+name)
     with open(log_path+name) as fp: 
         try:
@@ -74,12 +74,12 @@ def scanfile(name):
                             r = "EAST"
                     lastwinner = r
                     collected_rows.append([rows.copy(),  lastwinner, timestamp[:-1], date])
-                    timestamp = "??:??:??"
+                    timestamp = "??:??:?? "
                     rows = []
                 else:
                     splitat = line.find("[")
                     r = line[splitat:]  #remove timestamp
-                    #timestamp = line[:splitat]
+                    timestamp = line[:splitat]
                     r = r.rstrip() #remove \n
                     p = ast.literal_eval(r) #convert string into array object
                     p = p[1:] #remove first element
