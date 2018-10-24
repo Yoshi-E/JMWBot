@@ -8,6 +8,7 @@ import config
 from collections import Counter
 from tempfile import TemporaryFile
 import numpy as np
+import os
 
 TOKEN = config.discord_token
 user_data_path = config.user_data_path
