@@ -74,10 +74,12 @@ def scanfile(name):
                             r = "EAST"
                     lastwinner = r
                     collected_rows.append([rows.copy(),  lastwinner, timestamp[:-1], date])
+                    timestamp = "??:??:??"
                     rows = []
                 else:
                     splitat = line.find("[")
                     r = line[splitat:]  #remove timestamp
+                    #timestamp = line[:splitat]
                     r = r.rstrip() #remove \n
                     p = ast.literal_eval(r) #convert string into array object
                     p = p[1:] #remove first element
@@ -134,7 +136,8 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
             "xlabel": "Time in min",
             "ylabel": "Players",
             "title": "Players on Server"
-            })            
+            })  
+            
     if(admin == True):
         v1 = featchValues(data, "fps")
         if(len(v1) > 0):
@@ -144,6 +147,7 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
                 "ylabel": "Server FPS",
                 "title": "Server FPS"
                 }) 
+                
     if(admin == True):       
         v1 = featchValues(data, "active_SQF_count")
         if(len(v1) > 0):
@@ -152,6 +156,36 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
                 "xlabel": "Time in min",
                 "ylabel": "Active SQF",
                 "title": "Active Server SQF"
+                })  
+                
+    if(admin == True):       
+        v1 = featchValues(data, "active_towns")
+        if(len(v1) > 0):
+            plots.append({
+                "data": [[v1, "g"]],
+                "xlabel": "Time in min",
+                "ylabel": "Active Towns",
+                "title": "Active Towns"
+                }) 
+                
+    if(admin == True):       
+        v1 = featchValues(data, "active_AI")
+        if(len(v1) > 0):
+            plots.append({
+                "data": [[v1, "g"]],
+                "xlabel": "Time in min",
+                "ylabel": "Units",
+                "title": "Total Playable units count"
+                })  
+                
+    if(admin == True):       
+        v1 = featchValues(data, "total_objects")
+        if(len(v1) > 0):
+            plots.append({
+                "data": [[v1, "g"]],
+                "xlabel": "Time in min",
+                "ylabel": "Objects",
+                "title": "Total Objects count"
                 })  
 
     fdate = datetime.utcfromtimestamp(date).strftime('%Y-%m-%d')
@@ -212,14 +246,15 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
     if(admin==True):
         t +="-ADV"
         
-    filename = image_path+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+t
+    filename_pic = image_path+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+t+'.png'
+    filename = data_path+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+t+'.json'
     #save image
-    fig.savefig(filename+'.png', dpi=100, pad_inches=3)
+    fig.savefig(filename_pic, dpi=100, pad_inches=3)
     #save rawdata
-    with open(filename+".json", 'w') as outfile:
+    with open(filename, 'w') as outfile:
         json.dump(data, outfile)
     
-    return {"date": fdate, "time": timestamp, "lastwinner": lastwinner, "gameduration": gameduration, "picname": filename+'.png', "dataname": filename+'.txt', "data": data}
+    return {"date": fdate, "time": timestamp, "lastwinner": lastwinner, "gameduration": gameduration, "picname": filename_pic, "dataname": filename, "data": data}
 
     
 #readData()
