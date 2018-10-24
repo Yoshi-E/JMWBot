@@ -6,9 +6,11 @@ import os
 from datetime import datetime
 #import matplotlib.patches as mpatches
 import config
+import numpy as np
 
 image_path = config.image_path
 log_path = config.log_path
+data_path = config.data_path
 
 def getLogs():
     global log_path
@@ -66,7 +68,7 @@ def scanfile(name):
                     timestamp = line[:splitat] #time stamp of game end
                     r = r.rstrip() #remove \n
                     r = r[-5:-1] #get winner
-                    if("loose" in line): #if loser is found
+                    if("losse" in line): #if loser is found
                         if(r == "EAST"):
                             r = "WEST"
                         else:
@@ -90,13 +92,72 @@ def scanfile(name):
     return collected_rows.copy()
     
 def featchValues(data,field):
-    return [item[field] for item in data]
+
+    if(len(data)>0 and field in data[0]):
+        return [item[field] for item in data]
+    else:
+        return []
     
 def dataToGraph(data, lastwinner, timestamp, date, admin):
-    global image_path
+    global image_path  
     
+    #register plots
+    plots = []
+    
+    v1 = featchValues(data, "score_east")
+    v2 = featchValues(data, "score_west")
+    #data: [[data, color_String],....]
+    if(len(v1) > 0):
+        plots.append({
+            "data": [[v1, "r"],
+                    [v2, "b"]],
+            "xlabel": "Time in min",
+            "ylabel": "Team Score",
+            "title": "Team Score"
+            })
+ 
+    v1 = featchValues(data, "town_count_east")
+    v2 = featchValues(data, "town_count_west")
+    if(len(v1) > 0):
+        plots.append({
+            "data": [[v1, "r"],
+                    [v2, "b"]],
+            "xlabel": "Time in min",
+            "ylabel": "Towns owned",
+            "title": "Towns owned"
+            })
+            
+    v1 = featchValues(data, "player_count_east")
+    v2 = featchValues(data, "player_count_west")
+    if(len(v1) > 0):
+        plots.append({
+            "data": [[v1, "r"],
+                    [v2, "b"]],
+            "xlabel": "Time in min",
+            "ylabel": "Players",
+            "title": "Players on Server"
+            })            
+    if(admin = True):
+        v1 = featchValues(data, "fps")
+        if(len(v1) > 0):
+            plots.append({
+                "data": [[v1, "g"]],
+                "xlabel": "Time in min",
+                "ylabel": "Server FPS",
+                "title": "Server FPS"
+                }) 
+    if(admin = True):       
+        v1 = featchValues(data, "active_SQF_count")
+        if(len(v1) > 0):
+            plots.append({
+                "data": [[v1, "g"]],
+                "xlabel": "Time in min",
+                "ylabel": "Active SQF",
+                "title": "Active Server SQF"
+                })  
+
     fdate = datetime.utcfromtimestamp(date).strftime('%Y-%m-%d')
-    #Team Scores
+    #Calculate time in min
     time = featchValues(data, "time")
     for i in range(len(time)):
         if(time[i] > 0):
@@ -106,75 +167,59 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
     else:
         gameduration = 0
     print(timestamp+","+lastwinner+","+str(gameduration))
-    fig = plt.figure(figsize = (10,10))
+    
+    #maps plot count to image size
+    #plot_count: image_size
+    hight={ 12: 22,
+            11: 22,
+            10: 18,
+            9: 18,
+            8: 14,
+            7: 14,
+            6: 10,
+            5: 10,
+            4: 6,
+            3: 6,
+            2: 3,
+            1: 3}
+    phight = 10
+    if(len(plots) in hight):
+        phight = hight[len(plots)]
+    fig = plt.figure(figsize = (10,phight)) 
+
     fig.suptitle("Game end: "+fdate+" "+timestamp+", "+str(gameduration)+"min. Winner: "+lastwinner, fontsize=14)
     #red_patch = mpatches.Patch(color='red', label='The red data')
     #plt.legend(bbox_to_anchor=(0, 0), handles=[red_patch])
     fig.subplots_adjust(hspace=0.3)
     
+    #writes data to plot
+    for data in plots:
+        zplot = fig.add_subplot(2,2,3)
+        for row in data:
+            zplot.plot(time, row[0], color=row[1])
+            zplot.set_xlabel(data["xlabel"])
+            zplot.set_ylabel((data["ylabel"])
+            zplot.set_title((data["title"])
     
-    if(admin==True):
-        p1 = fig.add_subplot(3,2,1)
-    else:
-        p1 = fig.add_subplot(2,2,1)
-    score_east = featchValues(data, "score_east")
-    score_west = featchValues(data, "score_west")
-    p1.plot(time, score_east, color='r')
-    p1.plot(time, score_west, color='b')
-    p1.set_xlabel('Time in min')
-    p1.set_ylabel('Team Score')
-    p1.set_title('Team Score')
-
-    if(admin==True):
-        p2 = fig.add_subplot(3,2,2)
-    else:
-        p2 = fig.add_subplot(2,2,2)
-    town_count_east = featchValues(data, "town_count_east")
-    town_count_west = featchValues(data, "town_count_west")
-    p2.plot(time, town_count_east, color='r')
-    p2.plot(time, town_count_west, color='b')
-    p2.set_xlabel('Time in min')
-    p2.set_ylabel('Towns owned')
-    p2.set_title('Towns owned')
-
-    if(admin==True):
-        p3 = fig.add_subplot(3,2,3)
-    else:
-        p3 = fig.add_subplot(2,2,3)
-    player_count_east = featchValues(data, "player_count_east")
-    player_count_west = featchValues(data, "player_count_west")
-    p3.plot(time, player_count_east, color='r')
-    p3.plot(time, player_count_west, color='b')
-    p3.set_xlabel('Time in min')
-    p3.set_ylabel('Players')
-    p3.set_title('Players on Server')
-    
-    
-    if(admin==True):
-        p4 = fig.add_subplot(3,2,4)
-        fps = featchValues(data, "fps")
-        p4.plot(time, fps, color='g')
-        p4.set_xlabel('Time in min')
-        p4.set_ylabel('Server FPS')
-        p4.set_title('Server FPS')
-    
-        p5 = fig.add_subplot(3,2,5)
-        active_SQF_count = featchValues(data, "active_SQF_count")
-        p5.plot(time, active_SQF_count, color='g')
-        p5.set_xlabel('Time in min')
-        p5.set_ylabel('Active SQF')
-        p5.set_title('Active Server SQF')
-
+    #create folders to for images / raw data
+    if not os.path.exists(data_path):
+        os.makedirs(data_path)
     if not os.path.exists(image_path):
         os.makedirs(image_path)
     
+    t=""
     if(lastwinner=="::currentGame::"):
-        filename = image_path+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")ADV"+'.png'
-    else:
-        filename = image_path+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+'.png'
-    fig.savefig(filename, dpi=100, pad_inches=3)
+        t = "-CUR"
+    if(admin==True):
+        t +="-ADV"
+        
+    filename = image_path+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+t
+    #save image
+    fig.savefig(filename+'.png', dpi=100, pad_inches=3)
+    #save rawdata
+    np.savetxt(filename+."txt", data)
     
-    return {"date": fdate, "time": timestamp, "lastwinner": lastwinner, "gameduration": gameduration, "filename": filename, "data": data}
+    return {"date": fdate, "time": timestamp, "lastwinner": lastwinner, "gameduration": gameduration, "picname": filename+'.png', "dataname": filename+'.txt', "data": data}
 
     
 #readData()

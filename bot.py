@@ -6,12 +6,26 @@ import readLog
 import asyncio
 import config
 from collections import Counter
+from tempfile import TemporaryFile
+import numpy as np
 
 TOKEN = config.discord_token
+user_data_path = config.user_data_path
 BOT_PREFIX = ("?", "!")
 
 client = commands.Bot(command_prefix=BOT_PREFIX)
 
+#load data
+user_data = []
+if(os.path.isfile(user_data_path)):
+    user_data = np.loadtxt(user_data_path)
+    
+async def set_user_data(user, field, data):
+    global user_data
+    #check user id
+    user_data[user] = {field: data}
+    #save data
+    np.savetxt(user_data_path+"userdata.txt", user_data)
 
 @client.command()
 async def square(number):
@@ -71,7 +85,7 @@ async def processGame(channel, admin=False, gameindex=1):
                 await client.send_message(channel, msg)
             else:
                 msg="["+timestamp+"] Congratulation, "+game["lastwinner"]+"! You beat the other team after "+str(game["gameduration"])+"min of intense fighting. A new game is about to start, time to join!"
-                filename = game["filename"]
+                filename = game["picname"]
                 log_graph = filename
                 await client.send_file(channel, log_graph, content=msg)
 
