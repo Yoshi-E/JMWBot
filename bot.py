@@ -59,14 +59,28 @@ async def on_message(message):
             await processGame(message.channel, True, val)
         else:
             await processGame(message.channel, False, val)
+            
+    if message.content.startswith('!lastdata'):
+        if(" " in message.content):
+            val = message.content.split(" ")[1]
+            if(val.isdigit()):
+                val = int(val)
+            else:
+                val = 1
+        else:
+            val = 1
+        if "admin" in [y.name.lower() for y in message.author.roles]:
+            await processGame(message.channel, True, val, True)
         
-async def processGame(channel, admin=False, gameindex=1):
+async def processGame(channel, admin=False, gameindex=1, sendraw=False):
     if(gameindex>=0 and gameindex <= 10):
         game = readLog.readData(admin, gameindex)   
         timestamp = game["date"]+" "+game["time"]
         msg="Sorry, I could not find any games"
         if(admin == True): #post additional info
             filename = game["picname"]
+            if(sendraw == True):
+                filename = game["dataname"]
             log_graph = filename
             msg="["+timestamp+"] "+str(game["gameduration"])+"min game. Winner:"+game["lastwinner"]
             await client.send_file(channel, log_graph, content=msg)
