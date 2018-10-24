@@ -66,7 +66,7 @@ async def processGame(channel, admin=False, gameindex=1):
         timestamp = game["date"]+" "+game["time"]
         msg="Sorry, I could not find any games"
         if(admin == True): #post additional info
-            filename = game["filename"]
+            filename = game["picname"]
             log_graph = filename
             msg="["+timestamp+"] "+str(game["gameduration"])+"min game. Winner:"+game["lastwinner"]
             await client.send_file(channel, log_graph, content=msg)
