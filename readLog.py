@@ -92,7 +92,6 @@ def scanfile(name):
     return collected_rows.copy()
     
 def featchValues(data,field):
-
     if(len(data)>0 and field in data[0]):
         return [item[field] for item in data]
     else:
@@ -193,14 +192,14 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
     fig.subplots_adjust(hspace=0.3)
     
     #writes data to plot
-    for data in plots:
-        if(len(data["data"][0])>0):
+    for pdata in plots:
+        if(len(pdata["data"][0])>0):
             zplot = fig.add_subplot(2,2,3)
-            for row in data["data"]:
+            for row in pdata["data"]:
                 zplot.plot(time, row[0], color=row[1])
-            zplot.set_xlabel(data["xlabel"])
-            zplot.set_ylabel(data["ylabel"])
-            zplot.set_title(data["title"])
+            zplot.set_xlabel(pdata["xlabel"])
+            zplot.set_ylabel(pdata["ylabel"])
+            zplot.set_title(pdata["title"])
     
     #create folders to for images / raw data
     if not os.path.exists(data_path):
