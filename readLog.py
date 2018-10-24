@@ -217,7 +217,7 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
     #save image
     fig.savefig(filename+'.png', dpi=100, pad_inches=3)
     #save rawdata
-    np.savetxt(filename+."txt", data)
+    np.savetxt(filename+".txt", data)
     
     return {"date": fdate, "time": timestamp, "lastwinner": lastwinner, "gameduration": gameduration, "picname": filename+'.png', "dataname": filename+'.txt', "data": data}
 
