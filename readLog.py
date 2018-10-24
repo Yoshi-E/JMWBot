@@ -193,10 +193,7 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
     #writes data to plot
     for pdata in plots:
         if(len(pdata["data"][0])>0):
-            a = len(zplots)+1
-            b = int(round(a/2))
-            print(b)
-            zplots.append(fig.add_subplot(b, 2 ,a))
+            zplots.append(fig.add_subplot( int(round((len(plots)+1)/2)), 2 ,len(zplots)+1))
             for row in pdata["data"]:
                 zplots[-1].plot(time, row[0], color=row[1])
             zplots[-1].set_xlabel(pdata["xlabel"])
