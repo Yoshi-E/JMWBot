@@ -189,16 +189,16 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
     #red_patch = mpatches.Patch(color='red', label='The red data')
     #plt.legend(bbox_to_anchor=(0, 0), handles=[red_patch])
     fig.subplots_adjust(hspace=0.3)
-    
+    zplots = []
     #writes data to plot
     for pdata in plots:
         if(len(pdata["data"][0])>0):
-            zplot = fig.add_subplot(2,2,3)
+            zplot.append(fig.add_subplot(2,2,3))
             for row in pdata["data"]:
-                zplot.plot(time, row[0], color=row[1])
-            zplot.set_xlabel(pdata["xlabel"])
-            zplot.set_ylabel(pdata["ylabel"])
-            zplot.set_title(pdata["title"])
+                zplot[-1].plot(time, row[0], color=row[1])
+            zplot[-1].set_xlabel(pdata["xlabel"])
+            zplot[-1].set_ylabel(pdata["ylabel"])
+            zplot[-1].set_title(pdata["title"])
     
     #create folders to for images / raw data
     if not os.path.exists(data_path):
