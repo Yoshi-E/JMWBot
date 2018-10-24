@@ -194,14 +194,13 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
     
     #writes data to plot
     for data in plots:
-        zplot = fig.add_subplot(2,2,3)
-        for row in data["data"]:
-            print(row[0])
-            print("----------")
-            zplot.plot(time, row[0], color=row[1])
-        zplot.set_xlabel(data["xlabel"])
-        zplot.set_ylabel(data["ylabel"])
-        zplot.set_title(data["title"])
+        if(len(data["data"][0])>0):
+            zplot = fig.add_subplot(2,2,3)
+            for row in data["data"]:
+                zplot.plot(time, row[0], color=row[1])
+            zplot.set_xlabel(data["xlabel"])
+            zplot.set_ylabel(data["ylabel"])
+            zplot.set_title(data["title"])
     
     #create folders to for images / raw data
     if not os.path.exists(data_path):
