@@ -196,10 +196,10 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
     for data in plots:
         zplot = fig.add_subplot(2,2,3)
         for row in data:
-            zplot.plot(time, row[0], color=row[1])
-            zplot.set_xlabel(data["xlabel"])
-            zplot.set_ylabel(data["ylabel"])
-            zplot.set_title(data["title"])
+            zplot.plot(time, row[0], color=str(row[1]))
+        zplot.set_xlabel(data["xlabel"])
+        zplot.set_ylabel(data["ylabel"])
+        zplot.set_title(data["title"])
     
     #create folders to for images / raw data
     if not os.path.exists(data_path):
