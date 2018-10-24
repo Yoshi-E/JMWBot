@@ -195,10 +195,10 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
         if(len(pdata["data"][0])>0):
             zplots.append(fig.add_subplot(2,2,3))
             for row in pdata["data"]:
-                zplots[-1].plot(time, row[0], color=row[1])
-            zplots[-1].set_xlabel(pdata["xlabel"])
-            zplots[-1].set_ylabel(pdata["ylabel"])
-            zplots[-1].set_title(pdata["title"])
+                dir(zplots[-1]).plot(time, row[0], color=row[1])
+            dir(zplots[-1]).set_xlabel(pdata["xlabel"])
+            dir(zplots[-1]).set_ylabel(pdata["ylabel"])
+            dir(zplots[-1]).set_title(pdata["title"])
     
     #create folders to for images / raw data
     if not os.path.exists(data_path):
