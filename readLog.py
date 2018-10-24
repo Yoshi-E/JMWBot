@@ -137,7 +137,7 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
             "ylabel": "Players",
             "title": "Players on Server"
             })            
-    if(admin = True):
+    if(admin == True):
         v1 = featchValues(data, "fps")
         if(len(v1) > 0):
             plots.append({
@@ -146,7 +146,7 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
                 "ylabel": "Server FPS",
                 "title": "Server FPS"
                 }) 
-    if(admin = True):       
+    if(admin == True):       
         v1 = featchValues(data, "active_SQF_count")
         if(len(v1) > 0):
             plots.append({
