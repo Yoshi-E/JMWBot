@@ -194,7 +194,7 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
     for pdata in plots:
         if(len(pdata["data"][0])>0):
             a = len(zplots)+1
-            b = int(round((a/2)-0.4))
+            b = int(round(a/2))
             print(b)
             zplots.append(fig.add_subplot(b, 2 ,a))
             for row in pdata["data"]:
