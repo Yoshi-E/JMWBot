@@ -32,7 +32,7 @@ async def dm_users_new_game():
     global user_data
     msg = "A game just ended, now is the best time to join for a new game!"
     for user in user_data:
-        if "lastgame" user_data[user] and user_data[user]["lastgame"] == True:
+        if "lastgame" in user_data[user] and user_data[user]["lastgame"] == True:
             puser = await client.get_user_info(user)
             await client.send_message(puser, msg)  
     await set_user_data() #save changes
