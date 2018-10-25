@@ -33,8 +33,10 @@ async def dm_users_new_game():
     msg = "A game just ended, now is the best time to join for a new game!"
     for user in user_data:
         if "lastgame" in user_data[user] and user_data[user]["lastgame"] == True:
+            print("sending DM to: "+str(user))
             puser = await client.get_user_info(user)
             await client.send_message(puser, msg)  
+            user_data[user]["lastgame"] = False
     await set_user_data() #save changes
         
         
@@ -64,7 +66,7 @@ async def on_message(message):
         msg="JMWBot commands that are available to you: \n"
         cmd =       [   ["help", "Displays this message."],
                         ["ping", "returns Pong!"],
-                        ["nextgame", "Sends you a DM when a new game starts."],
+                        ["nextgame [stop]", "Sends you a DM when a new game starts. Use 'stop' to stop the reminder"],
                     ]
         
         cmdAdmin =  [   ["lastgame [index]", "Displays a datasheet for a game, where index=0 is the current game."],
