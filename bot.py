@@ -79,14 +79,14 @@ async def on_message(message):
         if(" " in message.content):
             val = message.content.split(" ")[1]
             if(val=="stop"):
-                await set_user_data(client.users.get(tauthor), "lastgame" , False)
+                await set_user_data(tauthor, "lastgame" , False)
                 msg = 'Ok, I will send no message'
             else:
                 msg = 'Sorry, I did not understand'
         else:
-            await set_user_data(client.users.get(tauthor), "lastgame" , True)
+            await set_user_data(tauthor, "lastgame" , True)
             msg = 'Ok, I will send you a message when you can join for a new round.'
-        await client.send_message(client.get_user_info(tauthor), msg)  
+        await client.send_message(client.users.get(tauthor), msg)  
             
     if message.content.startswith('!lastgame'):
         if(" " in message.content):
