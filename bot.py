@@ -20,14 +20,24 @@ user_data = {}
 if(os.path.isfile(user_data_path+"userdata.json")):
     user_data = json.load(open(user_data_path+"userdata.json","r"))
     
-async def set_user_data(user, field, data):
+async def set_user_data(user=0, field="", data=[]):
     global user_data
-    #check user id
-    user_data[user] = {field: data}
+    if(user != 0):
+        user_data[user] = {field: data}
     #save data
     with open(user_data_path+"userdata.json", 'w') as outfile:
         json.dump(user_data, outfile)
 
+async def dm_users_new_game():
+    global user_data
+    msg = "A game just ended, now is the best time to join for a new game!"
+    for user in user_data:
+        if "lastgame" user_data[user] and user_data[user]["lastgame"] == True:
+            puser = await client.get_user_info(user)
+            await client.send_message(puser, msg)  
+    await set_user_data() #save changes
+        
+        
 @client.command()
 async def square(number):
     squared_value = int(number) * int(number)
@@ -58,7 +68,8 @@ async def on_message(message):
                     ]
         
         cmdAdmin =  [   ["lastgame [index]", "Displays a datasheet for a game, where index=0 is the current game."],
-                        ["lastdata [index]", "Returns the raw data for a game, where index=0 is the current game."]]
+                        ["lastdata [index]", "Returns the raw data for a game, where index=0 is the current game."],
+                        ["trigger_nextgame", "Manually triggers game end reminder for all users that have !nextgame == true"],]
         msg+="```"
         for command in cmd:
             msg+=command[0].ljust(20)+command[1]+"\n"
@@ -70,7 +81,7 @@ async def on_message(message):
         await client.send_message(message.channel, msg)    
     
     if message.content.startswith('!nextgame'):
-        
+        #get user ID
         if hasattr(message.channel, 'author'):
             tauthor = message.channel.author.id
         else:
@@ -79,16 +90,22 @@ async def on_message(message):
         if(" " in message.content):
             val = message.content.split(" ")[1]
             if(val=="stop"):
-                await set_user_data(tauthor, "lastgame" , False)
+                await set_user_data(tauthor, "nextgame" , False)
                 msg = 'Ok, I will send no message'
             else:
                 msg = 'Sorry, I did not understand'
         else:
-            await set_user_data(tauthor, "lastgame" , True)
+            #store data, to remind user later on
+            await set_user_data(tauthor, "nextgame" , True)
             msg = 'Ok, I will send you a message when you can join for a new round.'
-        print(dir(client))
         puser = await client.get_user_info(tauthor)
         await client.send_message(puser, msg)  
+    
+    if message.content.startswith('!trigger_nextgame'):
+        if hasAdmin(message.author):
+            msg = 'triggering nextgame reminder'
+            await client.send_message(message.channel, msg)
+            await dm_users_new_game()
             
     if message.content.startswith('!lastgame'):
         if(" " in message.content):
