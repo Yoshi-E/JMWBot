@@ -79,7 +79,7 @@ async def on_message(message):
         if(" " in message.content):
             val = message.content.split(" ")[1]
             if(val=="stop"):
-                await set_user_data(tauthor, "lastgame" , False)
+                await set_user_data(client.get_user_info(tauthor), "lastgame" , False)
                 msg = 'Ok, I will send no message'
             else:
                 msg = 'Sorry, I did not understand'

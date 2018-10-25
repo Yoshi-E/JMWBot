@@ -95,6 +95,67 @@ def featchValues(data,field):
         return [item[field] for item in data]
     else:
         return []
+def stackedBarchart():
+    # Set the vertical dimension to be smaller.. 
+    # 3.5 seems to work after a bit of experimenting.
+    plt.rcParams["figure.figsize"] = [10, 3.5]
+    fig, chart_ax = plt.subplots()
+    plt.rcdefaults()
+
+    # Sample Data
+    # -------------------
+
+    segment_values = [ {'value': 12, 'label': 'A', 'color': '#FF0000'},
+     {'value': 8, 'label': 'B', 'color': '#00FF00'},
+     {'value': 5, 'label': 'C', 'color': '#0000FF'},
+     {'value': 5, 'label': 'D', 'color': '#33A6CC'},
+     {'value': 16, 'label': 'E', 'color': '#A82279'}
+     ]
+
+    # Sum up the value total.
+    outer_bar_length = 0
+    for segitem in segment_values:
+        outer_bar_length += segitem['value']
+    outer_bar_label = 'Total Time'
+
+    # In this case we expect only 1 item in the entries list.
+    y_pos = [0]
+    width = 0.05
+
+    # Set the 'empty' bar .. this is here to coerce Matplotlib
+    # to keep the size of the bar smaller on our actual data.
+    # Otherwise the bar will use all available space.
+
+    chart_ax.barh(y_pos, 0, 1.0, align='center', color='white', ecolor='black', label=None)
+
+    # Is there an 'outer' or container bar?
+    if outer_bar_length != -1:
+        chart_ax.barh(y_pos, outer_bar_length, 0.12,
+        align='center', color='#D9DCDE', label=outer_bar_label, left=0)
+
+
+    # Now go through and add in the actual segments of data.
+    left_pos = 0
+    for idx in range(len(segment_values)):
+        segdata = segment_values[idx]
+        seglabel = segdata['label']
+        segval = segdata['value']
+        segcol = segdata['color']
+
+        chart_ax.barh(y_pos, [segval], width, align='center', color=segcol, label=seglabel, left=left_pos, edgecolor=['black', 'black'], linewidth=0.5)
+        left_pos += segval
+
+    chart_ax.set_yticks([1])
+    chart_ax.invert_yaxis()
+    chart_ax.set_xlabel('Time')
+    chart_ax.set_title('Single Stacked Bar Chart')
+    plt.tight_layout()
+
+    # Set up the legend so it is arranged across the top of the chart.
+    anchor_vals = (0.01, 0.6, 0.95, 0.2)
+    plt.legend(bbox_to_anchor=anchor_vals, loc=4, ncol=4, mode="expand", borderaxespad=0.0)
+
+    plt.show() 
     
 def dataToGraph(data, lastwinner, timestamp, date, admin):
     global image_path  
