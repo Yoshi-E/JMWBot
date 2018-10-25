@@ -22,16 +22,16 @@ def readData(admin, gameindex):
     logindex = -1
     logs = getLogs()
     name = logs[logindex] #fetch last log file
-    print("scanning: "+name)
+    #print("scanning: "+name)
     collected_rows = scanfile(name)
-    for row in collected_rows:
-        print(row[2])
+    #for row in collected_rows:
+    #    print(row[2])
     #if data is also in previous logs, search there, until 2 game ends are found
 
     while((logindex*-1) < 10 and (logindex*-1) < len(logs) and (gameindex+1) >= len(collected_rows)): 
         logindex -= 1
         name = getLogs()[logindex] #fetch previous log file
-        print("next scan: "+name)
+        #print("next scan: "+name)
         p = scanfile(name)
         if(len(p[-1][0]) > 0): #incase p is empty
             for data in collected_rows[0][0]:
