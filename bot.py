@@ -84,8 +84,8 @@ async def on_message(message):
     
     if message.content.startswith('!nextgame'):
         #get user ID
-        if hasattr(message.channel, 'author'):
-            tauthor = message.channel.author.id
+        if hasattr(message, 'author'):
+            tauthor = message.author.id
         else:
             tauthor = message.channel.user.id
         print(tauthor)
