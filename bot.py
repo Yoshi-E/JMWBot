@@ -6,8 +6,7 @@ import readLog
 import asyncio
 import config
 from collections import Counter
-from tempfile import TemporaryFile
-import numpy as np
+import json
 import os
 
 TOKEN = config.discord_token
@@ -17,23 +16,28 @@ BOT_PREFIX = ("?", "!")
 client = commands.Bot(command_prefix=BOT_PREFIX)
 
 #load data
-user_data = []
-if(os.path.isfile(user_data_path)):
-    user_data = np.loadtxt(user_data_path)
+user_data = {}
+if(os.path.isfile(user_data_path+"userdata.json")):
+    user_data = json.load(open(user_data_path+"userdata.json","r"))
     
 async def set_user_data(user, field, data):
     global user_data
     #check user id
     user_data[user] = {field: data}
     #save data
-    np.savetxt(user_data_path+"userdata.txt", user_data)
+    with open(user_data_path+"userdata.json", 'w') as outfile:
+        json.dump(user_data, outfile)
 
 @client.command()
 async def square(number):
     squared_value = int(number) * int(number)
     await client.say(str(number) + " squared is " + str(squared_value))
 
-
+def hasAdmin(author):
+    if hasattr(author, 'roles'):
+        if ("admin" in [y.name.lower() for y in author.roles]):
+            return True
+    return False
 
 @client.event
 async def on_message(message):
@@ -57,7 +61,7 @@ async def on_message(message):
         msg+="```"
         for command in cmd:
             msg+=command[0].ljust(20)+command[1]+"\n"
-        if "admin" in [y.name.lower() for y in message.author.roles]:
+        if hasAdmin(message.author):
             msg+="Admin commands: \n"
             for command in cmdAdmin:
                 msg+=command[0].ljust(20)+command[1]+"\n"
@@ -74,7 +78,7 @@ async def on_message(message):
                 val = 1
         else:
             val = 1
-        if "admin" in [y.name.lower() for y in message.author.roles]:
+        if hasAdmin(message.author):
             await processGame(message.channel, True, val)
         else:
             await processGame(message.channel, False, val)
@@ -88,7 +92,7 @@ async def on_message(message):
                 val = 1
         else:
             val = 1
-        if "admin" in [y.name.lower() for y in message.author.roles]:
+        if hasAdmin(message.author):
             await processGame(message.channel, True, val, True)
         
 async def processGame(channel, admin=False, gameindex=1, sendraw=False):
