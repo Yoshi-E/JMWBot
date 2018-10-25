@@ -69,7 +69,7 @@ async def on_message(message):
         msg+="```"
         await client.send_message(message.channel, msg)    
     
-    if message.content.startswith('!nextgame'):
+    if message.content.startswith('!nextgame--'):
         
         if hasattr(message.channel, 'author'):
             tauthor = message.channel.author.id
