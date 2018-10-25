@@ -47,21 +47,21 @@ async def on_message(message):
         await client.send_message(message.channel, msg)
     
     if message.content.startswith('!help'):
-        msg="JMWBot commands that are available to you:"
+        msg="JMWBot commands that are available to you: \n"
         cmd =       [   ["help", "Displays this message."],
                         ["ping", "returns Pong!"] 
                     ]
         
         cmdAdmin =  [   ["lastgame [index]", "Displays a datasheet for a game, where index=0 is the current game."],
                         ["lastdata [index]", "Returns the raw data for a game, where index=0 is the current game."]]
-        
+        msg+="```"
         for command in cmd:
             msg+=command[0].ljust(20)+command[1]+"\n"
         if "admin" in [y.name.lower() for y in message.author.roles]:
             msg+="Admin commands: \n"
             for command in cmdAdmin:
                 msg+=command[0].ljust(20)+command[1]+"\n"
-
+        msg+="```"
         await client.send_message(message.channel, msg)    
           
             
