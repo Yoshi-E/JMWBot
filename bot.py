@@ -88,7 +88,6 @@ async def on_message(message):
             tauthor = message.author.id
         else:
             tauthor = message.channel.user.id
-        print(tauthor)
         if(" " in message.content):
             val = message.content.split(" ")[1]
             if(val=="stop"):
