@@ -87,7 +87,8 @@ async def on_message(message):
             await set_user_data(tauthor, "lastgame" , True)
             msg = 'Ok, I will send you a message when you can join for a new round.'
         print(dir(client))
-        await client.send_message(client.user.get(tauthor), msg)  
+        puser = await client.get_user_info(tauthor)
+        await client.send_message(puser, msg)  
             
     if message.content.startswith('!lastgame'):
         if(" " in message.content):
