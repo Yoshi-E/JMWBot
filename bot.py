@@ -53,7 +53,8 @@ async def on_message(message):
     if message.content.startswith('!help'):
         msg="JMWBot commands that are available to you: \n"
         cmd =       [   ["help", "Displays this message."],
-                        ["ping", "returns Pong!"] 
+                        ["ping", "returns Pong!"],
+                        ["nextgame", "Sends you a DM when a new game starts."],
                     ]
         
         cmdAdmin =  [   ["lastgame [index]", "Displays a datasheet for a game, where index=0 is the current game."],
@@ -67,7 +68,19 @@ async def on_message(message):
                 msg+=command[0].ljust(20)+command[1]+"\n"
         msg+="```"
         await client.send_message(message.channel, msg)    
-          
+    
+    if message.content.startswith('!nextgame'):
+        if(" " in message.content):
+            val = message.content.split(" ")[1]
+            if(val=="stop"):
+                await set_user_data(message.channel.author.id, "lastgame" , False)
+                msg = 'Ok, I will send no message'
+            else:
+                msg = 'Sorry, I did not understand'
+        else:
+            await set_user_data(message.channel.author.id, "lastgame" , True)
+            msg = 'Ok, I will send you a message when you can join for a new round.'
+        await client.send_message(client.get_user_info(id), msg)  
             
     if message.content.startswith('!lastgame'):
         if(" " in message.content):
