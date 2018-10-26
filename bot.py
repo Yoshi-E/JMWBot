@@ -195,6 +195,7 @@ async def watch_Log():
             #newline found
             if(line.find("BattlEye") ==-1):
                 if("CTI_Mission_Performance: GameOver" in line):
+                    await dm_users_new_game()
                     await processGame(channel)
                 if("CTI_Mission_Performance: Starting Server" in line):
                     msg="Let the game go on! The Server is now continuing the mission."
