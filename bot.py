@@ -92,13 +92,13 @@ async def on_message(message):
             val = message.content.split(" ")[1]
             if(val=="stop"):
                 await set_user_data(tauthor, "nextgame" , False)
-                msg = 'Ok, I will send no message'
+                msg = ':x: Ok, I will send no message'
             else:
-                msg = 'Sorry, I did not understand'
+                msg = ':question: Sorry, I did not understand'
         else:
             #store data, to remind user later on
             await set_user_data(tauthor, "nextgame" , True)
-            msg = 'Ok, I will send you a message when you can join for a new round.'
+            msg = ':white_check_mark: Ok, I will send you a message when you can join for a new round.'
         puser = await client.get_user_info(tauthor)
         await client.send_message(puser, msg)  
     
