@@ -141,7 +141,7 @@ async def watch_Log():
             if(line.find("BattlEye") ==-1):
                 if("CTI_Mission_Performance: GameOver" in line):
                     dm_users_new_game()
-                    processGame(channel)
+                    await processGame(channel)
                 if("CTI_Mission_Performance: Starting Server" in line):
                     msg="Let the game go on! The Server is now continuing the mission."
                     await bot.send_message(channel, msg)
@@ -221,9 +221,9 @@ async def command_lastgame(ctx):
     else:
         val = 1
     if hasPermission(message.author, lvl=10):
-        processGame(message.channel, True, val)
+        await processGame(message.channel, True, val)
     #else:
-    #    processGame(message.channel, False, val)
+    #   await processGame(message.channel, False, val)
     
     
     
@@ -239,7 +239,7 @@ async def command_lastdata(ctx):
     else:
         val = 1
     if hasPermission(message.author, lvl=10):
-        processGame(message.channel, True, val, True)
+        await processGame(message.channel, True, val, True)
     
 ###################################################################################################
 #####                                  Debug Commands                                          ####
