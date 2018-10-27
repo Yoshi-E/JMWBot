@@ -47,4 +47,4 @@ logs/
 images/
 __pycache__/
 config.py
-*.config
+config.json

@@ -4,31 +4,19 @@ import matplotlib.pyplot as plt
 import ast
 import os
 from datetime import datetime
-#import matplotlib.patches as mpatches
-import config
 import json
-import configparser
 
 
-config_name = "readLog.config"
+config_name = "config.json"
 
-#Load Config
+cfg = {}
 if(os.path.isfile(config_name)):
-    config = configparser.ConfigParser()
-    config.read(config_name)
+    cfg = json.load(open(config_name,"r"))
 else:
-    #write default config
-    config = configparser.ConfigParser()
-    config['logReader'] =   {
-                            'image_path': 'images/',    #folder where data graphs are saved
-                            'data_path': 'data/',       #folder where raw data is saved
-                            'logs_path': 'logs/',       #folder that contains arma .RPT logs
-                            }
-    with open(config_name, 'w') as configfile:
-        config.write(configfile)
-
-#more compact access
-cfg = config['logReader']  
+    cfg = json.load(open("config_default.json","r"))
+    with open(config_name, 'w') as outfile:
+        json.dump(cfg, outfile, indent=4, separators=(',', ': '))
+        
         
 
 #get the log files from folder and sort them by oldest first

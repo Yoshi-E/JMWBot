@@ -4,38 +4,22 @@ import asyncio
 from collections import Counter
 import json
 import os
-import configparser
 import readLog
-import ast
 import discord
 from discord.ext import commands
 
-
-
- 
-config_name = "bot.config"
+config_name = "config.json"
 modules = ["error_handle"]
-#Load Config
-if(os.path.isfile(config_name)):
-    config = configparser.ConfigParser()
-    config.read(config_name)
-else:
-    #write default config
-    config = configparser.ConfigParser()
-    config['Bot'] =  {   
-                            'user_path': '',           #folder location for user data (single file)
-                            #discord bot token, get here: https://discordapp.com/developers/applications/
-                            'TOKEN': 'WRITE_TOKEN_HERE',
-                            'BOT_PREFIX': "!",
-                            'Roles': {  'Default': 0,
-                                        'Admin': 10,
-                                        'Devloper': 10 
-                                     }
-                            }
-    with open(config_name, 'w') as configfile:
-        config.write(configfile)
 
-cfg = config['Bot']        
+#Load Config
+cfg = {}
+if(os.path.isfile(config_name)):
+    cfg = json.load(open(config_name,"r"))
+else:
+    cfg = json.load(open("config_default.json","r"))
+    with open(config_name, 'w') as outfile:
+        json.dump(cfg, outfile, indent=4, separators=(',', ': '))
+        
 bot = commands.Bot(command_prefix=cfg["BOT_PREFIX"])
 bot.remove_command("help")
 
@@ -69,7 +53,7 @@ async def dm_users_new_game():
     await set_user_data() #save changes
         
 def hasPermission(author, lvl=1):
-    roles = ast.literal_eval(cfg['Roles']) 
+    roles = cfg['Roles']
     if(roles['Default'] >= lvl):
         return True
         
