@@ -4,30 +4,35 @@ import matplotlib.pyplot as plt
 import ast
 import os
 from datetime import datetime
-#import matplotlib.patches as mpatches
-import config
 import json
-image_path = config.image_path
-log_path = config.log_path
-data_path = config.data_path
 
+
+config_name = "config.json"
+
+cfg = {}
+if(os.path.isfile(config_name)):
+    cfg = json.load(open(config_name,"r"))
+else:
+    cfg = json.load(open("config_default.json","r"))
+    with open(config_name, 'w') as outfile:
+        json.dump(cfg, outfile, indent=4, separators=(',', ': '))
+        
+        
+
+#get the log files from folder and sort them by oldest first
 def getLogs():
-    global log_path
-    files = sorted(os.listdir(log_path))
+    files = sorted(os.listdir(cfg['logs_path']))
     return files
 
-#preconditon: GameOver was called
+#preconditon: GameOver was called at least once
 def readData(admin, gameindex):
-    global log_path
     logindex = -1
     logs = getLogs()
     name = logs[logindex] #fetch last log file
     #print("scanning: "+name)
     collected_rows = scanfile(name)
-    #for row in collected_rows:
-    #    print(row[2])
     #if data is also in previous logs, search there, until 2 game ends are found
-
+    #that way we cen be sure if found a complete game from start till the end
     while((logindex*-1) < 10 and (logindex*-1) < len(logs) and (gameindex+1) >= len(collected_rows)): 
         logindex -= 1
         name = getLogs()[logindex] #fetch previous log file
@@ -35,24 +40,22 @@ def readData(admin, gameindex):
         p = scanfile(name)
         if(len(p[-1][0]) > 0): #incase p is empty
             for data in collected_rows[0][0]:
-                data["time"] = data["time"]+p[-1][0][-1]["time"]
+                #adds the time from last session onto the current game to have consistent timeline
+                data["time"] = data["time"]+p[-1][0][-1]["time"] 
             collected_rows[0][0] = (p[-1][0]) + (collected_rows[0][0]) #combine data from previous 
             collected_rows = p[:-1] + collected_rows  
-    
-    #collected_rows.append(collected_rows.pop(0)) #append current game to the end of list
-    gameindex += 1
-    data = collected_rows[-gameindex]
+    #last element in collected_rows is the current game, 2nd last the the last finished game
+    data = collected_rows[-(gameindex+1)]
     return dataToGraph(data[0], data[1], data[2], data[3], admin)
 
     
 def scanfile(name):
-    global log_path
     collected_rows = []
     rows = []
     lastwinner = "????"
     timestamp = "??:??:?? "
-    date = os.path.getmtime(log_path+name)
-    with open(log_path+name) as fp: 
+    date = os.path.getmtime(cfg['logs_path']+name)
+    with open(cfg['logs_path']+name) as fp: 
         try:
             line = fp.readline()
         except:
@@ -95,6 +98,10 @@ def featchValues(data,field):
         return [item[field] for item in data]
     else:
         return []
+        
+        
+# this is an exmaple place holder fuction for other plot types
+# ignore for now
 def stackedBarchart():
     # Set the vertical dimension to be smaller.. 
     # 3.5 seems to work after a bit of experimenting.
@@ -158,8 +165,6 @@ def stackedBarchart():
     plt.show() 
     
 def dataToGraph(data, lastwinner, timestamp, date, admin):
-    global image_path  
-    
     #register plots
     plots = []
     
@@ -294,10 +299,10 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
             zplots[-1].set_title(pdata["title"])
     
     #create folders to for images / raw data
-    if not os.path.exists(data_path):
-        os.makedirs(data_path)
-    if not os.path.exists(image_path):
-        os.makedirs(image_path)
+    if not os.path.exists(cfg['data_path']):
+        os.makedirs(cfg['data_path'])
+    if not os.path.exists(cfg['image_path']):
+        os.makedirs(cfg['image_path'])
     
     t=""
     if(lastwinner=="::currentGame::"):
@@ -305,8 +310,8 @@ def dataToGraph(data, lastwinner, timestamp, date, admin):
     if(admin==True):
         t +="-ADV"
         
-    filename_pic = image_path+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+t+'.png'
-    filename = data_path+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+t+'.json'
+    filename_pic = cfg['image_path']+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+t+'.png'
+    filename = cfg['data_path']+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+t+'.json'
     #save image
     fig.savefig(filename_pic, dpi=100, pad_inches=3)
     #save rawdata
