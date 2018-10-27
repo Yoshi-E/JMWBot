@@ -7,16 +7,19 @@ from datetime import datetime
 #import matplotlib.patches as mpatches
 import config
 import json
+
+#load config
 image_path = config.image_path
 log_path = config.log_path
 data_path = config.data_path
 
+#get the log files from folder and sort them by oldest first
 def getLogs():
     global log_path
     files = sorted(os.listdir(log_path))
     return files
 
-#preconditon: GameOver was called
+#preconditon: GameOver was called at least once
 def readData(admin, gameindex):
     global log_path
     logindex = -1
@@ -24,10 +27,8 @@ def readData(admin, gameindex):
     name = logs[logindex] #fetch last log file
     #print("scanning: "+name)
     collected_rows = scanfile(name)
-    #for row in collected_rows:
-    #    print(row[2])
     #if data is also in previous logs, search there, until 2 game ends are found
-
+    #that way we cen be sure if found a complete game from start till the end
     while((logindex*-1) < 10 and (logindex*-1) < len(logs) and (gameindex+1) >= len(collected_rows)): 
         logindex -= 1
         name = getLogs()[logindex] #fetch previous log file
@@ -35,13 +36,12 @@ def readData(admin, gameindex):
         p = scanfile(name)
         if(len(p[-1][0]) > 0): #incase p is empty
             for data in collected_rows[0][0]:
-                data["time"] = data["time"]+p[-1][0][-1]["time"]
+                #adds the time from last session onto the current game to have consistent timeline
+                data["time"] = data["time"]+p[-1][0][-1]["time"] 
             collected_rows[0][0] = (p[-1][0]) + (collected_rows[0][0]) #combine data from previous 
             collected_rows = p[:-1] + collected_rows  
-    
-    #collected_rows.append(collected_rows.pop(0)) #append current game to the end of list
-    gameindex += 1
-    data = collected_rows[-gameindex]
+    #last element in collected_rows is the current game, 2nd last the the last finished game
+    data = collected_rows[-(gameindex+1)]
     return dataToGraph(data[0], data[1], data[2], data[3], admin)
 
     

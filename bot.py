@@ -4,21 +4,43 @@ import discord
 from discord.ext import commands
 import readLog
 import asyncio
-import config
 from collections import Counter
 import json
 import os
+import configparser
 
-TOKEN = config.discord_token
-user_data_path = config.user_data_path
-BOT_PREFIX = ("?", "!")
 
-client = commands.Bot(command_prefix=BOT_PREFIX)
+config_name = "/bot.config"
+
+#Load Config
+if(os.path.isfile(config_name)):
+    config = configparser.ConfigParser()
+    config.read(config_name)
+else:
+    #write default config
+    config = configparser.ConfigParser()
+    config['Bot'] =  {   
+                            'user_path': '/',           #folder location for user data (single file)
+                            #discord bot token, get here: https://discordapp.com/developers/applications/
+                            'TOKEN': 'WRITE_TOKEN_HERE',
+                            'BOT_PREFIX': ("?", "!")                            
+                            }
+    config['logReader'] =   {
+                            'image_path': 'images/',    #folder where data graphs are saved
+                            'data_path': 'data/',       #folder where raw data is saved
+                            'logs_path': 'logs/',       #folder that contains arma .RPT logs
+                            }
+    with open(config_name, 'w') as configfile:
+        config.write(configfile)
+
+
+client = commands.Bot(  command_prefix=config['Bot']['BOT_PREFIX']
+                     )
 
 #load data
 user_data = {}
-if(os.path.isfile(user_data_path+"userdata.json")):
-    user_data = json.load(open(user_data_path+"userdata.json","r"))
+if(os.path.isfile(config['Bot']['user_path']+"userdata.json")):
+    user_data = json.load(open(config['Bot']['user_path']+"userdata.json","r"))
     
 async def set_user_data(user=0, field="", data=[]):
     global user_data
@@ -215,9 +237,12 @@ async def on_ready():
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
-    print('------')
+    print('------------')
     #client.add_command(square)   
 
-client.loop.create_task(watch_Log())
-client.run(TOKEN)
+if(config['Bot']['TOKEN'] == "WRITE_TOKEN_HERE"):
+    print("Please enter the discord bot token into the config: "+config_name)
+else:
+    client.loop.create_task(watch_Log())
+    client.run(config['Bot']['TOKEN'])
 
