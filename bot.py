@@ -1,17 +1,20 @@
 
 # Work with Python 3.6
-import discord
-from discord.ext import commands
-import readLog
 import asyncio
 from collections import Counter
 import json
 import os
 import configparser
+import readLog
+import ast
+import discord
+from discord.ext import commands
 
 
-config_name = "/bot.config"
 
+ 
+config_name = "bot.config"
+modules = ["error_handle"]
 #Load Config
 if(os.path.isfile(config_name)):
     config = configparser.ConfigParser()
@@ -20,32 +23,36 @@ else:
     #write default config
     config = configparser.ConfigParser()
     config['Bot'] =  {   
-                            'user_path': '/',           #folder location for user data (single file)
+                            'user_path': '',           #folder location for user data (single file)
                             #discord bot token, get here: https://discordapp.com/developers/applications/
                             'TOKEN': 'WRITE_TOKEN_HERE',
-                            'BOT_PREFIX': ("?", "!")                            
-                            }
-    config['logReader'] =   {
-                            'image_path': 'images/',    #folder where data graphs are saved
-                            'data_path': 'data/',       #folder where raw data is saved
-                            'logs_path': 'logs/',       #folder that contains arma .RPT logs
+                            'BOT_PREFIX': "!",
+                            'Roles': {  'Default': 0,
+                                        'Admin': 10,
+                                        'Devloper': 10 
+                                     }
                             }
     with open(config_name, 'w') as configfile:
         config.write(configfile)
 
+cfg = config['Bot']        
+bot = commands.Bot(command_prefix=cfg["BOT_PREFIX"])
+bot.remove_command("help")
 
-client = commands.Bot(  command_prefix=config['Bot']['BOT_PREFIX']
-                     )
-
-#load data
 user_data = {}
-if(os.path.isfile(config['Bot']['user_path']+"userdata.json")):
-    user_data = json.load(open(config['Bot']['user_path']+"userdata.json","r"))
+if(os.path.isfile(cfg['user_path']+"userdata.json")):
+    user_data = json.load(open(cfg['user_path']+"userdata.json","r"))
     
-async def set_user_data(user=0, field="", data=[]):
+
+###################################################################################################
+#####                                  common functions                                        ####
+###################################################################################################
+
+
+def set_user_data(user_id=0, field="", data=[]):
     global user_data
-    if(user != 0):
-        user_data[user] = {field: data}
+    if(user_id != 0):
+        user_data[user_id] = {field: data}
     #save data
     with open(user_data_path+"userdata.json", 'w') as outfile:
         json.dump(user_data, outfile)
@@ -56,106 +63,22 @@ async def dm_users_new_game():
     for user in user_data:
         if "nextgame" in user_data[user] and user_data[user]["nextgame"] == True:
             print("sending DM to: "+str(user))
-            puser = await client.get_user_info(user)
-            await client.send_message(puser, msg)  
+            puser = await bot.get_user_info(user)
+            await bot.send_message(puser, msg)  
             user_data[user]["nextgame"] = False
     await set_user_data() #save changes
         
+def hasPermission(author, lvl=1):
+    roles = ast.literal_eval(cfg['Roles']) 
+    if(roles['Default'] >= lvl):
+        return True
         
-@client.command()
-async def square(number):
-    squared_value = int(number) * int(number)
-    await client.say(str(number) + " squared is " + str(squared_value))
-
-def hasAdmin(author):
     if hasattr(author, 'roles'):
-        if ("admin" in [y.name.lower() for y in author.roles]):
-            return True
+        for role in roles:
+            if (roles[role] >= lvl and role.lower() in [y.name.lower() for y in author.roles]):
+                return True
     return False
 
-@client.event
-async def on_message(message):
-    # we do not want the bot to reply to itself
-    if message.author == client.user:
-        return
-
-    if message.content.startswith('!ping'):
-        
-        msg = 'Pong!'
-        await client.send_message(message.channel, msg)
-    
-    if message.content.startswith('!help'):
-        msg="JMWBot commands that are available to you: \n"
-        cmd =       [   ["help", "Displays this message."],
-                        ["ping", "returns Pong!"],
-                        ["nextgame [stop]", "Sends you a DM when a new game starts. Use 'stop' to stop the reminder"],
-                    ]
-        
-        cmdAdmin =  [   ["lastgame [index]", "Displays a datasheet for a game, where index=0 is the current game."],
-                        ["lastdata [index]", "Returns the raw data for a game, where index=0 is the current game."],
-                        ["trigger_nextgame", "Manually triggers game end reminder for all users that have !nextgame == true"],]
-        msg+="```"
-        for command in cmd:
-            msg+=command[0].ljust(20)+command[1]+"\n"
-        if hasAdmin(message.author):
-            msg+="Admin commands: \n"
-            for command in cmdAdmin:
-                msg+=command[0].ljust(20)+command[1]+"\n"
-        msg+="```"
-        await client.send_message(message.channel, msg)    
-    
-    if message.content.startswith('!nextgame'):
-        #get user ID
-        if hasattr(message, 'author'):
-            tauthor = message.author.id
-        else:
-            tauthor = message.channel.user.id
-        if(" " in message.content):
-            val = message.content.split(" ")[1]
-            if(val=="stop"):
-                await set_user_data(tauthor, "nextgame" , False)
-                msg = ':x: Ok, I will send no message'
-            else:
-                msg = ':question: Sorry, I did not understand'
-        else:
-            #store data, to remind user later on
-            await set_user_data(tauthor, "nextgame" , True)
-            msg = ':white_check_mark: Ok, I will send you a message when you can join for a new round.'
-        puser = await client.get_user_info(tauthor)
-        await client.send_message(puser, msg)  
-    
-    if message.content.startswith('!trigger_nextgame'):
-        if hasAdmin(message.author):
-            msg = 'triggering nextgame reminder'
-            await client.send_message(message.channel, msg)
-            await dm_users_new_game()
-            
-    if message.content.startswith('!lastgame'):
-        if(" " in message.content):
-            val = message.content.split(" ")[1]
-            if(val.isdigit()):
-                val = int(val)
-            else:
-                val = 1
-        else:
-            val = 1
-        if hasAdmin(message.author):
-            await processGame(message.channel, True, val)
-        else:
-            await processGame(message.channel, False, val)
-            
-    if message.content.startswith('!lastdata'):
-        if(" " in message.content):
-            val = message.content.split(" ")[1]
-            if(val.isdigit()):
-                val = int(val)
-            else:
-                val = 1
-        else:
-            val = 1
-        if hasAdmin(message.author):
-            await processGame(message.channel, True, val, True)
-        
 async def processGame(channel, admin=False, gameindex=1, sendraw=False):
     if(gameindex>=0 and gameindex <= 10):
         game = readLog.readData(admin, gameindex)   
@@ -167,11 +90,11 @@ async def processGame(channel, admin=False, gameindex=1, sendraw=False):
                 filename = game["dataname"]
             log_graph = filename
             msg="["+timestamp+"] "+str(game["gameduration"])+"min game. Winner:"+game["lastwinner"]
-            await client.send_file(channel, log_graph, content=msg)
+            await bot.send_file(channel, log_graph, content=msg)
             com_east = "EAST_com:"+str(Counter(readLog.featchValues(game["data"], "commander_east")))
             com_west = "WEST_com:"+str(Counter(readLog.featchValues(game["data"], "commander_west")))
-            await client.send_message(channel, com_east)
-            await client.send_message(channel, com_west)
+            await bot.send_message(channel, com_east)
+            await bot.send_message(channel, com_west)
         else: #normal dislay
             if(game["gameduration"]<30):
                 if(game["gameduration"]<10):
@@ -181,26 +104,26 @@ async def processGame(channel, admin=False, gameindex=1, sendraw=False):
                 else:
                     loser = "WEST"
                 msg="["+timestamp+"] "+"A "+str(game["gameduration"])+"min game was just finished because "+loser+" lost their HQ."
-                await client.send_message(channel, msg)
+                await bot.send_message(channel, msg)
             else:
                 msg="["+timestamp+"] Congratulation, "+game["lastwinner"]+"! You beat the other team after "+str(game["gameduration"])+"min of intense fighting. A new game is about to start, time to join!"
                 filename = game["picname"]
                 log_graph = filename
-                await client.send_file(channel, log_graph, content=msg)
+                await bot.send_file(channel, log_graph, content=msg)
 
     else:
-        await client.send_message(channel, "Invalid Index. has to be >0 and <10")
+        await bot.send_message(channel, "Invalid Index. has to be >0 and <10")
 
             
 #this will be used for watching for a game end     
 async def watch_Log():
-    await client.wait_until_ready()
-    channel = client.get_channel('503285457019207690')
+    await bot.wait_until_ready()
+    channel = bot.get_channel('503285457019207690')
     current_log = readLog.getLogs()[-1]
     print("current log: "+current_log)
-    file = open(readLog.log_path+current_log, "r")
+    file = open(readLog.cfg["logs_path"]+current_log, "r")
     file.seek(0, 2)
-    while not client.is_closed:
+    while not bot.is_closed:
         where = file.tell()
         try:
             line = file.readline()
@@ -217,32 +140,143 @@ async def watch_Log():
             #newline found
             if(line.find("BattlEye") ==-1):
                 if("CTI_Mission_Performance: GameOver" in line):
-                    await dm_users_new_game()
-                    await processGame(channel)
+                    dm_users_new_game()
+                    processGame(channel)
                 if("CTI_Mission_Performance: Starting Server" in line):
                     msg="Let the game go on! The Server is now continuing the mission."
-                    await client.send_message(channel, msg)
+                    await bot.send_message(channel, msg)
 
+
+
+###################################################################################################
+#####                                   Bot commands                                           ####
+###################################################################################################
+
+#await bot.send_message(message.channel, msg)
+
+@bot.command(name='ping')
+async def command_ping(*args):
+    msg = 'Pong!'
+    await bot.say(msg)
+      
+    
+@bot.command(name='help', pass_context=True)
+async def command_help(ctx):
+    author = ctx.message.author
+    cmd =       [   ["help", "Displays this message."],
+                    ["ping", "returns Pong!"],
+                    ["nextgame [stop]", "Sends you a DM when a new game starts. Use 'stop' to stop the reminder"],
+                ]
+    
+    cmdAdmin =  [   ["lastgame [index]", "Displays a datasheet for a game, where index=0 is the current game."],
+                    ["lastdata [index]", "Returns the raw data for a game, where index=0 is the current game."],
+                    ["trigger_nextgame", "Manually triggers game end reminder for all users that have !nextgame == true"],]
+                    
+                    
+    embed = discord.Embed(
+        color = discord.Colour.orange()
+    )
+    embed.set_author(name='Commands that are available to you:')
+
+    for command in cmd:
+        embed.add_field(name=command[0], value=command[1], inline=False)
+    if hasPermission(author, lvl=10):
+        for command in cmdAdmin:
+            embed.add_field(name=command[0], value=command[1], inline=False)
+
+    await bot.send_message(author, embed=embed)    
+         
+@bot.command(name='nextgame', pass_context=True)
+async def command_nextgame(ctx):
+    message = ctx.message
+     #get user ID
+    if hasattr(message, 'author'):
+        tauthor = message.author.id
+    else:
+        tauthor = message.channel.user.id
+    if(" " in message.content):
+        val = message.content.split(" ")[1]
+        if(val=="stop"):
+            await set_user_data(tauthor, "nextgame" , False)
+            msg = ':x: Ok, I will send no message'
+        else:
+            msg = ':question: Sorry, I did not understand'
+    else:
+        #store data, to remind user later on
+        await set_user_data(tauthor, "nextgame" , True)
+        msg = ':white_check_mark: Ok, I will send you a message when you can join for a new round.'
+    puser = await bot.get_user_info(tauthor)
+    await bot.send_message(puser, msg)  
+
+    
+@bot.command(name='lastgame', pass_context=True)
+async def command_lastgame(ctx):
+    message = ctx.message
+    if(" " in message.content):
+        val = message.content.split(" ")[1]
+        if(val.isdigit()):
+            val = int(val)
+        else:
+            val = 1
+    else:
+        val = 1
+    if hasPermission(message.author, lvl=10):
+        processGame(message.channel, True, val)
+    #else:
+    #    processGame(message.channel, False, val)
+    
+    
+    
+@bot.command(name='lastdata', pass_context=True)
+async def command_lastdata(ctx):
+    message = ctx.message
+    if(" " in message.content):
+        val = message.content.split(" ")[1]
+        if(val.isdigit()):
+            val = int(val)
+        else:
+            val = 1
+    else:
+        val = 1
+    if hasPermission(message.author, lvl=10):
+        processGame(message.channel, True, val, True)
+    
+###################################################################################################
+#####                                  Debug Commands                                          ####
+###################################################################################################
    
-#async def list_servers():
-#    await client.wait_until_ready()
-#    while not client.is_closed:
-#        print("Current servers:")
-#        for server in client.servers:
-#            print(server.name)
-#        await asyncio.sleep(600)        
-           
-@client.event
+@bot.command(name='trigger_nextgame', pass_context=True)
+async def command_trigger_nextgame(ctx):
+    author = ctx.message.author
+    if hasPermission(author, lvl=10):
+        msg = 'triggering nextgame reminder'
+        await bot.send_message(ctx.message.channel, msg)
+        dm_users_new_game()
+        
+        
+@bot.event
 async def on_ready():
     print('Logged in as')
-    print(client.user.name)
-    print(client.user.id)
+    print(bot.user.name)
+    print(bot.user.id)
     print('------------')
-    #client.add_command(square)   
+    #bot.add_command(square)   
 
-if(config['Bot']['TOKEN'] == "WRITE_TOKEN_HERE"):
-    print("Please enter the discord bot token into the config: "+config_name)
-else:
-    client.loop.create_task(watch_Log())
-    client.run(config['Bot']['TOKEN'])
+    
+if __name__ == '__main__':
+    if(cfg['TOKEN'] == "WRITE_TOKEN_HERE"):
+        print("Please enter the discord bot token into the config: "+config_name)
+        exit()
+    else:
+        for extension in modules:
+            try:
+                bot.load_extension(extension)
+            except (discord.ClientException, ModuleNotFoundError):
+                print(f'Failed to load extension {extension}.')
+                traceback.print_exc()
+        
+        bot.loop.create_task(watch_Log())
+        bot.run(cfg['TOKEN'])
+    
+    
 
