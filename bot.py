@@ -39,7 +39,7 @@ def set_user_data(user_id=0, field="", data=[]):
         user_data[user_id] = {field: data}
     #save data
     with open(user_data_path+"userdata.json", 'w') as outfile:
-        json.dump(user_data, outfile)
+        json.dump(user_data, outfile, sort_keys=True, indent=4, separators=(',', ': '))
 
 async def dm_users_new_game():
     global user_data
