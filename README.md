@@ -15,13 +15,12 @@ This project is not affiliated or authorized by Discord or Bohemia Interactive a
 
 ## Examples
 
-You can use this bot to analyse the performance of your mission on your server.
-![advanced_1](https://github.com/Yoshi-E/jmwBOT/blob/dev/examples/2018-10-27_3-32-27562-ADV.png)
-Or use it to look at the current balance of the game in a detailed graph.
-![advanced_2](https://github.com/Yoshi-E/jmwBOT/blob/dev/examples/2018-10-27_22-22-34235-CUR-ADV.png)
-Promoting the mission with it as a summary is also possible
-![advanced_3](https://github.com/Yoshi-E/jmwBOT/blob/dev/examples/discord_usage_example.PNG)
-
+You can use this bot to analyse the performance of your mission on your server.<br>
+<img src="https://github.com/Yoshi-E/jmwBOT/blob/dev/examples/2018-10-27_3-32-27562-ADV.png" height="500"/><br>
+Or use it to look at the current balance of the game in a detailed graph.<br>
+<img src="https://github.com/Yoshi-E/jmwBOT/blob/dev/examples/2018-10-27_22-22-34235-CUR-ADV.png" height="500"/><br>
+Promoting the mission with it as a summary is also possible<br>
+<img src="https://github.com/Yoshi-E/jmwBOT/blob/dev/examples/discord_usage_example.PNG" height="400"/>
 
 ## Usage
 
@@ -34,3 +33,10 @@ In the current version the bot listens to 3 types of log entries:
 * ["CTI_Mission_Performance:",["time",110.087],["fps",49.2308],["score_east",0], ...
 
 This helps the bot to understand the current state of the game, and helps it to report game starts and ends, and as well to create a summary of its performance.
+These entries have to generated server side and for this version can be found here:
+* <a href="https://github.com/zerty/Benny-Edition-CTI-0.97-Zerty-Modification/blob/bd20f6b128c84aa6740564ffd66d2d8cce701ceb/Server/Init/Init_Server.sqf#L313-L340">Server starting and timestamps with data</a>
+* <a href="https://github.com/zerty/Benny-Edition-CTI-0.97-Zerty-Modification/blob/5d71066fbab57764e0127f2467990379578f17c7/Server/FSM/update_victory.fsm#L82-L108">Registering the Winner of a round</a>
+Right now it is very important that the data array is logged in a format that can be interpreted by python as a valid data structure.
+Valid: [{"Data1": 10}, {"Data1": "String"}, ["Data2"]]
+Invalid: ["Data": String]
+
