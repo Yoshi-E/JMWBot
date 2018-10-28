@@ -34,3 +34,6 @@ In the current version the bot listens to 3 types of log entries:
 * ["CTI_Mission_Performance:",["time",110.087],["fps",49.2308],["score_east",0], ...
 
 This helps the bot to understand the current state of the game, and helps it to report game starts and ends, and as well to create a summary of its performance.
+These entries have to generated server side and for this version can be found here:
+* <a href="https://github.com/zerty/Benny-Edition-CTI-0.97-Zerty-Modification/blob/bd20f6b128c84aa6740564ffd66d2d8cce701ceb/Server/Init/Init_Server.sqf#L313-L340">Server starting and timestamps with data</a>
+* <a href="https://github.com/zerty/Benny-Edition-CTI-0.97-Zerty-Modification/blob/5d71066fbab57764e0127f2467990379578f17c7/Server/FSM/update_victory.fsm#L82-L108">Registering the Winner of a round</a>
