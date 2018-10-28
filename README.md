@@ -15,4 +15,22 @@ This project is not affiliated or authorized by Discord or Bohemia Interactive a
 
 ## Examples
 
-![advanced_1](http://...)
+You can use this bot to analyse the performance of your mission on your server.
+![advanced_1](https://github.com/Yoshi-E/jmwBOT/blob/dev/examples/2018-10-27_3-32-27562-ADV.png)
+Or use it to look at the current balance of the game in a detailed graph.
+![advanced_2](https://github.com/Yoshi-E/jmwBOT/blob/dev/examples/2018-10-27_22-22-34235-CUR-ADV.png)
+Promoting the mission with it as a summary is also possible
+![advanced_3](https://github.com/Yoshi-E/jmwBOT/blob/dev/examples/discord_usage_example.PNG)
+
+
+## Usage
+
+This discord bot is designed with flexablity in mind. The core pricinple for it is to listen to a game log and to react and summarize events in the given log. This can be any kind of game that logs details of events to a text file. In theory this bot should work with other game such as CSGO, Minecraft, GTA, ... and many more.
+
+In the current version the bot listens to 3 types of log entries:
+
+* CTI_Mission_Performance: Starting Server
+* CTI_Mission_Performance: GameOver
+* ["CTI_Mission_Performance:",["time",110.087],["fps",49.2308],["score_east",0], ...
+
+This helps the bot to understand the current state of the game, and helps it to report game starts and ends, and as well to create a summary of its performance.
