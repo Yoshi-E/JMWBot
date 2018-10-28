@@ -10,6 +10,8 @@ from discord.ext import commands
 
 config_name = "config.json"
 modules = ["error_handle"]
+commands = [""]
+
 
 #Load Config
 cfg = {}
@@ -38,7 +40,7 @@ def set_user_data(user_id=0, field="", data=[]):
     if(user_id != 0):
         user_data[user_id] = {field: data}
     #save data
-    with open(user_data_path+"userdata.json", 'w') as outfile:
+    with open(cfg["user_path"]+"userdata.json", 'w') as outfile:
         json.dump(user_data, outfile, sort_keys=True, indent=4, separators=(',', ': '))
 
 async def dm_users_new_game():
@@ -257,7 +259,13 @@ if __name__ == '__main__':
     else:
         for extension in modules:
             try:
-                bot.load_extension(extension)
+                bot.load_extension("modules/"+extension)
+            except (discord.ClientException, ModuleNotFoundError):
+                print(f'Failed to load extension {extension}.')
+                traceback.print_exc()
+        for extension in commands:
+            try:
+                bot.load_extension("commands/"+extension)
             except (discord.ClientException, ModuleNotFoundError):
                 print(f'Failed to load extension {extension}.')
                 traceback.print_exc()
