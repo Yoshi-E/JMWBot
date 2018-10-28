@@ -102,7 +102,7 @@ async def processGame(channel, admin=False, gameindex=1, sendraw=False):
 #this will be used for watching for a game end     
 async def watch_Log():
     await bot.wait_until_ready()
-    channel = bot.get_channel('503285457019207690')
+    channel = bot.get_channel(cfg["Channel_post_status"])
     current_log = readLog.getLogs()[-1]
     print("current log: "+current_log)
     file = open(readLog.cfg["logs_path"]+current_log, "r")
@@ -237,7 +237,10 @@ async def command_trigger_nextgame(ctx):
         await bot.send_message(ctx.message.channel, msg)
         await dm_users_new_game()
         
-        
+###################################################################################################
+#####                                  Initialization                                          ####
+###################################################################################################     
+   
 @bot.event
 async def on_ready():
     print('Logged in as')
