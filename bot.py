@@ -259,7 +259,7 @@ if __name__ == '__main__':
     else:
         for extension in modules:
             try:
-                bot.load_extension("modules/"+extension)
+                bot.load_extension(extension)
             except (discord.ClientException, ModuleNotFoundError):
                 print(f'Failed to load extension {extension}.')
                 traceback.print_exc()
