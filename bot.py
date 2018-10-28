@@ -10,7 +10,7 @@ from discord.ext import commands
 
 config_name = "config.json"
 modules = ["error_handle"]
-commands = [""]
+modules_commands = []
 
 
 #Load Config
@@ -263,7 +263,7 @@ if __name__ == '__main__':
             except (discord.ClientException, ModuleNotFoundError):
                 print(f'Failed to load extension {extension}.')
                 traceback.print_exc()
-        for extension in commands:
+        for extension in modules_commands:
             try:
                 bot.load_extension("commands/"+extension)
             except (discord.ClientException, ModuleNotFoundError):
