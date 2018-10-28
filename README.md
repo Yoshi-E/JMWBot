@@ -16,12 +16,11 @@ This project is not affiliated or authorized by Discord or Bohemia Interactive a
 ## Examples
 
 You can use this bot to analyse the performance of your mission on your server.
-![advanced_1](https://github.com/Yoshi-E/jmwBOT/blob/dev/examples/2018-10-27_3-32-27562-ADV.png | height=100)
+<img src="https://github.com/Yoshi-E/jmwBOT/blob/dev/examples/2018-10-27_3-32-27562-ADV.png" height="400"/>
 Or use it to look at the current balance of the game in a detailed graph.
-![advanced_2](https://github.com/Yoshi-E/jmwBOT/blob/dev/examples/2018-10-27_22-22-34235-CUR-ADV.png | height=100)
+<img src="https://github.com/Yoshi-E/jmwBOT/blob/dev/examples/2018-10-27_22-22-34235-CUR-ADV.png" height="400"/>
 Promoting the mission with it as a summary is also possible
-![advanced_3](https://github.com/Yoshi-E/jmwBOT/blob/dev/examples/discord_usage_example.PNG | height=100)
-
+<img src="https://github.com/Yoshi-E/jmwBOT/blob/dev/examples/discord_usage_example.PNG" height="400"/>
 
 ## Usage
 
