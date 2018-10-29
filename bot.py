@@ -120,7 +120,7 @@ async def watch_Log():
     channel = bot.get_channel(cfg("Channel_post_status"))
     current_log = readLog.getLogs()[-1]
     print("current log: "+current_log)
-    file = open(readLog.cfg("logs_path")+current_log, "r")
+    file = open(cfg("logs_path")+current_log, "r")
     file.seek(0, 2)
     while not bot.is_closed:
         where = file.tell()
@@ -133,7 +133,7 @@ async def watch_Log():
             file.seek(where)
             if(current_log != readLog.getLogs()[-1]):
                 current_log = readLog.getLogs()[-1] #update to new recent log
-                file = open(readLog.log_path+current_log, "r")
+                file = open(cfg("logs_path")+current_log, "r")
                 print("current log: "+current_log)
         else:
             #newline found
