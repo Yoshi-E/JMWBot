@@ -13,15 +13,15 @@ modules = ["error_handle"]
 modules_commands = []
 
 def cfg(field):
-    if(field in cfg):
-        return cfg[field]
+    if(field in _cfg):
+        return _cfg[field]
     else:
-        cfg_default = json.load(open("config_default.json","r"))
-        if(field in cfg_default):
-            cfg.update({field: cfg_default[field]})
+        _cfg_default = json.load(open("config_default.json","r"))
+        if(field in _cfg_default):
+            _cfg.update({field: cfg_default[field]})
             with open(config_name, 'w') as outfile:
-                json.dump(cfg, outfile, indent=4, separators=(',', ': '))
-            return cfg_default[field]
+                json.dump(_cfg, outfile, indent=4, separators=(',', ': '))
+            return _cfg_default[field]
         else:
             print("Error, cound not find config value for: "+str(field))
     return None
