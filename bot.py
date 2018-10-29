@@ -12,7 +12,19 @@ config_name = "config.json"
 modules = ["error_handle"]
 modules_commands = []
 
-
+def cfg(field):
+    if(field in cfg):
+        return cfg[field]
+    else:
+        cfg_default = json.load(open("config_default.json","r"))
+        if(field in cfg_default):
+            cfg.update({field: cfg_default[field]})
+            with open(config_name, 'w') as outfile:
+                json.dump(cfg, outfile, indent=4, separators=(',', ': '))
+            return cfg_default[field]
+        else:
+            print("Error, cound not find config value for: "+str(field))
+            
 #Load Config
 cfg = {}
 if(os.path.isfile(config_name)):
@@ -34,20 +46,7 @@ if(os.path.isfile(cfg('user_path')+"userdata.json")):
 #####                                  common functions                                        ####
 ###################################################################################################
 
-def cfg(field):
-    if(field in cfg):
-        return cfg[field]
-    else:
-        cfg_default = json.load(open("config_default.json","r"))
-        if(field in cfg_default):
-            cfg.update({field: cfg_default[field]})
-            with open(config_name, 'w') as outfile:
-                json.dump(cfg, outfile, indent=4, separators=(',', ': '))
-            return cfg_default[field]
-        else:
-            print("Error, cound not find config value for: "+str(field))
-            
-
+    
 def set_user_data(user_id=0, field="", data=[]):
     global user_data
     if(user_id != 0):
