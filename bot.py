@@ -12,6 +12,26 @@ config_name = "config.json"
 modules = ["error_handle"]
 modules_commands = []
 
+#Load Config
+_cfg = {}
+if(os.path.isfile(config_name)):
+    _cfg = json.load(open(config_name,"r"))
+else:
+    _cfg = json.load(open("config_default.json","r"))
+    with open(config_name, 'w') as outfile:
+        json.dump(_cfg, outfile, indent=4, separators=(',', ': '))
+        
+bot = commands.Bot(command_prefix=cfg("BOT_PREFIX"))
+bot.remove_command("help")
+
+user_data = {}
+if(os.path.isfile(cfg('user_path')+"userdata.json")):
+    user_data = json.load(open(cfg('user_path')+"userdata.json","r"))
+    
+
+###################################################################################################
+#####                                  common functions                                        ####
+###################################################################################################
 def cfg(field):
     if(field in cfg):
         return cfg[field]
@@ -24,28 +44,8 @@ def cfg(field):
             return cfg_default[field]
         else:
             print("Error, cound not find config value for: "+str(field))
+    return None
             
-#Load Config
-cfg = {}
-if(os.path.isfile(config_name)):
-    cfg = json.load(open(config_name,"r"))
-else:
-    cfg = json.load(open("config_default.json","r"))
-    with open(config_name, 'w') as outfile:
-        json.dump(cfg, outfile, indent=4, separators=(',', ': '))
-        
-bot = commands.Bot(command_prefix=cfg["BOT_PREFIX"])
-bot.remove_command("help")
-
-user_data = {}
-if(os.path.isfile(cfg('user_path')+"userdata.json")):
-    user_data = json.load(open(cfg('user_path')+"userdata.json","r"))
-    
-
-###################################################################################################
-#####                                  common functions                                        ####
-###################################################################################################
-
     
 def set_user_data(user_id=0, field="", data=[]):
     global user_data
