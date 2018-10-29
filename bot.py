@@ -18,7 +18,7 @@ def cfg(field):
     else:
         _cfg_default = json.load(open("config_default.json","r"))
         if(field in _cfg_default):
-            _cfg.update({field: cfg_default[field]})
+            _cfg.update({field: _cfg_default[field]})
             with open(config_name, 'w') as outfile:
                 json.dump(_cfg, outfile, indent=4, separators=(',', ': '))
             return _cfg_default[field]
