@@ -26,21 +26,34 @@ bot = commands.Bot(command_prefix=cfg["BOT_PREFIX"])
 bot.remove_command("help")
 
 user_data = {}
-if(os.path.isfile(cfg['user_path']+"userdata.json")):
-    user_data = json.load(open(cfg['user_path']+"userdata.json","r"))
+if(os.path.isfile(cfg('user_path')+"userdata.json")):
+    user_data = json.load(open(cfg('user_path')+"userdata.json","r"))
     
 
 ###################################################################################################
 #####                                  common functions                                        ####
 ###################################################################################################
 
+def cfg(field):
+    if(field in cfg):
+        return cfg[field]
+    else:
+        cfg_default = json.load(open("config_default.json","r"))
+        if(field in cfg_default):
+            cfg.update({field: cfg_default[field]})
+            with open(config_name, 'w') as outfile:
+                json.dump(cfg, outfile, indent=4, separators=(',', ': '))
+            return cfg_default[field]
+        else:
+            print("Error, cound not find config value for: "+str(field))
+            
 
 def set_user_data(user_id=0, field="", data=[]):
     global user_data
     if(user_id != 0):
         user_data[user_id] = {field: data}
     #save data
-    with open(cfg["user_path"]+"userdata.json", 'w') as outfile:
+    with open(cfg("user_path")+"userdata.json", 'w') as outfile:
         json.dump(user_data, outfile, sort_keys=True, indent=4, separators=(',', ': '))
 
 async def dm_users_new_game():
@@ -55,7 +68,7 @@ async def dm_users_new_game():
     await set_user_data() #save changes
         
 def hasPermission(author, lvl=1):
-    roles = cfg['Roles']
+    roles = cfg('Roles')
     if(roles['Default'] >= lvl):
         return True
         
@@ -104,10 +117,10 @@ async def processGame(channel, admin=False, gameindex=1, sendraw=False):
 #this will be used for watching for a game end     
 async def watch_Log():
     await bot.wait_until_ready()
-    channel = bot.get_channel(cfg["Channel_post_status"])
+    channel = bot.get_channel(cfg("Channel_post_status"))
     current_log = readLog.getLogs()[-1]
     print("current log: "+current_log)
-    file = open(readLog.cfg["logs_path"]+current_log, "r")
+    file = open(readLog.cfg("logs_path")+current_log, "r")
     file.seek(0, 2)
     while not bot.is_closed:
         where = file.tell()
@@ -253,7 +266,7 @@ async def on_ready():
 
     
 if __name__ == '__main__':
-    if(cfg['TOKEN'] == "WRITE_TOKEN_HERE"):
+    if(cfg('TOKEN') == "WRITE_TOKEN_HERE"):
         print("Please enter the discord bot token into the config: "+config_name)
         exit()
     else:
@@ -271,7 +284,7 @@ if __name__ == '__main__':
                 traceback.print_exc()
         
         bot.loop.create_task(watch_Log())
-        bot.run(cfg['TOKEN'])
+        bot.run(cfg('TOKEN'))
     
     
 
