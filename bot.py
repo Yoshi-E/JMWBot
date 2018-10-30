@@ -48,7 +48,7 @@ if(os.path.isfile(cfg('user_path')+"userdata.json")):
 ###################################################################################################
           
     
-def set_user_data(user_id=0, field="", data=[]):
+await def set_user_data(user_id=0, field="", data=[]):
     global user_data
     if(user_id != 0):
         user_data[user_id] = {field: data}
