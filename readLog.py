@@ -77,6 +77,15 @@ def scanfile(name):
                     collected_rows.append([rows.copy(),  lastwinner, timestamp[:-1], date])
                     timestamp = "??:??:?? "
                     rows = []
+                    
+                    #seeks forward until a new mission start was found, to ensure entries between end - start will be skipped
+                    while line:
+                        try:
+                            line = fp.readline()
+                            if(line.find("BattlEye") ==-1 and "CTI_Mission_Performance: Starting Server" in line):
+                                break
+                        except:
+                            line = "Error"
                 else:
                     splitat = line.find("[")
                     r = line[splitat:]  #remove timestamp
