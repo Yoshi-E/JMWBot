@@ -2,6 +2,7 @@
     "TOKEN":"WRITE_TOKEN_HERE",
     "user_path":"",
     "BOT_PREFIX":"!",
+	"Channel_post_status": "000000000000000000",
     "Roles":{  
         "Default":0,
         "Admin":10,

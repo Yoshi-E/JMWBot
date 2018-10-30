@@ -10,35 +10,50 @@ from discord.ext import commands
 
 config_name = "config.json"
 modules = ["error_handle"]
+modules_commands = []
 
+def cfg(field):
+    if(field in _cfg):
+        return _cfg[field]
+    else:
+        _cfg_default = json.load(open("config_default.json","r"))
+        if(field in _cfg_default):
+            _cfg.update({field: _cfg_default[field]})
+            with open(config_name, 'w') as outfile:
+                json.dump(_cfg, outfile, indent=4, separators=(',', ': '))
+            return _cfg_default[field]
+        else:
+            print("Error, cound not find config value for: "+str(field))
+    return None
+    
 #Load Config
-cfg = {}
+_cfg = {}
 if(os.path.isfile(config_name)):
-    cfg = json.load(open(config_name,"r"))
+    _cfg = json.load(open(config_name,"r"))
 else:
-    cfg = json.load(open("config_default.json","r"))
+    _cfg = json.load(open("config_default.json","r"))
     with open(config_name, 'w') as outfile:
-        json.dump(cfg, outfile, indent=4, separators=(',', ': '))
+        json.dump(_cfg, outfile, indent=4, separators=(',', ': '))
         
-bot = commands.Bot(command_prefix=cfg["BOT_PREFIX"])
+bot = commands.Bot(command_prefix=cfg("BOT_PREFIX"))
 bot.remove_command("help")
 
 user_data = {}
-if(os.path.isfile(cfg['user_path']+"userdata.json")):
-    user_data = json.load(open(cfg['user_path']+"userdata.json","r"))
+if(os.path.isfile(cfg('user_path')+"userdata.json")):
+    user_data = json.load(open(cfg('user_path')+"userdata.json","r"))
     
 
 ###################################################################################################
 #####                                  common functions                                        ####
 ###################################################################################################
-
-
-def set_user_data(user_id=0, field="", data=[]):
+          
+    
+async def set_user_data(user_id=0, field="", data=[]):
     global user_data
     if(user_id != 0):
         user_data[user_id] = {field: data}
     #save data
-    with open(user_data_path+"userdata.json", 'w') as outfile:
+    with open(cfg("user_path")+"userdata.json", 'w') as outfile:
         json.dump(user_data, outfile, sort_keys=True, indent=4, separators=(',', ': '))
 
 async def dm_users_new_game():
@@ -53,7 +68,7 @@ async def dm_users_new_game():
     await set_user_data() #save changes
         
 def hasPermission(author, lvl=1):
-    roles = cfg['Roles']
+    roles = cfg('Roles')
     if(roles['Default'] >= lvl):
         return True
         
@@ -102,10 +117,10 @@ async def processGame(channel, admin=False, gameindex=1, sendraw=False):
 #this will be used for watching for a game end     
 async def watch_Log():
     await bot.wait_until_ready()
-    channel = bot.get_channel('503285457019207690')
+    channel = bot.get_channel(cfg("Channel_post_status"))
     current_log = readLog.getLogs()[-1]
     print("current log: "+current_log)
-    file = open(readLog.cfg["logs_path"]+current_log, "r")
+    file = open(cfg("logs_path")+current_log, "r")
     file.seek(0, 2)
     while not bot.is_closed:
         where = file.tell()
@@ -118,7 +133,7 @@ async def watch_Log():
             file.seek(where)
             if(current_log != readLog.getLogs()[-1]):
                 current_log = readLog.getLogs()[-1] #update to new recent log
-                file = open(readLog.log_path+current_log, "r")
+                file = open(cfg("logs_path")+current_log, "r")
                 print("current log: "+current_log)
         else:
             #newline found
@@ -237,7 +252,10 @@ async def command_trigger_nextgame(ctx):
         await bot.send_message(ctx.message.channel, msg)
         await dm_users_new_game()
         
-        
+###################################################################################################
+#####                                  Initialization                                          ####
+###################################################################################################     
+   
 @bot.event
 async def on_ready():
     print('Logged in as')
@@ -248,7 +266,7 @@ async def on_ready():
 
     
 if __name__ == '__main__':
-    if(cfg['TOKEN'] == "WRITE_TOKEN_HERE"):
+    if(cfg('TOKEN') == "WRITE_TOKEN_HERE"):
         print("Please enter the discord bot token into the config: "+config_name)
         exit()
     else:
@@ -258,9 +276,15 @@ if __name__ == '__main__':
             except (discord.ClientException, ModuleNotFoundError):
                 print(f'Failed to load extension {extension}.')
                 traceback.print_exc()
+        for extension in modules_commands:
+            try:
+                bot.load_extension("commands/"+extension)
+            except (discord.ClientException, ModuleNotFoundError):
+                print(f'Failed to load extension {extension}.')
+                traceback.print_exc()
         
         bot.loop.create_task(watch_Log())
-        bot.run(cfg['TOKEN'])
+        bot.run(cfg('TOKEN'))
     
     
 
