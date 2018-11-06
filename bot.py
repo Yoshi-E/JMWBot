@@ -141,6 +141,7 @@ async def watch_Log():
                 if("CTI_Mission_Performance: GameOver" in line):
                     await dm_users_new_game()
                     await processGame(channel)
+                    readLog.readData(True, 1) #Generate advaced data as well, for later use.
                 if("CTI_Mission_Performance: Starting Server" in line):
                     msg="Let the game go on! The Server is now continuing the mission."
                     await bot.send_message(channel, msg)
