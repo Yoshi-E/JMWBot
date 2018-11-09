@@ -122,6 +122,7 @@ async def watch_Log():
     print("current log: "+current_log)
     file = open(cfg("logs_path")+current_log, "r")
     file.seek(0, 2)
+    waitfor_newsession = False
     while not bot.is_closed:
         where = file.tell()
         try:
@@ -138,13 +139,15 @@ async def watch_Log():
         else:
             #newline found
             if(line.find("BattlEye") ==-1):
-                if("CTI_Mission_Performance: GameOver" in line):
+                if(waitfor_newsession == False and "CTI_Mission_Performance: GameOver" in line):
                     await dm_users_new_game()
                     await processGame(channel)
                     readLog.readData(True, 1) #Generate advaced data as well, for later use.
+                    waitfor_newsession = True
                 if("CTI_Mission_Performance: Starting Server" in line):
                     msg="Let the game go on! The Server is now continuing the mission."
                     await bot.send_message(channel, msg)
+                    waitfor_newsession = False
 
 
 
