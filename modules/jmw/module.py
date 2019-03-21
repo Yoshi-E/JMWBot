@@ -23,8 +23,8 @@ class CommandJMW:
             
         self.readLog = readLog(self.cfg)    
         self.user_data = {}
-        if(os.path.isfile(self.path+"\\userdata.json")):
-            self.user_data = json.load(open(self.path+"\\userdata.json","r"))
+        if(os.path.isfile(self.path+"//userdata.json")):
+            self.user_data = json.load(open(self.path+"//userdata.json","r"))
     
         
         
@@ -37,7 +37,7 @@ class CommandJMW:
         if(user_id != 0):
             user_data[user_id] = {field: data}
         #save data
-        with open(self.path+"\\userdata.json", 'w') as outfile:
+        with open(self.path+"//userdata.json", 'w') as outfile:
             json.dump(user_data, outfile, sort_keys=True, indent=4, separators=(',', ': '))
 
     async def dm_users_new_game(self):
