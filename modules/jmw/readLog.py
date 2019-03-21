@@ -319,12 +319,12 @@ class readLog:
             
         filename_pic = self.path+"/"+self.cfg['image_path']+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+") ("+lastwinner+")"+t+'.png'
         filename = self.path+"/"+self.cfg['data_path']+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+") ("+lastwinner+")"+t+'.json'
-        if(t not in filename):
-            #save image
-            fig.savefig(filename_pic, dpi=100, pad_inches=3)
-            #save rawdata
-            with open(filename, 'w') as outfile:
-                json.dump(data, outfile)
+        
+        #save image
+        fig.savefig(filename_pic, dpi=100, pad_inches=3)
+        #save rawdata
+        with open(filename, 'w') as outfile:
+            json.dump(data, outfile)
         
         return {"date": fdate, "time": timestamp, "lastwinner": lastwinner, "gameduration": gameduration, "picname": filename_pic, "dataname": filename, "data": data}
 
