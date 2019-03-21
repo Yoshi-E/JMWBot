@@ -11,8 +11,8 @@ class Commandconfig:
         self.bot = bot
         
         self.path = os.path.dirname(os.path.realpath(__file__))
-        self.config_name = self.path+"//config.json" 
-        self.config_default_name = self.path+"//config_default.json" 
+        self.config_name = self.path+"/config.json" 
+        self.config_default_name = self.path+"/config_default.json" 
         
         self.cfg = {}
         self.config_load()

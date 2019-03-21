@@ -306,10 +306,10 @@ class readLog:
                 zplots[-1].set_title(pdata["title"])
         
         #create folders to for images / raw data
-        if not os.path.exists(self.path+"//"+self.cfg['data_path']):
-            os.makedirs(self.path+"//"+self.cfg['data_path'])
-        if not os.path.exists(self.path+"//"+self.cfg['image_path']):
-            os.makedirs(self.path+"//"+self.cfg['image_path'])
+        if not os.path.exists(self.path+"/"+self.cfg['data_path']):
+            os.makedirs(self.path+"/"+self.cfg['data_path'])
+        if not os.path.exists(self.path+"/"+self.cfg['image_path']):
+            os.makedirs(self.path+"/"+self.cfg['image_path'])
         
         t=""
         if(lastwinner=="::currentGame::"):
@@ -317,13 +317,14 @@ class readLog:
         if(admin==True):
             t +="-ADV"
             
-        filename_pic = self.path+"//"+self.cfg['image_path']+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+t+'.png'
-        filename = self.path+"//"+self.cfg['data_path']+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")"+t+'.json'
-        #save image
-        fig.savefig(filename_pic, dpi=100, pad_inches=3)
-        #save rawdata
-        with open(filename, 'w') as outfile:
-            json.dump(data, outfile)
+        filename_pic = self.path+"/"+self.cfg['image_path']+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+") ("+lastwinner+")"+t+'.png'
+        filename = self.path+"/"+self.cfg['data_path']+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+") ("+lastwinner+")"+t+'.json'
+        if(t not in filename):
+            #save image
+            fig.savefig(filename_pic, dpi=100, pad_inches=3)
+            #save rawdata
+            with open(filename, 'w') as outfile:
+                json.dump(data, outfile)
         
         return {"date": fdate, "time": timestamp, "lastwinner": lastwinner, "gameduration": gameduration, "picname": filename_pic, "dataname": filename, "data": data}
 
