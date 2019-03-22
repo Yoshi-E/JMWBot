@@ -35,20 +35,19 @@ class CommandJMW:
     
     async def set_user_data(self, user_id=0, field="", data=[]):
         if(user_id != 0):
-            user_data[user_id] = {field: data}
+            self.user_data[user_id] = {field: data}
         #save data
         with open(self.path+"/userdata.json", 'w') as outfile:
-            json.dump(user_data, outfile, sort_keys=True, indent=4, separators=(',', ': '))
+            json.dump(self.user_data, outfile, sort_keys=True, indent=4, separators=(',', ': '))
 
     async def dm_users_new_game(self):
-        global user_data
         msg = "A game just ended, now is the best time to join for a new game!"
-        for user in user_data:
-            if "nextgame" in user_data[user] and user_data[user]["nextgame"] == True:
+        for user in self.user_data:
+            if "nextgame" in self.user_data[user] and self.user_data[user]["nextgame"] == True:
                 print("sending DM to: "+str(user))
                 puser = await self.bot.get_user_info(user)
                 await self.bot.send_message(puser, msg)  
-                user_data[user]["nextgame"] = False
+                self.user_data[user]["nextgame"] = False
         await self.set_user_data() #save changes
             
     def hasPermission(self, author, lvl=1):
