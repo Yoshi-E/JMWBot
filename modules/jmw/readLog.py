@@ -14,7 +14,10 @@ class readLog:
     #get the log files from folder and sort them by oldest first
     def getLogs(self):
         if(os.path.exists(self.cfg['logs_path'])):
-            files = sorted(os.listdir(self.cfg['logs_path']))
+            files = []
+            for file in os.listdir(self.cfg['logs_path']):
+                if file.endswith(".log"):
+                    files.append(file)
             return files
         else:
             return []
@@ -41,10 +44,10 @@ class readLog:
                     collected_rows[0][0] = (p[-1][0]) + (collected_rows[0][0]) #combine data from previous 
                     collected_rows = p[:-1] + collected_rows  
             #last element in collected_rows is the current game, 2nd last the the last finished game
-            data = collected_rows[-(gameindex+1)]
-            return self.dataToGraph(data[0], data[1], data[2], data[3], admin)
-        else:
-            return None
+            if((gameindex+1) <= len(collected_rows)):
+                data = collected_rows[-(gameindex+1)]
+                return self.dataToGraph(data[0], data[1], data[2], data[3], admin)
+        return None
 
         
     def scanfile(self, name):
@@ -59,40 +62,47 @@ class readLog:
             except:
                 line = "Error"
             while line:
-                if(line.find("BattlEye") ==-1 and line.find("[") > 0 and "CTI_Mission_Performance" in line):
-                    if("CTI_Mission_Performance: GameOver" in line):
-                        splitat = line.find("[")
-                        r = line[splitat:]  #remove timestamp
-                        timestamp = line[:splitat] #time stamp of game end
-                        r = r.rstrip() #remove /n
-                        r = r[-5:-1] #get winner
-                        if("losse" in line): #if loser is found
-                            if(r == "EAST"):
-                                r = "WEST"
-                            else:
-                                r = "EAST"
-                        lastwinner = r
-                        collected_rows.append([rows.copy(),  lastwinner, timestamp[:-1], date])
-                        timestamp = "??:??:?? "
-                        rows = []
-                        
-                        #seeks forward until a new mission start was found, to ensure entries between end - start will be skipped
-                        while line:
-                            try:
-                                line = fp.readline()
-                                if(line.find("BattlEye") ==-1 and "CTI_Mission_Performance: Starting Server" in line):
-                                    break
-                            except:
-                                line = "Error"
-                    else:
+                if(line.find("BattlEye") ==-1 and line.find("[") > 0 and "CTI_DataPacket" in line):
+                    #if("CTI_Mission_Performance: GameOver" in line):
                         splitat = line.find("[")
                         r = line[splitat:]  #remove timestamp
                         timestamp = line[:splitat]
                         r = r.rstrip() #remove /n
-                        p = ast.literal_eval(r) #convert string into array object
-                        p = p[1:] #remove first element
-                        d = dict(p)
-                        rows.append(d)
+                        datarow = ast.literal_eval(r) #convert string into array object
+                        datarow = dict(datarow)
+                        if(datarow["CTI_DataPacket"] == "Header"):
+                            #print("Map starting: "+datarow["Map"])
+                            pass
+                        if(datarow["CTI_DataPacket"] == "Data"):
+                            rows.append(datarow)
+                            
+                        if(datarow["CTI_DataPacket"] == "EOF"):
+                            pass
+                            
+                        if(datarow["CTI_DataPacket"] == "GameOver"):
+                            if(datarow["Lost"]):
+                                if(datarow["Side"] == "WEST"):
+                                    lastwinner = "EAST"
+                                else:
+                                    lastwinner = "WEST"
+                            else:
+                                if(datarow["Side"] == "WEST"):
+                                    lastwinner = "WEST"
+                                else:
+                                    lastwinner = "EAST"
+                            collected_rows.append([rows.copy(),  lastwinner, timestamp[:-1], date])
+                            timestamp = "??:??:?? "
+                            rows = []
+                            #seeks forward until a new mission start was found, to ensure entries between end - start will be skipped
+                            while line:
+                                try:
+                                    line = fp.readline()
+                                    if(line.find("BattlEye") ==-1 and "CTI_DataPacket" in line):
+                                        break
+                                except:
+                                    line = "Error"
+                    
+                    
                 try:
                     line = fp.readline()
                 except:
@@ -174,7 +184,6 @@ class readLog:
     def dataToGraph(self, data, lastwinner, timestamp, date, admin):
         #register plots
         plots = []
-        
         v1 = self.featchValues(data, "score_east")
         v2 = self.featchValues(data, "score_west")
         #data: [[data, color_String],....]
@@ -313,12 +322,13 @@ class readLog:
         
         t=""
         if(lastwinner=="::currentGame::"):
+            lastwinner="currentGame"
             t = "-CUR"
         if(admin==True):
             t +="-ADV"
             
-        filename_pic = self.path+"/"+self.cfg['image_path']+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+") ("+lastwinner+")"+t+'.png'
-        filename = self.path+"/"+self.cfg['data_path']+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+") ("+lastwinner+")"+t+'.json'
+        filename_pic = (self.path+"/"+self.cfg['image_path']+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")("+lastwinner+")"+t+'.png').replace("\\","/")
+        filename = (self.path+"/"+self.cfg['data_path']+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")("+lastwinner+")"+t+'.json').replace("\\","/")
         
         #save image
         fig.savefig(filename_pic, dpi=100, pad_inches=3)

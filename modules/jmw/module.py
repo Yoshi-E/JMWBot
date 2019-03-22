@@ -66,7 +66,7 @@ class CommandJMW:
         if(gameindex>=0 and gameindex <= 10):
             game = self.readLog.readData(admin, gameindex)   
             if(game == None):
-                await self.bot.send_message(channel, "No Log found, wrong path? '"+self.cfg['logs_path']+"'")
+                await self.bot.send_message(channel, "No Data found, wrong log path? '"+self.cfg['logs_path']+"'")
                 return None
             timestamp = game["date"]+" "+game["time"]
             msg="Sorry, I could not find any games"
