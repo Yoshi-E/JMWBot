@@ -18,7 +18,7 @@ class readLog:
             for file in os.listdir(self.cfg['logs_path']):
                 if file.endswith(".log"):
                     files.append(file)
-            return files
+            return sorted(files)
         else:
             return []
 
