@@ -13,9 +13,9 @@ class readLog:
                 
     #get the log files from folder and sort them by oldest first
     def getLogs(self):
-        if(os.path.exists(self.cfg['logs_path'])):
+        if(os.path.exists(self.cfg.get('logs_path'))):
             files = []
-            for file in os.listdir(self.cfg['logs_path']):
+            for file in os.listdir(self.cfg.get('logs_path')):
                 if file.endswith(".log"):
                     files.append(file)
             return sorted(files)
@@ -55,8 +55,8 @@ class readLog:
         rows = []
         lastwinner = "????"
         timestamp = "??:??:?? "
-        date = os.path.getmtime(self.cfg['logs_path']+name)
-        with open(self.cfg['logs_path']+name) as fp: 
+        date = os.path.getmtime(self.cfg.get('logs_path')+name)
+        with open(self.cfg.get('logs_path')+name) as fp: 
             try:
                 line = fp.readline()
             except:
@@ -315,10 +315,10 @@ class readLog:
                 zplots[-1].set_title(pdata["title"])
         
         #create folders to for images / raw data
-        if not os.path.exists(self.path+"/"+self.cfg['data_path']):
-            os.makedirs(self.path+"/"+self.cfg['data_path'])
-        if not os.path.exists(self.path+"/"+self.cfg['image_path']):
-            os.makedirs(self.path+"/"+self.cfg['image_path'])
+        if not os.path.exists(self.path+"/"+self.cfg.get('data_path')):
+            os.makedirs(self.path+"/"+self.cfg.get('data_path'))
+        if not os.path.exists(self.path+"/"+self.cfg.get('image_path')):
+            os.makedirs(self.path+"/"+self.cfg.get('image_path'))
         
         t=""
         if(lastwinner=="::currentGame::"):
@@ -327,8 +327,8 @@ class readLog:
         if(admin==True):
             t +="-ADV"
             
-        filename_pic = (self.path+"/"+self.cfg['image_path']+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")("+lastwinner+")"+t+'.png').replace("\\","/")
-        filename = (self.path+"/"+self.cfg['data_path']+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")("+lastwinner+")"+t+'.json').replace("\\","/")
+        filename_pic = (self.path+"/"+self.cfg.get('image_path')+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")("+lastwinner+")"+t+'.png').replace("\\","/")
+        filename = (self.path+"/"+self.cfg.get('data_path')+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")("+lastwinner+")"+t+'.json').replace("\\","/")
         
         #save image
         fig.savefig(filename_pic, dpi=100, pad_inches=3)

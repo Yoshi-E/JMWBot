@@ -8,5 +8,7 @@
     },
     "image_path":"images/",
     "data_path":"data/",
-    "logs_path":"logs/"
+    "logs_path":"logs/",
+    "config_path":"D:/Server/discord/server.cfg",
+    "cycle_assist":false
 }

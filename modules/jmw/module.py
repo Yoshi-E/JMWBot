@@ -5,9 +5,11 @@ from collections import Counter
 import json
 import os
 from modules.jmw.readLog import readLog
+from modules.jmw import a3cfgreader
 import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions, CheckFailure
+import ast
 
 class CommandJMW:
     def __init__(self, bot):
@@ -17,11 +19,13 @@ class CommandJMW:
         
         #checking depencies 
         if("Commandconfig" in bot.cogs.keys()):
-            self.cfg = bot.cogs["Commandconfig"].cfg
+            self.cfg = bot.cogs["Commandconfig"]
         else: 
             sys.exit("Module 'Commandconfig' not loaded, but required")
-            
+        
+        self.cfgreader = a3cfgreader.readcfg(self.cfg.get("config_path"), self.path+"/"+"mission_cycle.cfg")
         self.readLog = readLog(self.cfg)    
+        
         self.user_data = {}
         if(os.path.isfile(self.path+"/userdata.json")):
             self.user_data = json.load(open(self.path+"/userdata.json","r"))
@@ -40,18 +44,8 @@ class CommandJMW:
         with open(self.path+"/userdata.json", 'w') as outfile:
             json.dump(self.user_data, outfile, sort_keys=True, indent=4, separators=(',', ': '))
 
-    async def dm_users_new_game(self):
-        msg = "A game just ended, now is the best time to join for a new game!"
-        for user in self.user_data:
-            if "nextgame" in self.user_data[user] and self.user_data[user]["nextgame"] == True:
-                print("sending DM to: "+str(user))
-                puser = await self.bot.get_user_info(user)
-                await self.bot.send_message(puser, msg)  
-                self.user_data[user]["nextgame"] = False
-        await self.set_user_data() #save changes
-            
     def hasPermission(self, author, lvl=1):
-        roles = self.cfg['Roles']
+        roles = self.cfg.get('Roles')
         if(roles['Default'] >= lvl):
             return True
             
@@ -65,7 +59,7 @@ class CommandJMW:
         if(gameindex>=0 and gameindex <= 10):
             game = self.readLog.readData(admin, gameindex)   
             if(game == None):
-                await self.bot.send_message(channel, "No Data found, wrong log path? '"+self.cfg['logs_path']+"'")
+                await self.bot.send_message(channel, "No Data found, wrong log path? '"+self.cfg.get('logs_path')+"'")
                 return None
             timestamp = game["date"]+" "+game["time"]
             msg="Sorry, I could not find any games"
@@ -107,13 +101,13 @@ class CommandJMW:
     #this will be used for watching for a game end     
     async def watch_Log(self):
         await self.bot.wait_until_ready()
-        channel = self.bot.get_channel(self.cfg["Channel_post_status"])
+        channel = self.bot.get_channel(self.cfg.get("Channel_post_status"))
         while(True):
             logs = self.readLog.getLogs()
             if(len(logs) > 0):
                 current_log = logs[-1]
                 print("current log: "+current_log)
-                file = open(self.cfg["logs_path"]+current_log, "r")
+                file = open(self.cfg.get("logs_path")+current_log, "r")
                 file.seek(0, 2)
                 waitfor_newsession = False
                 while not self.bot.is_closed:
@@ -127,24 +121,33 @@ class CommandJMW:
                         file.seek(where)
                         if(current_log != self.readLog.getLogs()[-1]):
                             current_log = self.readLog.getLogs()[-1] #update to new recent log
-                            file = open(self.cfg["logs_path"]+current_log, "r")
+                            file = open(self.cfg.get("logs_path")+current_log, "r")
                             print("current log: "+current_log)
                     else:
                         #newline found
-                        if(line.find("BattlEye") ==-1):
-                            if(waitfor_newsession == False and "CTI_Mission_Performance: GameOver" in line):
-                                await self.dm_users_new_game()
+                        if(line.find("BattlEye") ==-1 and line.find("[") > 0 and "CTI_DataPacket" in line):
+                            splitat = line.find("[")
+                            r = line[splitat:]  #remove timestamp
+                            timestamp = line[:splitat]
+                            r = r.rstrip() #remove /n
+                            datarow = ast.literal_eval(r) #convert string into array object
+                            datarow = dict(datarow)
+                            if(waitfor_newsession == False and datarow["CTI_DataPacket"] == "GameOver"):
                                 await self.processGame(channel)
                                 self.readLog.readData(True, 1) #Generate advaced data as well, for later use.
                                 waitfor_newsession = True
-                            if("CTI_Mission_Performance: Starting Server" in line):
+                            if(datarow["CTI_DataPacket"] == "Header"):
+                                if(self.cfg.get("cycle_assist") == True):
+                                    self.cfgreader.writeMission(self.cfgreader.parseMissions(), datarow["Map"])
                                 msg="Let the game go on! The Server is now continuing the mission."
                                 await self.bot.send_message(channel, msg)
                                 waitfor_newsession = False
             else:
                 await asyncio.sleep(10*60)
-
-
+    #TODO
+    def updateConfigMap(self, Map):
+        _readcfg = readcfg(self.cfg.get("config_path"), self.path+"/"+"mission_cycle.cfg")
+        cycle = _readcfg.parseMissions()
     ###################################################################################################
     #####                                   Bot commands                                           ####
     ###################################################################################################
@@ -156,7 +159,44 @@ class CommandJMW:
     async def command_ping(self, *args):
         msg = 'Pong!'
         await self.bot.say(msg)
-          
+    
+    ####################################
+    #Cycle Assist                      #
+    ####################################
+    @commands.command(  name='cycleassist',
+                        brief="Enables the Cycle assist",
+                        description="The cycle assist rewrites an arma 3 config in a way that after crash the correct map is loaded.",
+                        pass_context=True)
+    @has_permissions(administrator=True)
+    async def command_cycleassist(self, ctx):
+        message = ctx.message
+        if(" " in message.content):
+            val = message.content.split(" ")[1]
+            if(val in ["false", "off", "0", "disable"]):
+                self.cfg.set("cycle_assist", False)
+                msg = ':x: Ok, Mission cycle assist disabled'
+            else:
+                self.cfg.set("cycle_assist", True)
+                msg = ':white_check_mark: Ok, Mission cycle assist enabled.'
+        else:
+            msg = ':question: Usage: cycleassist [true/false]'
+        await self.bot.send_message(message.channel, msg)    
+
+    @commands.command(  name='cycleassistList',
+                        brief="List the current cycle",
+                        description="List the default order of mission playback",
+                        pass_context=True)
+    @has_permissions(administrator=True)
+    async def command_cycleassistList(self, ctx):
+        message = ctx.message
+        msg = str(self.cfgreader.parseMissions()).replace("\\t","").replace("\\n","")
+        await self.bot.send_message(message.channel, msg)    
+    
+    
+    
+    ####################################
+    #Game tools                        #
+    ####################################
     @commands.command(  name='nextgame',
                         brief="TODO",
                         description="TODO",
@@ -225,16 +265,7 @@ class CommandJMW:
     #####                                  Debug Commands                                          ####
     ###################################################################################################
        
-    @commands.command(  name='trigger_nextgame',
-                        brief="TODO",
-                        description="TODO",
-                        pass_context=True)
-    async def command_trigger_nextgame(self, ctx):
-        author = ctx.message.author
-        if self.hasPermission(author, lvl=10):
-            msg = 'triggering nextgame reminder'
-            await self.bot.send_message(ctx.message.channel, msg)
-            await dm_users_new_game()
+
             
 def setup(bot):
     bot.add_cog(CommandJMW(bot))

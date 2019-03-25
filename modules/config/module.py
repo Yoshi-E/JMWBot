@@ -24,8 +24,13 @@ class Commandconfig:
             self.cfg = json.load(open(self.config_default_name,"r"))
             with open(self.config_name, 'w') as outfile:
                 json.dump(self.cfg, outfile, indent=4, separators=(',', ': '))   
-        
-    def config_get(self, field):
+                
+    def set(self, field, value):
+        self.cfg[field] = value
+        with open(self.config_name, 'w') as outfile:
+            json.dump(self.cfg, outfile, indent=4, separators=(',', ': '))     
+            
+    def get(self, field):
         if(field in self.cfg):
             return self.cfg[field]
         else:
