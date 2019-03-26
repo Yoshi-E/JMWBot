@@ -6,8 +6,7 @@ from datetime import datetime
 from PIL import Image
 from PIL import ImageDraw
 
-
-TownsAltis = {
+TownMap = { "Altis": {
 "Town0": [20826.033,36.789253,6824.6987],
 "Town1": [16820.996,26.518801,12713.124],
 "Town2": [19407.914,42.663628,13262.551],
@@ -57,10 +56,35 @@ TownsAltis = {
 "Town47": [21752.174,19.689096,7520.2725],
 "Town48": [5853.1182,229.927,20094.025],
 "Town49": [23236.664,38.75779,21794.523]
+},
+"Malden": {
+"Town0": [8141.9028,32.866806,10032.275],
+"Town1": [5526.2373,339.83679,6982.5664],
+"Town2": [5337.7021,45.364891,2796.292],
+"Town3": [5905.499,58.962273,3578.531],
+"Town6": [7125.938,75.791107,6122.4321],
+"Town4": [7062.2842,83.649132,7100.2358],
+"Town5": [3580.99,132.93045,8521.291],
+"Town7": [3149.092,228.3168,6335.374],
+"Town8": [3766.947,22.658308,3241.3359],
+"Town9": [7302.6274,171.54681,7990.9468],
+"Town12": [5558.4565,75.736809,11184.31],
+"Town13": [766.15063,32.896805,12132.624],
+"Town16": [3098.9939,234.082,6852.1948],
+"Town14": [7117.3838,109.22265,8962.2412],
+"Town15": [5597.0229,107.30638,4232.4102],
+"Town11": [8207.4014,25.557577,3157.1941],
+"Town10": [6029.3882,129.0968,8605.4844]
 }
-class readLog:
-    def __init__(self, cfg):
-        self.cfg = cfg
+}
+
+
+
+
+
+
+class mapGenerator:
+    def __init__(self):
         self.path = os.path.dirname(os.path.realpath(__file__))
                 
     #get the log files from folder and sort them by oldest first
@@ -68,62 +92,61 @@ class readLog:
        pass 
 
 
-def coordTransform(Map, img, x, y):
-    #Bottom-Left to Top-Right
-    Maps = {"Altis": 30720,
-            "Malden": 12800,
-            "Stratis": 8192,
-            "Tanoa": 15360}
-    width, height = img.size
-    if(x > Maps[Map]):
-        x = Maps[Map]
-    if(y > Maps[Map]):
-        y = Maps[Map]
-    
-    return [width*(x/Maps[Map]),height-(height*(y/Maps[Map]))]
+    def coordTransform(self, Map, img, x, y):
+        #Bottom-Left to Top-Right
+        Maps = {"Altis": 30720,
+                "Malden": 12800,
+                "Stratis": 8192,
+                "Tanoa": 15360}
+        width, height = img.size
+        if(x > Maps[Map]):
+            x = Maps[Map]
+        if(y > Maps[Map]):
+            y = Maps[Map]
+        
+        return [width*(x/Maps[Map]),height-(height*(y/Maps[Map]))]
 
-def loadMap(Map):
-    Maps = {"Altis": "Altis_sat_s.jpg",
-            "Malden": "",
-            "Stratis": "",
-            "Tanoa": ""}
-    img = Image.open("mapTemplates/"+Maps[Map])
-    return [ImageDraw.Draw(img, "RGBA"), img]
-    
-def drawTown(canvas, p_x, p_y, side):
-    sides = {   "neutral": [0,0.8,0,0.3],
-                "east": [0.5,0,0,0.3],
-                "west": [0,0.3,0.6,0.3]
-    }
-    radius = 5
-    # Now I draw the circle:
-    canvas.ellipse((p_x - radius, p_y - radius, p_x + radius, p_y + radius), fill=(round(255*sides[side][0]), round(255*sides[side][1]), round(255*sides[side][2]), round(255*sides[side][3])))
-    
-def drawBase(canvas, p_x, p_y, side):
-    sides = {   "neutral": [0,0.8,0,0.6],
-                "east": [0.5,0,0,0.6],
-                "west": [0,0.3,0.6,0.6]
-    }
-    radius = 5
-    # Now I draw the circle:
-    canvas.rectangle((p_x - radius, p_y - radius, p_x + radius, p_y + radius), fill=(round(255*sides[side][0]), round(255*sides[side][1]), round(255*sides[side][2]), round(255*sides[side][3])))
-    
-
-
-
-Map = "Altis" 
-canvas, img = loadMap(Map)   
-for key, value in TownsAltis.items():
-    Town = TownsAltis[key]
-    Town = coordTransform(Map, img, Town[0],Town[2])
-    drawTown(canvas, Town[0],Town[1], "neutral")  
-
-Town = coordTransform(Map, img, 13000,15000)
-drawBase(canvas,Town[0],Town[1], "east")
-#img = Image.new('RGBA', size = (1000, 1000), color = (128, 128, 128, 255))
+    def loadMap(self, Map):
+        Maps = {"Altis": "Altis_sat_s.jpg",
+                "Malden": "Malden_s.jpg",
+                "Stratis": "",
+                "Tanoa": ""}
+        img = Image.open("mapTemplates/"+Maps[Map])
+        return [ImageDraw.Draw(img, "RGBA"), img]
+        
+    def drawTown(self, canvas, p_x, p_y, side):
+        sides = {   "neutral": [0,0.8,0,0.3],
+                    "east": [0.5,0,0,0.3],
+                    "west": [0,0.3,0.6,0.3]
+        }
+        radius = 5
+        # Now I draw the circle:
+        canvas.ellipse((p_x - radius, p_y - radius, p_x + radius, p_y + radius), fill=(round(255*sides[side][0]), round(255*sides[side][1]), round(255*sides[side][2]), round(255*sides[side][3])))
+        
+    def drawBase(self, canvas, p_x, p_y, side):
+        sides = {   "neutral": [0,0.8,0,0.6],
+                    "east": [0.5,0,0,0.6],
+                    "west": [0,0.3,0.6,0.6]
+        }
+        radius = 5
+        # Now I draw the circle:
+        canvas.rectangle((p_x - radius, p_y - radius, p_x + radius, p_y + radius), fill=(round(255*sides[side][0]), round(255*sides[side][1]), round(255*sides[side][2]), round(255*sides[side][3])))
+        
 
 
-  
-# now save and close
-del canvas
-img.save("test.png", 'PNG')
+    def makeMap(self, Map):
+        canvas, img = self.loadMap(Map)   
+        for key, value in TownMap[Map].items():
+            Town = TownMap[Map][key]
+            Town = self.coordTransform(Map, img, Town[0],Town[2])
+            self.drawTown(canvas, Town[0],Town[1], "neutral")  
+        
+        #Town = self.coordTransform(Map, img, 13000,15000)
+        #self.drawBase(canvas,Town[0],Town[1], "east")
+        #img = Image.new('RGBA', size = (1000, 1000), color = (128, 128, 128, 255))
+        # now save and close
+        del canvas
+        img.save("test.png", 'PNG') 
+      
+mG = mapGenerator()
+mG.makeMap("Malden")
