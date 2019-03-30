@@ -326,9 +326,9 @@ class readLog:
             t = "-CUR"
         if(admin==True):
             t +="-ADV"
-            
-        filename_pic = (self.path+"/"+self.cfg.get('image_path')+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")("+lastwinner+")"+t+'.png').replace("\\","/")
-        filename = (self.path+"/"+self.cfg.get('data_path')+fdate+" "+timestamp.replace(":","-")+"("+str(gameduration)+")("+lastwinner+")"+t+'.json').replace("\\","/")
+                        #path / date # time # duration # winner # addtional_tags
+        filename_pic =  (self.path+"/"+self.cfg.get('image_path')+fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+t+'.png').replace("\\","/")
+        filename =      (self.path+"/"+self.cfg.get('data_path')+ fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+t+'.json').replace("\\","/")
         
         #save image
         fig.savefig(filename_pic, dpi=100, pad_inches=3)
