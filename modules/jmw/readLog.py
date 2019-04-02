@@ -46,7 +46,7 @@ class readLog:
             #last element in collected_rows is the current game, 2nd last the the last finished game
             if((gameindex+1) <= len(collected_rows)):
                 data = collected_rows[-(gameindex+1)]
-                return self.dataToGraph(data[0], data[1], ,data[2], data[3], data[4], admin)
+                return self.dataToGraph(data[0], data[1], data[2], data[3], data[4], admin)
         return None
 
         
