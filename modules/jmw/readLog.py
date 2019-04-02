@@ -69,6 +69,12 @@ class readLog:
                         r = line[splitat:]  #remove timestamp
                         timestamp = line[:splitat]
                         r = r.rstrip() #remove /n
+                        #converting arma3 boolen working with python +converting rawnames to strings:
+                        r = r.replace(",WEST]", ',"WEST"]')
+                        r = r.replace(",EAST]", ',"EAST"]')
+                        r = r.replace("true", "True")
+                        r = r.replace("false", "False")
+                        print(r)
                         datarow = ast.literal_eval(r) #convert string into array object
                         datarow = dict(datarow)
                         if(datarow["CTI_DataPacket"] == "Header"):
