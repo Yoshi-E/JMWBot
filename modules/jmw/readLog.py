@@ -46,7 +46,7 @@ class readLog:
             #last element in collected_rows is the current game, 2nd last the the last finished game
             if((gameindex+1) <= len(collected_rows)):
                 data = collected_rows[-(gameindex+1)]
-                return self.dataToGraph(data[0], data[1], data[2], data[3], admin)
+                return self.dataToGraph(data[0], data[1], ,data[2], data[3], data[4], admin)
         return None
 
         
@@ -54,6 +54,7 @@ class readLog:
         collected_rows = []
         rows = []
         lastwinner = "????"
+        lastmap = "unkown"
         timestamp = "??:??:?? "
         date = os.path.getmtime(self.cfg.get('logs_path')+name)
         with open(self.cfg.get('logs_path')+name) as fp: 
@@ -72,14 +73,16 @@ class readLog:
                         datarow = dict(datarow)
                         if(datarow["CTI_DataPacket"] == "Header"):
                             #print("Map starting: "+datarow["Map"])
-                            pass
+                            #rows.append(datarow)
+                            lastmap = datarow["Map"]
                         if(datarow["CTI_DataPacket"] == "Data"):
                             rows.append(datarow)
                             
                         if(datarow["CTI_DataPacket"] == "EOF"):
-                            pass
+                            lastmap = datarow["Map"]
                             
                         if(datarow["CTI_DataPacket"] == "GameOver"):
+                            lastmap = datarow["Map"]
                             if(datarow["Lost"]):
                                 if(datarow["Side"] == "WEST"):
                                     lastwinner = "EAST"
@@ -90,7 +93,8 @@ class readLog:
                                     lastwinner = "WEST"
                                 else:
                                     lastwinner = "EAST"
-                            collected_rows.append([rows.copy(),  lastwinner, timestamp[:-1], date])
+                                #rows.append(datarow)
+                            collected_rows.append([rows.copy(),  lastwinner, lastmap, timestamp[:-1], date])
                             timestamp = "??:??:?? "
                             rows = []
                             #seeks forward until a new mission start was found, to ensure entries between end - start will be skipped
@@ -107,7 +111,7 @@ class readLog:
                     line = fp.readline()
                 except:
                     line = "Error"
-            collected_rows.append([rows.copy(),  "::currentGame::", timestamp[:-1], date]) #get rows from current game
+            collected_rows.append([rows.copy(),  "::currentGame::", lastmap,timestamp[:-1], date]) #get rows from current game
         return collected_rows.copy()
     
     def featchValues(self, data,field):
@@ -181,7 +185,7 @@ class readLog:
 
         plt.show() 
         
-    def dataToGraph(self, data, lastwinner, timestamp, date, admin):
+    def dataToGraph(self, data, lastwinner, lastmap, timestamp, date, admin):
         #register plots
         plots = []
         v1 = self.featchValues(data, "score_east")
@@ -299,7 +303,7 @@ class readLog:
             phight = hight[len(plots)]
         fig = plt.figure(figsize = (10,phight)) 
 
-        fig.suptitle("Game end: "+fdate+" "+timestamp+", "+str(gameduration)+"min. Winner: "+lastwinner, fontsize=14)
+        fig.suptitle("Game end: "+fdate+" "+timestamp+", "+str(gameduration)+"min. Map: "+lastmap+" Winner: "+lastwinner, fontsize=14)
         #red_patch = mpatches.Patch(color='red', label='The red data')
         #plt.legend(bbox_to_anchor=(0, 0), handles=[red_patch])
         fig.subplots_adjust(hspace=0.3)
@@ -327,8 +331,8 @@ class readLog:
         if(admin==True):
             t +="-ADV"
                         #path / date # time # duration # winner # addtional_tags
-        filename_pic =  (self.path+"/"+self.cfg.get('image_path')+fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+t+'.png').replace("\\","/")
-        filename =      (self.path+"/"+self.cfg.get('data_path')+ fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+t+'.json').replace("\\","/")
+        filename_pic =(self.path+"/"+self.cfg.get('image_path')+fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.png').replace("\\","/")
+        filename =    (self.path+"/"+self.cfg.get('data_path')+ fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.json').replace("\\","/")
         
         #save image
         fig.savefig(filename_pic, dpi=100, pad_inches=3)
