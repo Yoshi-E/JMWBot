@@ -66,7 +66,7 @@ class CommandJMW:
             if(admin == True): #post additional info
                 if(game["gameduration"] < 2):
                     gameindex+=1
-                    await self.bot.send_message(channel, "Selected game is too short, displaying lastgame="+gameindex+" instead")
+                    await self.bot.send_message(channel, "Selected game is too short, displaying lastgame="+str(gameindex)+" instead")
                     game = self.readLog.readData(admin, gameindex)  
                 filename = game["picname"]
                 if(sendraw == True):
