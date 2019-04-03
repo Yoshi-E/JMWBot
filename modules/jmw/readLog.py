@@ -58,7 +58,7 @@ class readLog:
         timestamp = "??:??:?? "
         date = os.path.getmtime(self.cfg.get('logs_path')+name)
         with open(self.cfg.get('logs_path')+name) as fp: 
-            databuilder = []
+            databuilder = {}
             try:
                 line = fp.readline()
             except:
@@ -84,17 +84,16 @@ class readLog:
                         if("Data_" in datarow["CTI_DataPacket"]):
                             if(len(databuilder)>0):
                                 #check if previous 'Data_x' is present
-                                if(int(databuilder[-1]["CTI_DataPacket"][-1])+1 == int(datarow["CTI_DataPacket"][-1])):
-                                    databuilder.extend(datarow[1:])
+                                if(int(databuilder["CTI_DataPacket"][-1])+1 == int(datarow["CTI_DataPacket"][-1])):
+                                    databuilder.update(datarow)
                                     #If last element "Data_3" is present, 
                                     if(datarow["CTI_DataPacket"] == "Data_3"):
-                                        print(databuilder)
-                                        rows.append(datarow)
-                                        databuilder = []
+                                        databuilder["CTI_DataPacket"] = "Data"
+                                        rows.append(databuilder)
+                                        databuilder = {}
                             elif(datarow["CTI_DataPacket"] == "Data_1"):
                                 #add first element
-                                datarow["CTI_DataPacket"] = "Data"
-                                databuilder.extend(datarow)
+                                databuilder.update(datarow)
 
                         if(datarow["CTI_DataPacket"] == "EOF"):
                             lastmap = datarow["Map"]
