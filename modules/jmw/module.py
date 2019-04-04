@@ -125,23 +125,26 @@ class CommandJMW:
                             print("current log: "+current_log)
                     else:
                         #newline found
-                        if(line.find("BattlEye") ==-1 and line.find("[") > 0 and "CTI_DataPacket" in line):
-                            splitat = line.find("[")
-                            r = line[splitat:]  #remove timestamp
-                            timestamp = line[:splitat]
-                            r = r.rstrip() #remove /n
-                            datarow = ast.literal_eval(r) #convert string into array object
-                            datarow = dict(datarow)
-                            if(waitfor_newsession == False and datarow["CTI_DataPacket"] == "GameOver"):
-                                await self.processGame(channel)
-                                self.readLog.readData(True, 1) #Generate advaced data as well, for later use.
-                                waitfor_newsession = True
-                            if(datarow["CTI_DataPacket"] == "Header"):
-                                if(self.cfg.get("cycle_assist") == True):
-                                    self.cfgreader.writeMission(self.cfgreader.parseMissions(), datarow["Map"])
-                                msg="Let the game go on! The Server is now continuing the mission."
-                                await self.bot.send_message(channel, msg)
-                                waitfor_newsession = False
+                        if(line.find("BattlEye") ==-1 and line.find("[") > 0 and "CTI_DataPacket" in line and line.rstrip()[-2:] == "]]"):
+                            try:
+                                splitat = line.find("[")
+                                r = line[splitat:]  #remove timestamp
+                                timestamp = line[:splitat]
+                                r = r.rstrip() #remove /n
+                                datarow = ast.literal_eval(r) #convert string into array object
+                                datarow = dict(datarow)
+                                if(waitfor_newsession == False and datarow["CTI_DataPacket"] == "GameOver"):
+                                    await self.processGame(channel)
+                                    self.readLog.readData(True, 1) #Generate advaced data as well, for later use.
+                                    waitfor_newsession = True
+                                if(datarow["CTI_DataPacket"] == "Header"):
+                                    if(self.cfg.get("cycle_assist") == True):
+                                        self.cfgreader.writeMission(self.cfgreader.parseMissions(), datarow["Map"])
+                                    msg="Let the game go on! The Server is now continuing the mission."
+                                    await self.bot.send_message(channel, msg)
+                                    waitfor_newsession = False
+                            except:
+                                line = "Error"
             else:
                 await asyncio.sleep(10*60)
     #TODO
