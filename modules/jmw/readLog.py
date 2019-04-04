@@ -126,9 +126,9 @@ class readLog:
                             #            break
                             #    except:
                             #        line = "Error"
-                    except:
-                        line = "Error" #failed to convert to dict  
-                    
+                    except Exception as e::
+                        print(e)
+                        line = "Error"
                 try:
                     line = fp.readline()
                 except:

@@ -130,6 +130,10 @@ class CommandJMW:
                                 r = line[splitat:]  #remove timestamp
                                 timestamp = line[:splitat]
                                 r = r.rstrip() #remove /n
+                                r = r.replace(",WEST]", ',"WEST"]')
+                                r = r.replace(",EAST]", ',"EAST"]') #this still needs working
+                                r = r.replace("true", "True")
+                                r = r.replace("false", "False")
                                 datarow = ast.literal_eval(r) #convert string into array object
                                 datarow = dict(datarow)
                                 if(datarow["CTI_DataPacket"] == "GameOver"):
@@ -140,8 +144,8 @@ class CommandJMW:
                                         self.cfgreader.writeMission(self.cfgreader.parseMissions(), datarow["Map"])
                                     msg="Let the game go on! The Server is now continuing the mission."
                                     await self.bot.send_message(channel, msg)
-                            except:
-                                line = "Error"
+                            except Exception as e::
+                                print(e)
             else:
                 await asyncio.sleep(10*60)
     #TODO
