@@ -114,16 +114,18 @@ class readLog:
                                     lastwinner = "EAST"
                                 #rows.append(datarow)
                             collected_rows.append([rows.copy(),  lastwinner, lastmap, timestamp[:-1], date])
+                            lastwinner = "????"
+                            lastmap = "unkown"
                             timestamp = "??:??:?? "
                             rows = []
                             #seeks forward until a new mission start was found, to ensure entries between end - start will be skipped
-                            while line:
-                                try:
-                                    line = fp.readline()
-                                    if(line.find("BattlEye") ==-1 and "CTI_DataPacket" in line):
-                                        break
-                                except:
-                                    line = "Error"
+                            #while line:
+                            #    try:
+                            #        line = fp.readline()
+                            #        if(line.find("BattlEye") ==-1 and "CTI_DataPacket" in line):
+                            #            break
+                            #    except:
+                            #        line = "Error"
                     except:
                         line = "Error" #failed to convert to dict  
                     
