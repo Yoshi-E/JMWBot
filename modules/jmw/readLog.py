@@ -76,54 +76,56 @@ class readLog:
                     r = r.replace(",EAST]", ',"EAST"]') #this still needs working
                     r = r.replace("true", "True")
                     r = r.replace("false", "False")
-                    datarow = ast.literal_eval(r) #convert string into array object
-                    datarow = dict(datarow)
-                    if(datarow["CTI_DataPacket"] == "Header"):
-                        #print("Map starting: "+datarow["Map"])
-                        #rows.append(datarow)
-                        lastmap = datarow["Map"]
-                    if("Data_" in datarow["CTI_DataPacket"]):
-                        if(len(databuilder)>0):
-                            #check if previous 'Data_x' is present
-                            if(int(databuilder["CTI_DataPacket"][-1])+1 == int(datarow["CTI_DataPacket"][-1])):
-                                databuilder.update(datarow)
-                                #If last element "Data_3" is present, 
-                                if(datarow["CTI_DataPacket"] == "Data_3"):
-                                    databuilder["CTI_DataPacket"] = "Data"
-                                    rows.append(databuilder)
-                                    databuilder = {}
-                        elif(datarow["CTI_DataPacket"] == "Data_1"):
-                            #add first element
-                            databuilder.update(datarow)
-
-                    if(datarow["CTI_DataPacket"] == "EOF"):
-                        lastmap = datarow["Map"]
-                        
-                    if(datarow["CTI_DataPacket"] == "GameOver"):
-                        lastmap = datarow["Map"]
-                        if(datarow["Lost"]):
-                            if(datarow["Side"] == "WEST"):
-                                lastwinner = "EAST"
-                            else:
-                                lastwinner = "WEST"
-                        else:
-                            if(datarow["Side"] == "WEST"):
-                                lastwinner = "WEST"
-                            else:
-                                lastwinner = "EAST"
+                    try:
+                        datarow = ast.literal_eval(r) #convert string into array object
+                        datarow = dict(datarow)
+                        if(datarow["CTI_DataPacket"] == "Header"):
+                            #print("Map starting: "+datarow["Map"])
                             #rows.append(datarow)
-                        collected_rows.append([rows.copy(),  lastwinner, lastmap, timestamp[:-1], date])
-                        timestamp = "??:??:?? "
-                        rows = []
-                        #seeks forward until a new mission start was found, to ensure entries between end - start will be skipped
-                        while line:
-                            try:
-                                line = fp.readline()
-                                if(line.find("BattlEye") ==-1 and "CTI_DataPacket" in line):
-                                    break
-                            except:
-                                line = "Error"
-                    
+                            lastmap = datarow["Map"]
+                        if("Data_" in datarow["CTI_DataPacket"]):
+                            if(len(databuilder)>0):
+                                #check if previous 'Data_x' is present
+                                if(int(databuilder["CTI_DataPacket"][-1])+1 == int(datarow["CTI_DataPacket"][-1])):
+                                    databuilder.update(datarow)
+                                    #If last element "Data_3" is present, 
+                                    if(datarow["CTI_DataPacket"] == "Data_3"):
+                                        databuilder["CTI_DataPacket"] = "Data"
+                                        rows.append(databuilder)
+                                        databuilder = {}
+                            elif(datarow["CTI_DataPacket"] == "Data_1"):
+                                #add first element
+                                databuilder.update(datarow)
+
+                        if(datarow["CTI_DataPacket"] == "EOF"):
+                            lastmap = datarow["Map"]
+                            
+                        if(datarow["CTI_DataPacket"] == "GameOver"):
+                            lastmap = datarow["Map"]
+                            if(datarow["Lost"]):
+                                if(datarow["Side"] == "WEST"):
+                                    lastwinner = "EAST"
+                                else:
+                                    lastwinner = "WEST"
+                            else:
+                                if(datarow["Side"] == "WEST"):
+                                    lastwinner = "WEST"
+                                else:
+                                    lastwinner = "EAST"
+                                #rows.append(datarow)
+                            collected_rows.append([rows.copy(),  lastwinner, lastmap, timestamp[:-1], date])
+                            timestamp = "??:??:?? "
+                            rows = []
+                            #seeks forward until a new mission start was found, to ensure entries between end - start will be skipped
+                            while line:
+                                try:
+                                    line = fp.readline()
+                                    if(line.find("BattlEye") ==-1 and "CTI_DataPacket" in line):
+                                        break
+                                except:
+                                    line = "Error"
+                    except:
+                        line = "Error" #failed to convert to dict  
                     
                 try:
                     line = fp.readline()
