@@ -109,7 +109,6 @@ class CommandJMW:
                 print("current log: "+current_log)
                 file = open(self.cfg.get("logs_path")+current_log, "r")
                 file.seek(0, 2)
-                waitfor_newsession = False
                 while not self.bot.is_closed:
                     where = file.tell()
                     try:
@@ -133,16 +132,14 @@ class CommandJMW:
                                 r = r.rstrip() #remove /n
                                 datarow = ast.literal_eval(r) #convert string into array object
                                 datarow = dict(datarow)
-                                if(waitfor_newsession == False and datarow["CTI_DataPacket"] == "GameOver"):
+                                if(datarow["CTI_DataPacket"] == "GameOver"):
                                     await self.processGame(channel)
                                     self.readLog.readData(True, 1) #Generate advaced data as well, for later use.
-                                    waitfor_newsession = True
                                 if(datarow["CTI_DataPacket"] == "Header"):
                                     if(self.cfg.get("cycle_assist") == True):
                                         self.cfgreader.writeMission(self.cfgreader.parseMissions(), datarow["Map"])
                                     msg="Let the game go on! The Server is now continuing the mission."
                                     await self.bot.send_message(channel, msg)
-                                    waitfor_newsession = False
                             except:
                                 line = "Error"
             else:
