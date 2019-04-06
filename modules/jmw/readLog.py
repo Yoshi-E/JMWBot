@@ -48,7 +48,14 @@ class readLog:
                 data = collected_rows[-(gameindex+1)]
                 return self.dataToGraph(data[0], data[1], data[2], data[3], data[4], admin)
         return None
-
+    
+    def updateDicArray(self, parent, data):
+        if("players" in parent and "players" in data):
+            parent["CTI_DataPacket"] = data["CTI_DataPacket"]
+            parent["players"] = parent["players"]+data["players"]
+            return parent
+        parent.update(data)
+        return parent
         
     def scanfile(self, name):
         collected_rows = []
@@ -87,15 +94,17 @@ class readLog:
                             if(len(databuilder)>0):
                                 #check if previous 'Data_x' is present
                                 if(int(databuilder["CTI_DataPacket"][-1])+1 == int(datarow["CTI_DataPacket"][-1])):
-                                    databuilder.update(datarow)
-                                    #If last element "Data_3" is present, 
-                                    if(datarow["CTI_DataPacket"] == "Data_3"):
+                                    
+                                    databuilder = self.updateDicArray(databuilder, datarow)
+                                    #If last element "Data_EOD" is present, 
+                                    if("EOD" in datarow["CTI_DataPacket"]):
                                         databuilder["CTI_DataPacket"] = "Data"
-                                        rows.append(databuilder)
+                                        rows.append(databuilder.copy())
                                         databuilder = {}
                             elif(datarow["CTI_DataPacket"] == "Data_1"):
                                 #add first element
-                                databuilder.update(datarow)
+                                databuilder = self.updateDicArray(databuilder, datarow)
+                                
 
                         if(datarow["CTI_DataPacket"] == "EOF"):
                             lastmap = datarow["Map"]
