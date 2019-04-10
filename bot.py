@@ -29,23 +29,24 @@ async def on_ready():
     print('------------')
 
 if __name__ == '__main__':
-    limit = 0
-    while limit<10:
-        try:
-            limit +=1
-            load_modules()
-            bot.loop.create_task(bot.cogs["CommandJMW"].watch_Log())
-            
-            #checking depencies 
-            if("Commandconfig" in bot.cogs.keys()):
-                cfg = bot.cogs["Commandconfig"].cfg
-            else: 
-                sys.exit("Module 'Commandconfig' not loaded, but required")
-        except Exception as e:
-            bot.logout()
-            print(e)
-            print("The bot has crashed. Attemping to restart it...")
-        bot.run(cfg["TOKEN"])
+    #limit = 0
+    #while limit<10:
+        #try:
+    limit +=1
+    load_modules()
+    bot.loop.create_task(bot.cogs["CommandJMW"].watch_Log())
+    
+    #checking depencies 
+    if("Commandconfig" in bot.cogs.keys()):
+        cfg = bot.cogs["Commandconfig"].cfg
+    else: 
+        sys.exit("Module 'Commandconfig' not loaded, but required")
+    bot.run(cfg["TOKEN"])
+        #except Exception as e:
+        #    bot.logout()
+        #    print(e)
+        #    print("The bot has crashed. Attemping to restart it...")
+        
             
 #make bot join server:
 # https://discordapp.com/oauth2/authorize?client_id=xxxxxx&scope=bot
