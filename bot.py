@@ -41,11 +41,11 @@ if __name__ == '__main__':
                 cfg = bot.cogs["Commandconfig"].cfg
             else: 
                 sys.exit("Module 'Commandconfig' not loaded, but required")
-            bot.run(cfg["TOKEN"])
         except Exception as e:
             bot.logout()
             print(e)
             print("The bot has crashed. Attemping to restart it...")
+        bot.run(cfg["TOKEN"])
             
 #make bot join server:
 # https://discordapp.com/oauth2/authorize?client_id=xxxxxx&scope=bot
