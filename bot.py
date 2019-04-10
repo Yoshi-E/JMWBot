@@ -6,11 +6,6 @@ from discord.ext import commands
 
 modules = ["errorhandle", "config", "jmw"]
 
-bot = commands.Bot(command_prefix="!", pm_help=True)
-#bot.remove_command("help")   
-
-
-
 def load_modules():
     for extension in modules:
         try:
@@ -37,6 +32,7 @@ async def on_ready():
 if __name__ == '__main__':
     while True:
         try:
+            bot = commands.Bot(command_prefix="!", pm_help=True)
             load_modules()
             bot.loop.create_task(bot.cogs["CommandJMW"].watch_Log())
             
