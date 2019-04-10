@@ -31,7 +31,6 @@ async def on_ready():
 if __name__ == '__main__':
     while True:
         try:
-            bot = commands.Bot(command_prefix="!", pm_help=True)
             load_modules()
             bot.loop.create_task(bot.cogs["CommandJMW"].watch_Log())
             
@@ -42,6 +41,7 @@ if __name__ == '__main__':
                 sys.exit("Module 'Commandconfig' not loaded, but required")
             bot.run(cfg["TOKEN"])
         except Exception as e:
+            bot.logout()
             print(e)
             print("The bot has crashed. Attemping to restart it...")
             
