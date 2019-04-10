@@ -48,7 +48,7 @@ if __name__ == '__main__':
             bot.run(cfg["TOKEN"])
         except Exception as e:
             print(e)
-            print(The bot has crashed. Attemping to restart it...)
+            print("The bot has crashed. Attemping to restart it...")
             
         
 #https://discordpy.readthedocs.io/en/rewrite/ext/commands/api.html#event-reference
