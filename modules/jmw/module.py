@@ -145,6 +145,7 @@ class CommandJMW:
                                     msg="Let the game go on! The Server is now continuing the mission."
                                     await self.bot.send_message(channel, msg)
                             except Exception as e:
+                                print(line)
                                 print(e)
             else:
                 await asyncio.sleep(10*60)

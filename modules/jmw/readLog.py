@@ -136,6 +136,7 @@ class readLog:
                             #    except:
                             #        line = "Error"
                     except Exception as e:
+                        print(line)
                         print(e)
                         line = "Error"
                 try:
