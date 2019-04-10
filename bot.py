@@ -5,7 +5,8 @@ import os
 from discord.ext import commands
 
 modules = ["errorhandle", "config", "jmw"]
-
+bot = commands.Bot(command_prefix="!", pm_help=True)
+ 
 def load_modules():
     for extension in modules:
         try:
@@ -19,6 +20,13 @@ def load_modules():
 ###################################################################################################     
 
 
+@bot.event
+async def on_ready():
+
+    print('Logged in as')
+    print(bot.user.name)
+    print(bot.user.id)
+    print('------------')
 
 if __name__ == '__main__':
     while True:
@@ -40,12 +48,5 @@ if __name__ == '__main__':
 #make bot join server:
 # https://discordapp.com/oauth2/authorize?client_id=xxxxxx&scope=bot
 
-@bot.event
-async def on_ready():
-
-    print('Logged in as')
-    print(bot.user.name)
-    print(bot.user.id)
-    print('------------')
 #https://discordpy.readthedocs.io/en/rewrite/ext/commands/api.html#event-reference
 
