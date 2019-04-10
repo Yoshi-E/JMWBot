@@ -32,7 +32,7 @@ if __name__ == '__main__':
     #limit = 0
     #while limit<10:
         #try:
-    limit +=1
+    #limit +=1
     load_modules()
     bot.loop.create_task(bot.cogs["CommandJMW"].watch_Log())
     
