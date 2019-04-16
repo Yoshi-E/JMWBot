@@ -56,7 +56,7 @@ class CommandJMW:
         with open(self.path+"/userdata.json", 'w') as outfile:
             json.dump(self.user_data, outfile, sort_keys=True, indent=4, separators=(',', ': '))
     
-    async def dm_users_new_game():
+    async def dm_users_new_game(self):
         msg = "A game just ended, now is the best time to join for a new game!"
         for user in self.user_data:
             if "nextgame" in self.user_data[user] and self.user_data[user]["nextgame"] == True:
