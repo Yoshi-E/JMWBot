@@ -253,42 +253,49 @@ class CommandJMW:
 
         
     @commands.command(  name='lastgame',
-                        brief="TODO",
-                        description="TODO",
+                        brief="Posts a summary of select game",
+                        description="Takes up to 2 arguments, 1st: index of the game, 2nd: sending 'normal'",
                         pass_context=True)
     async def command_lastgame(self, ctx):
         message = ctx.message
+        admin = True
         if(" " in message.content):
-            val = message.content.split(" ")[1]
+            args = message.content.split(" ")
+            val = args[1]
             if(val.isdigit()):
                 val = int(val)
             else:
                 val = 1
+            if(len(args)>1):
+                admin = False
         else:
             val = 1
         if self.hasPermission(message.author, lvl=10):
-            await self.processGame(message.channel, True, val)
-        #else:
-        #   await self.processGame(message.channel, False, val)
+            await self.processGame(message.channel, admin, val)
+
         
         
         
     @commands.command(  name='lastdata',
-                        brief="TODO",
-                        description="TODO",
+                        brief="sends the slected game as raw .json",
+                        description="Takes up to 2 arguments, 1st: index of the game, 2nd: sending 'normal'",
                         pass_context=True)
     async def command_lastdata(self, ctx):
         message = ctx.message
+        admin = True
         if(" " in message.content):
-            val = message.content.split(" ")[1]
+            args = message.content.split(" ")
+            val = args[1]
             if(val.isdigit()):
                 val = int(val)
             else:
                 val = 1
+            if(len(args)>1):
+                admin = False
         else:
             val = 1
         if self.hasPermission(message.author, lvl=10):
-            await self.processGame(message.channel, True, val, True)
+            await self.processGame(message.channel, admin, val, True)
         
     ###################################################################################################
     #####                                  Debug Commands                                          ####
