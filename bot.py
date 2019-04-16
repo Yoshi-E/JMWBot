@@ -3,6 +3,19 @@ import discord
 import traceback
 import os
 from discord.ext import commands
+import time
+import builtins as __builtin__
+import logging
+
+logging.basicConfig(filename='error.log',
+                    level=logging.INFO, 
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+
+def print(*args, **kwargs):
+    if(len(args)>0):
+        logging.info(args[0])
+    return __builtin__.print(*args, **kwargs)
 
 modules = ["errorhandle", "config", "jmw"]
 bot = commands.Bot(command_prefix="!", pm_help=True)
@@ -28,11 +41,7 @@ async def on_ready():
     print(bot.user.id)
     print('------------')
 
-if __name__ == '__main__':
-    #limit = 0
-    #while limit<10:
-        #try:
-    #limit +=1
+def main():
     load_modules()
     bot.loop.create_task(bot.cogs["CommandJMW"].watch_Log())
     
@@ -42,10 +51,16 @@ if __name__ == '__main__':
     else: 
         sys.exit("Module 'Commandconfig' not loaded, but required")
     bot.run(cfg["TOKEN"])
-        #except Exception as e:
-        #    bot.logout()
-        #    print(e)
-        #    print("The bot has crashed. Attemping to restart it...")
+    #while True:
+    #    try:
+    #        bot.loop.run_until_complete(bot.run(cfg["TOKEN"]))
+    #    except Exception as e:
+    #        print(e)
+    #        time.sleep(5)
+            
+if __name__ == '__main__':
+    main() 
+    #print("The bot has crashed. Attemping to restart it...")
         
             
 #make bot join server:

@@ -5,7 +5,19 @@ import ast
 import os
 from datetime import datetime
 import json
+import builtins as __builtin__
+import logging
 
+logging.basicConfig(filename='error.log',
+                    level=logging.INFO, 
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+
+def print(*args, **kwargs):
+    if(len(args)>0):
+        logging.info(args[0])
+    return __builtin__.print(*args, **kwargs)
+    
 class readLog:
     def __init__(self, cfg):
         self.cfg = cfg
@@ -215,7 +227,7 @@ class readLog:
         anchor_vals = (0.01, 0.6, 0.95, 0.2)
         plt.legend(bbox_to_anchor=anchor_vals, loc=4, ncol=4, mode="expand", borderaxespad=0.0)
 
-        plt.show() 
+        plt.show(block=False) 
         
     def dataToGraph(self, data, lastwinner, lastmap, timestamp, date, admin):
         #register plots
@@ -368,6 +380,8 @@ class readLog:
         
         #save image
         fig.savefig(filename_pic, dpi=100, pad_inches=3)
+        #fig.gcf()
+        plt.close('all')
         #save rawdata
         with open(filename, 'w') as outfile:
             json.dump(data, outfile)

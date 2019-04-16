@@ -5,6 +5,18 @@ from discord.ext.commands import has_permissions, CheckFailure
 import discord
 import os
 import json
+import builtins as __builtin__
+import logging
+
+logging.basicConfig(filename='error.log',
+                    level=logging.INFO, 
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+
+def print(*args, **kwargs):
+    if(len(args)>0):
+        logging.info(args[0])
+    return __builtin__.print(*args, **kwargs)
 
 class Commandconfig:
     def __init__(self, bot):
