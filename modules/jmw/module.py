@@ -55,7 +55,17 @@ class CommandJMW:
         #save data
         with open(self.path+"/userdata.json", 'w') as outfile:
             json.dump(self.user_data, outfile, sort_keys=True, indent=4, separators=(',', ': '))
-
+    
+    async def dm_users_new_game():
+        msg = "A game just ended, now is the best time to join for a new game!"
+        for user in self.user_data:
+            if "nextgame" in self.user_data[user] and self.user_data[user]["nextgame"] == True:
+                print("sending DM to: "+str(user))
+                puser = await bot.get_user_info(user)
+                await bot.send_message(puser, msg)  
+                self.user_data[user]["nextgame"] = False
+        await set_user_data() #save changes
+    
     def hasPermission(self, author, lvl=1):
         roles = self.cfg.get('Roles')
         if(roles['Default'] >= lvl):
@@ -149,6 +159,7 @@ class CommandJMW:
                                 datarow = ast.literal_eval(r) #convert string into array object
                                 datarow = dict(datarow)
                                 if(datarow["CTI_DataPacket"] == "GameOver"):
+                                    await self.dm_users_new_game()
                                     await self.processGame(channel)
                                     self.readLog.readData(True, 1) #Generate advaced data as well, for later use.
                                 if(datarow["CTI_DataPacket"] == "Header"):
@@ -176,6 +187,7 @@ class CommandJMW:
     async def command_ping(self, *args):
         msg = 'Pong!'
         await self.bot.say(msg)
+    
     
     ####################################
     #Cycle Assist                      #
@@ -215,8 +227,8 @@ class CommandJMW:
     #Game tools                        #
     ####################################
     @commands.command(  name='nextgame',
-                        brief="TODO",
-                        description="TODO",
+                        brief="You'll receive a DM when a game has ended",
+                        description="Send 'nextgame stop' to stop the notification",
                         pass_context=True)
     async def command_nextgame(self, ctx):
         message = ctx.message

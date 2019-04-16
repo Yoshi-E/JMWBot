@@ -113,3 +113,4 @@ modules/config/config.json
 modules/jmw/data/
 data/
 error.log
+modules/jmw/userdata.json
