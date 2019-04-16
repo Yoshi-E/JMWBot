@@ -266,7 +266,7 @@ class CommandJMW:
                 val = int(val)
             else:
                 val = 1
-            if(len(args)>1):
+            if(len(args)>2):
                 admin = False
         else:
             val = 1
@@ -290,7 +290,7 @@ class CommandJMW:
                 val = int(val)
             else:
                 val = 1
-            if(len(args)>1):
+            if(len(args)>2):
                 admin = False
         else:
             val = 1
