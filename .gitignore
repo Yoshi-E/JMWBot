@@ -114,3 +114,4 @@ modules/jmw/data/
 data/
 error.log
 modules/jmw/userdata.json
+modules/jmw/mission_cycle.cfg
