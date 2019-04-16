@@ -61,8 +61,8 @@ class CommandJMW:
         for user in self.user_data:
             if "nextgame" in self.user_data[user] and self.user_data[user]["nextgame"] == True:
                 print("sending DM to: "+str(user))
-                puser = await bot.get_user_info(user)
-                await bot.send_message(puser, msg)  
+                puser = await self.bot.get_user_info(user)
+                await self.bot.send_message(puser, msg)  
                 self.user_data[user]["nextgame"] = False
         await set_user_data() #save changes
     
