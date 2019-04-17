@@ -64,7 +64,7 @@ class CommandJMW:
                 puser = await self.bot.get_user_info(user)
                 await self.bot.send_message(puser, msg)  
                 self.user_data[user]["nextgame"] = False
-        await set_user_data() #save changes
+        await self.set_user_data() #save changes
     
     def hasPermission(self, author, lvl=1):
         roles = self.cfg.get('Roles')
