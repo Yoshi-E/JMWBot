@@ -358,6 +358,7 @@ class readLog:
                 zplots.append(fig.add_subplot( int(round((len(plots)+1)/2)), 2 ,len(zplots)+1))
                 for row in pdata["data"]:
                     zplots[-1].plot(time, row[0], color=row[1])
+                zplots[-1].grid(True, lw = 1, ls = '-', c = '.75')
                 zplots[-1].set_xlabel(pdata["xlabel"])
                 zplots[-1].set_ylabel(pdata["ylabel"])
                 zplots[-1].set_title(pdata["title"])
