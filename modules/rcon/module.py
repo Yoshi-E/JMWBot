@@ -234,7 +234,7 @@ class CommandRcon:
     async def players(self, ctx):
         players = self.epm_rcon.getPlayersArray()
         msgtable = prettytable.PrettyTable()
-        msgtable.field_names = ["ID", "Name", "IP"]
+        msgtable.field_names = ["ID", "Name", "IP", "GUID"]
         msgtable.align["ID"] = "r"
         msgtable.align["Name"] = "l"
         msgtable.align["IP"] = "l"
