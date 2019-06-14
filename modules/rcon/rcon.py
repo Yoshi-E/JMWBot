@@ -575,8 +575,8 @@ class ARC():
     #@return array
     def formatList(self, str):
         #Remove first array
-        if(len(str)>0):
-            str.pop(0) #[1:]
+        #if(len(str)>0):
+        #    str.pop(0) #[1:]
         #Create return array
         result = []
         #Loop True the main arrays, each holding a value
