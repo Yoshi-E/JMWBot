@@ -246,8 +246,8 @@ class CommandRcon:
         msg  = ""
         for player in players:
             if(i <= limit):
+                msgtable.add_row([player[0], player[4], player[1],player[3]])
                 if(len(str(msgtable)) < 1800):
-                    msgtable.add_row([player[0], player[4], player[1],player[3]])
                     i += 1
                     new = False
                 else:
