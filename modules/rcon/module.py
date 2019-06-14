@@ -399,7 +399,15 @@ class CommandRcon:
     async def getBEServerVersion(self, ctx): 
         version = self.epm_rcon.getBEServerVersion()
         msg = "BE version: ``"+version+"``"
-        await self.bot.send_message(ctx.message.channel, msg)    
+        await self.bot.send_message(ctx.message.channel, msg)  
+
+    @commands.check(isAdmin)    
+    @commands.command(name='restart',
+        brief="terminates the bot and auto restarts",
+        pass_context=True)
+    async def setRestart(self, ctx):
+        await self.bot.send_message(ctx.message.channel, "Restarting...")
+        sys.exit()          
         
     ###################################################################################################
     #####                                  Debug Commands                                          ####
