@@ -12,6 +12,7 @@ from discord.ext.commands import has_permissions, CheckFailure
 import ast
 import builtins as __builtin__
 import logging
+import sys
 
 logging.basicConfig(filename='error.log',
                     level=logging.INFO, 
@@ -296,13 +297,35 @@ class CommandJMW:
             val = 1
         if self.hasPermission(message.author, lvl=10):
             await self.processGame(message.channel, admin, val, True)
-        
+    
+    @commands.command(name='restart',
+        brief="terminates the bot and auto restarts",
+        pass_context=True)
+    async def setRestart(self, ctx):
+        if self.hasPermission(ctx.message.author, lvl=10):
+            await self.bot.send_message(ctx.message.channel, "Restarting...")
+            sys.exit()     
     ###################################################################################################
     #####                                  Debug Commands                                          ####
     ###################################################################################################
-       
+    async def handle_exception(self, myfunction):
+        coro = getattr(self, myfunction)
+        for i in range (0,5):
+            try:
+                await coro()
+            except Exception as ex:
+                ex = str(ex)+"/n"+str(traceback.format_exc())
+                user=await self.bot.get_user_info("165810842972061697")
+                await self.bot.send_message(user, "Caught exception")
+                await self.bot.send_message(user, (ex[:1800] + '..') if len(ex) > 1800 else ex)
+                logging.error('Caught exception')
+                await asyncio.sleep(10)  
+                  
 
-            
+local_module = None     
 def setup(bot):
-    bot.add_cog(CommandJMW(bot))
+    global local_module
+    module = CommandJMW(bot)
+    #bot.loop.create_task(module.handle_exception("watch_Log"))
+    bot.add_cog(module)
     

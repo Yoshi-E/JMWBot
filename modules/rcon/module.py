@@ -2,6 +2,7 @@
 # Work with Python 3.6
 import asyncio
 from collections import Counter
+import concurrent.futures
 import json
 import os
 from modules.rcon import rcon
@@ -399,23 +400,37 @@ class CommandRcon:
     async def getBEServerVersion(self, ctx): 
         version = self.epm_rcon.getBEServerVersion()
         msg = "BE version: ``"+version+"``"
-        await self.bot.send_message(ctx.message.channel, msg)  
-
-    @commands.check(isAdmin)    
-    @commands.command(name='restart',
-        brief="terminates the bot and auto restarts",
-        pass_context=True)
-    async def setRestart(self, ctx):
-        await self.bot.send_message(ctx.message.channel, "Restarting...")
-        sys.exit()          
-        
+        await self.bot.send_message(ctx.message.channel, msg)      
+    
+    ###################################################################################################
+    #####                                  Connection Cycle                                        ####
+    ###################################################################################################
+    async def maintain_connection(self):
+        while(True):
+            if(self.epm_rcon.disconnected == False):
+                self.epm_rcon.keepAlive()
+            await asyncio.sleep(1)
     ###################################################################################################
     #####                                  Debug Commands                                          ####
     ###################################################################################################
-       
+    async def handle_exception(self, myfunction):
+        coro = getattr(self, myfunction)
+        for i in range (0,5):
+            try:
+                await coro()
+            except Exception as ex:
+                ex = str(ex)+"/n"+str(traceback.format_exc())
+                user=await self.bot.get_user_info("165810842972061697")
+                await self.bot.send_message(user, "Caught exception")
+                await self.bot.send_message(user, (ex[:1800] + '..') if len(ex) > 1800 else ex)
+                logging.error('Caught exception')
+                await asyncio.sleep(10)  
+                
 local_module = None
 def setup(bot):
     global local_module
     module = CommandRcon(bot)
     local_module = module #access for @check decorators
+    #bot.loop.create_task(module.handle_exception("maintain_connection"))
     bot.add_cog(module)      
+    

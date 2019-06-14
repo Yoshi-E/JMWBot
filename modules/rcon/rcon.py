@@ -79,13 +79,12 @@ class ARC():
     
     #Closes the current connection and creates a new one
     def reconnect(self):
-
         if (self.disconnected == False):
             self.disconnect()
         self.connect()
         return None
-
     
+
     #Checks if ARC's option array contains any deprecated options
     def checkForDeprecatedOptions(self):
         if ('timeout_sec' in self.options):
@@ -130,20 +129,21 @@ class ARC():
         answer = ""
         while(True):
             try:
-                self.socket.settimeout(self.options["timeoutSec"])
+                self.socket.settimeout(1)
                 answer = self.socket.recv(102400)[len(self.head):].decode("iso-8859-1") # #substr(fread(self.socket, 102400), len(self.head))
             except:
                 answer = "" #timed out
             while ('RCon admin' in answer):
                 #Flushing Stream
                 try:
-                    self.socket.settimeout(self.options["timeoutSec"])
+                    self.socket.settimeout(1)
                     answer = self.socket.recv(102400)[len(self.head):].decode("iso-8859-1") # #substr(fread(self.socket, 102400), len(self.head))
                 except:
                     answer = "" #timed out
             output += answer  
             if(answer == ""):
                 break
+            self.socket.settimeout(self.options['timeoutSec'])
         return output
 
     
@@ -231,7 +231,7 @@ class ARC():
     #@throws \Exception if wrong parameter types were passed to the function
     #@return string Response from the server
     def command(self, command):
-        self.reconnect()
+        #self.reconnect()
         if (is_string(command) == False):
             raise Exception('Wrong parameter type!')
         self.send(command)
@@ -251,7 +251,7 @@ class ARC():
     #@throws \Exception if wrong parameter types were passed to the function
     #@return None ARC
     def kickPlayer(self, player, reason = 'Admin Kick'):
-        self.reconnect()
+        #self.reconnect()
         if (type(player) != int and type(player) != str):
             raise Exception('Expected parameter 1 to be string or integer, got %s' % type(player))
         if (type(reason) != str):
@@ -265,7 +265,7 @@ class ARC():
     #@return None ARC
     
     def sayGlobal(self, message):
-        self.reconnect()
+        #self.reconnect()
         if (type(message) != str):
             raise Exception('Expected parameter 1 to be string, got %s' % type(message))
         self.send("Say -1 "+message)
@@ -276,7 +276,7 @@ class ARC():
     #@param string message Message for the player
     #@return None ARC
     def sayPlayer(self, player, message):
-        self.reconnect()
+        #self.reconnect()
         if (type(player) != int or type(message) != str):
             raise Exception('Wrong parameter type(s)!')
         self.send("Say "+player+" "+message)
@@ -286,7 +286,7 @@ class ARC():
     #Loads the "scripts.txt" file without the need to restart the server
     #@return None ARC
     def loadScripts(self):
-        self.reconnect()
+        #self.reconnect()
         self.send('loadScripts')
         return None
 
@@ -295,7 +295,7 @@ class ARC():
     #@throws \Exception if wrong parameter types were passed to the function
     #@return None ARC
     def maxPing(self, ping):
-        self.reconnect()
+        #self.reconnect()
         if (type(ping) != int):
             raise Exception('Expected parameter 1 to be integer, got %s' % type(ping))
         self.send("MaxPing "+ping)
@@ -306,7 +306,7 @@ class ARC():
     #@throws \Exception if wrong parameter types were passed to the function
     #@return None ARC
     def changePassword(self, password):
-        self.reconnect()
+        #self.reconnect()
         if (type(password) != str):
             raise Exception('Expected parameter 1 to be string, got %s' % type(password))
         self.send("RConPassword password")
@@ -315,18 +315,18 @@ class ARC():
     #(Re)load the BE ban list from bans.txt
     #@return None ARC
     def loadBans(self):
-        self.reconnect()
+        #self.reconnect()
         self.send('loadBans')
         return None
 
     #Gets a list of all players currently on the server
     #@return string The list of all players on the server
     def getPlayers(self):
-        self.reconnect()
+        #self.reconnect()
         self.send('players')
         result = self.getResponse()
         #print(self.String2Hex(result))
-        self.reconnect()
+        #self.reconnect()
         return result
 
     #Gets a list of all players currently on the server as an array
@@ -345,7 +345,7 @@ class ARC():
     #@throws \Exception if sending the command failed
     #@return string List containing the missions
     def getMissions(self):
-        self.reconnect()
+        #self.reconnect()
         self.send('missions')
         return self.getResponse()
 
@@ -357,13 +357,13 @@ class ARC():
     #@throws \Exception if wrong parameter types were passed to the function
     #@return None ARC
     def banPlayer(self, player, reason = 'Banned', time = 0):
-        self.reconnect()
+        #self.reconnect()
         if (type(player) != str and type(player) != int):
             raise Exception('Expected parameter 1 to be integer or string, got %s' % type(player))
         if (type(reason) != str or type(time) != int):
             raise Exception('Wrong parameter type(s)!')
         self.send("ban "+player+" "+time+" "+reason)
-        self.reconnect()
+        #self.reconnect()
         if (self.options['autosaveBans']):
             self.writeBans()
         return None
@@ -375,7 +375,7 @@ class ARC():
     #@throws \Exception if wrong parameter types were passed to the function
     #@return None ARC
     def addBan(self, player, reason = 'Banned', time = 0):
-        self.reconnect()
+        #self.reconnect()
         if (type(player) != str or type(reason) != str or type(time) != int):
             raise Exception('Wrong parameter type(s)!')
         self.send("addBan "+player+" "+time+" "+reason)
@@ -388,7 +388,7 @@ class ARC():
     #@throws \Exception if wrong parameter types were passed to the function
     #@return None ARC
     def removeBan(self, banId):
-        self.reconnect()
+        #self.reconnect()
         if (type(banId) != int):
             raise Exception('Expected parameter 1 to be integer, got %s' % type(banId))
         self.send("removeBan "+banId)
@@ -401,7 +401,7 @@ class ARC():
     #@link https://github.com/Nizarii/arma-rcon-class-php/issues/4
     #@return array The array containing all bans
     def getBansArray(self):
-        self.reconnect()
+        #self.reconnect()
         bansRaw = self.getBans()
         bans = self.cleanList(bansRaw)
         str = re.findall(r'(\d+)\s+([0-9a-fA-F]+)\s([perm|\d]+)\s([\S ]+)', bans)
@@ -411,21 +411,21 @@ class ARC():
     #Gets a list of all bans
     #@return string The response from the server
     def getBans(self):
-        self.reconnect()
+        #self.reconnect()
         self.send('bans')
         return self.getResponse()
 
     #Removes expired bans from bans file
     #@return None ARC
     def writeBans(self):
-        self.reconnect()
+        #self.reconnect()
         self.send('writeBans')
         return None
 
     #Gets the current version of the BE server
     #@return string The BE server version
     def getBEServerVersion(self):
-        self.reconnect()
+        #self.reconnect()
         self.send('version')
         return self.getResponse()
 
@@ -559,9 +559,10 @@ class ARC():
     def keepAlive(self):
         if (self.options['debug']):
             print('--Keep connection alive--'+"\n")
-    
-        keepalive = "BE".chr(hex("be")).chr(hex("dc")).chr(hex("c2")).chr(hex("58"))
-        keepalive += chr(hex('ff')).chr(hex('01')).chr(hex(str('00')))
+        #loginMsg = 'BE'+chr(int(authCRC[0],16))+chr(int(authCRC[1],16))+chr(int(authCRC[2],16))+chr(int(authCRC[3],16))
+        keepalive = 'BE'+chr(int("be",16))+chr(int("dc",16))+chr(int("c2",16))+chr(int("58",16))
+        keepalive += chr(int('ff', 16))+chr(int('01',16))+chr(int('00',16))
+        print("Alive:",self.String2Hex(keepalive))
         if (self.writeToSocket(keepalive) == False):
             raise Exception('Failed to send command!')
             return False #Failed

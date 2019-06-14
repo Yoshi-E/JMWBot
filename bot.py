@@ -43,8 +43,7 @@ async def on_ready():
 
 def main():
     load_modules()
-    bot.loop.create_task(bot.cogs["CommandJMW"].watch_Log())
-    
+
     #checking depencies 
     if("Commandconfig" in bot.cogs.keys()):
         cfg = bot.cogs["Commandconfig"].cfg
