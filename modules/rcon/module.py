@@ -116,10 +116,10 @@ class CommandRcon:
         msg = "Executed command: ``"+message+"``"
         await self.bot.send_message(ctx.message.channel, msg)    
         
-    @commands.check(canUseCmds)   
-    @commands.command(name='kickPlayer',
-        brief="Kicks a player who is currently on the server",
-        pass_context=True)
+    # @commands.check(canUseCmds)   
+    # @commands.command(name='kickPlayer',
+        # brief="Kicks a player who is currently on the server",
+        # pass_context=True)
     async def kickPlayer(self, ctx, in_player, *message): 
         message = " ".join(message)
         print("kickPlayer", in_player, message)
@@ -279,10 +279,10 @@ class CommandRcon:
                 await self.bot.send_message(ctx.message.channel, missions)
                 missions = ""
                 
-    @commands.check(canUseCmds)   
-    @commands.command(name='banPlayer',
-        brief="Ban a player's BE GUID from the server. If time is not specified or 0, the ban will be permanent.",
-        pass_context=True)
+    # @commands.check(canUseCmds)   
+    # @commands.command(name='banPlayer',
+        # brief="Ban a player's BE GUID from the server. If time is not specified or 0, the ban will be permanent.",
+        # pass_context=True)
     async def banPlayer(self, ctx, in_player, time=0, *message): 
         message = " ".join(message)
         print("banPlayer", in_player, message)
@@ -311,10 +311,10 @@ class CommandRcon:
         await self.bot.send_message(ctx.message.channel, msg)    
         
         
-    @commands.check(canUseCmds)   
-    @commands.command(name='addBan',
-        brief="Same as 'banPlayer', but allows to ban a player that is not currently on the server",
-        pass_context=True)
+    # @commands.check(canUseCmds)   
+    # @commands.command(name='addBan',
+        # brief="Same as 'banPlayer', but allows to ban a player that is not currently on the server",
+        # pass_context=True)
     async def addBan(self, ctx, in_player, time=0, *message): 
         message = " ".join(message)
         print("addBan", in_player, message)
@@ -342,10 +342,10 @@ class CommandRcon:
         msg = "Banned player: ``"+player+" - "+matches[0]+"`` with reason: "+message
         await self.bot.send_message(ctx.message.channel, msg)   
 
-    @commands.check(canUseCmds)   
-    @commands.command(name='removeBan',
-        brief="Removes a ban",
-        pass_context=True)
+    # @commands.check(canUseCmds)   
+    # @commands.command(name='removeBan',
+        # brief="Removes a ban",
+        # pass_context=True)
     async def removeBan(self, ctx, banID): 
         self.epm_rcon.removeBan(banID)
             
