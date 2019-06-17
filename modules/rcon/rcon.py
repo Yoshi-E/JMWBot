@@ -28,20 +28,16 @@ class ARC():
         self.socket = None;
         # Status of the connection
         self.disconnected = True
-        # Head of the message, which was sent to the server
-        self.head = None;
         # Stores all recent server message (Format: array([datetime, msg],...))
         self.serverMessage = deque( maxlen=500) 
         # Event Handlers (Format: array([name, function],...)
         self.Events = []
-        
+        #Multi packet buffer
         self.MultiPackets = []
         # Locks Sending until space to send is available 
         self.sendLock = False
         # Stores all recent command returned data (Format: array([datetime, msg],...))
         self.serverCommandData = deque( maxlen=10) 
-        # Sequence number and also a helper to end loops.
-        self.end = 0 # required to remember the sequence.
         
         if (type(serverPort) != int or type(RConPassword) != str or type(serverIP) != str):
             raise Exception('Wrong constructor parameter type(s)!')
@@ -71,6 +67,7 @@ class ARC():
     
     #Creates a connection to the server
     def connect(self):
+        self.sendLock = False
         if (self.disconnected == False):
             self.disconnect()
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #
@@ -119,7 +116,6 @@ class ARC():
                 msgCRC = self.getMsgCRC(command)
                 head = 'BE'+chr(int(msgCRC[0],16))+chr(int(msgCRC[1],16))+chr(int(msgCRC[2],16))+chr(int(msgCRC[3],16))+chr(int('ff',16))+chr(int('01',16))+chr(int('0',16))
                 msg = head+command
-                self.head = head
                 if (self.writeToSocket(msg) == False):
                     raise Exception('Failed to send command!')
                 return True
@@ -349,7 +345,9 @@ class ARC():
                 return self.serverCommandData.pop()
             await asyncio.sleep(0.1)
         self.on_command_fail()
+        self.sendLock = False
         raise Exception("ERROR, command timed out")
+        
             
     def sendReciveConfirmation(self, sequence):
         if (self.disconnected):
