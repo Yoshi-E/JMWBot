@@ -15,7 +15,7 @@ import logging
 import prettytable
 from difflib import get_close_matches 
 import textwrap
-
+import time
 logging.basicConfig(filename='error.log',
                     level=logging.INFO, 
                     format='%(asctime)s %(levelname)-8s %(message)s',
@@ -51,10 +51,9 @@ class CommandRcon:
                                  {'timeoutSec' : self.rcon_settings["timeoutSec"]}
                                 )
 
+        #Add Event Handlers
+        self.epm_rcon.add_Event("received_ServerMessage", self.rcon_on_msg_received)
 
-        #array = self.epm_rcon.getPlayersArray()
-        #print(array)
-        #rcon.sayGlobal("No humans here, just bots")
     
         
         
@@ -69,21 +68,11 @@ class CommandRcon:
         #save data
         with open(self.path+"/rcon_cfg.json", 'w') as outfile:
             json.dump(self.rcon_settings, outfile, sort_keys=True, indent=4, separators=(',', ': '))
-            
-    def hasPermission(self, author, lvl=1):
-        roles = self.cfg.get('Roles')
-        if(roles['Default'] >= lvl):
-            return True
-            
-        if hasattr(author, 'roles'):
-            for role in roles:
-                if (roles[role] >= lvl and role.lower() in [y.name.lower() for y in author.roles]):
-                    return True
-        return False
 
-    ###################################################################################################
-    #####                                   Bot commands                                           ####
-    ###################################################################################################   
+
+###################################################################################################
+#####                                   Bot commands                                           ####
+###################################################################################################   
     def isAdmin(ctx):
         admin_ids = ["165810842972061697"] #Yoshi
         return ctx.message.author.id in admin_ids
@@ -104,7 +93,66 @@ class CommandRcon:
                         if(role.name.lower() in [x.lower() for x in aroles]):
                             return True
         return False
+
+###################################################################################################
+#####                                BEC Rcon Event handler                                    ####
+###################################################################################################  
+    async def keepConnection(self):
+        while(True):
+            await asyncio.sleep(60) #wait 60s before attemping reconnection
+            if(self.epm_rcon.disconnected == True):
+                self.epm_rcon.connect() #reconnect
+                print("Reconnecting to BEC Rcon")
+    
+    def rcon_on_msg_received(self, message):
+        message=message[0]
+        #print(message)
+
+###################################################################################################
+#####                                BEC Rcon custom commands                                  ####
+###################################################################################################   
+    @commands.check(canUseCmds)   
+    @commands.command(name='getChat',
+        brief="Sends a custom command to the server",
+        pass_context=True)
+    async def getChat(self, ctx, limit=20): 
+        msg = ""
+        data = self.epm_rcon.serverMessage.copy()
+        start = len(data)-1
+        if(start > limit):
+            end = start-limit
+        else:
+            end = 0
+        i = end
+        while(i<=start):
+            pair = data[i]
+            time = pair[0]
+            msg+= time.strftime("%H:%M:%S")+" | "+ pair[1]+"\n"
+            i += 1
+        await self.bot.send_message(ctx.message.channel, msg) 
         
+    @commands.check(canUseCmds)   
+    @commands.command(name='getChat',
+        brief="Sends a custom command to the server",
+        pass_context=True)
+    async def getChat(self, ctx, limit=20): 
+        msg = ""
+        data = self.epm_rcon.serverMessage.copy()
+        start = len(data)-1
+        if(start > limit):
+            end = start-limit
+        else:
+            end = 0
+        i = end
+        while(i<=start):
+            pair = data[i]
+            time = pair[0]
+            msg+= time.strftime("%H:%M:%S")+" | "+ pair[1]+"\n"
+            i += 1
+        await self.bot.send_message(ctx.message.channel, msg)    
+###################################################################################################
+#####                                   BEC Rcon commands                                      ####
+###################################################################################################   
         
     @commands.check(canUseCmds)   
     @commands.command(name='command',
@@ -112,39 +160,19 @@ class CommandRcon:
         pass_context=True)
     async def command(self, ctx, *message): 
         message = " ".join(message)
-        self.epm_rcon.command(message)
+        await self.epm_rcon.command(message)
         msg = "Executed command: ``"+message+"``"
         await self.bot.send_message(ctx.message.channel, msg)    
         
-    # @commands.check(canUseCmds)   
-    # @commands.command(name='kickPlayer',
-        # brief="Kicks a player who is currently on the server",
-        # pass_context=True)
-    async def kickPlayer(self, ctx, in_player, *message): 
+    @commands.check(canUseCmds)   
+    @commands.command(name='kickPlayer',
+        brief="Kicks a player who is currently on the server",
+        pass_context=True)
+    async def kickPlayer(self, ctx, player_id: int, *message): 
         message = " ".join(message)
-        print("kickPlayer", in_player, message)
-        matches = ["?"]
-        if(len(in_player) >3 and in_player.isdigit()==False):
-            #find player
-            players = {}
-            players_list = self.epm_rcon.getPlayersArray()
-            for cplayer in players_list:
-                players[cplayer[4]] = cplayer[0] 
-                
-            matches = get_close_matches(in_player, players.keys(), cutoff = 0.5, n = 3)   
-            if(len(matches) > 0):
-                player = players[matches[0]]
-            else:
-                matches = ["?"]
-                player = in_player
-        else:
-            player = in_player
-        if(len(message)<2):
-            self.epm_rcon.kickPlayer(player)
-        else:
-            self.epm_rcon.kickPlayer(player, message)
+        await self.epm_rcon.kickPlayer(player_id, message)
             
-        msg = "kicked player: ``"+player+" - "+matches[0]+"``"
+        msg = "kicked player: "+str(player_id)
         await self.bot.send_message(ctx.message.channel, msg)
             
     @commands.check(canUseCmds)   
@@ -154,7 +182,7 @@ class CommandRcon:
     async def sayGlobal(self, ctx, *message): 
         name = ctx.message.author.name
         message = " ".join(message)
-        self.epm_rcon.sayGlobal(name+": "+message)
+        await self.epm_rcon.sayGlobal(name+": "+message)
         msg = "Send: ``"+message+"``"
         await self.bot.send_message(ctx.message.channel, msg)    
         
@@ -162,32 +190,13 @@ class CommandRcon:
     @commands.command(name='sayPlayer',
         brief="Sends a message to a specific player",
         pass_context=True)
-    async def sayPlayer(self, ctx, in_player, *message): 
+    async def sayPlayer(self, ctx, player_id: int, *message): 
         message = " ".join(message)
         name = ctx.message.author.name
-        print("sayPlayer", in_player, message)
-        matches = ["?"]
-        if(len(in_player) >3 and in_player.isdigit()==False):
-            #find player
-            players = {}
-            players_list = self.epm_rcon.getPlayersArray()
-            for cplayer in players_list:
-                players[cplayer[4]] = cplayer[0] 
-                
-            matches = get_close_matches(in_player, players.keys(), cutoff = 0.5, n = 3)   
-            if(len(matches) > 0):
-                player = players[matches[0]]
-            else:
-                matches = ["?"]
-                player = in_player
-        else:
-            player = in_player
         if(len(message)<2):
-            self.epm_rcon.sayPlayer(player, name+": Ping")
-        else:
-            self.epm_rcon.sayPlayer(player, name+": "+message)
-            
-        msg = "Send msg: ``"+player+" - "+matches[0]+"``"+message
+            message = "Ping"
+        await self.epm_rcon.sayPlayer(player, name+": "+message)
+        msg = "Send msg: ``"+str(player)+" - "+matches[0]+"``"+message
         await self.bot.send_message(ctx.message.channel, msg)
     
     @commands.check(canUseCmds)   
@@ -195,7 +204,7 @@ class CommandRcon:
         brief="Loads the 'scripts.txt' file without the need to restart the server",
         pass_context=True)
     async def loadScripts(self, ctx): 
-        self.epm_rcon.loadScripts()
+        await self.epm_rcon.loadScripts()
         msg = "Loaded Scripts!"
         await self.bot.send_message(ctx.message.channel, msg)    
             
@@ -204,8 +213,8 @@ class CommandRcon:
     @commands.command(name='maxPing',
         brief="Changes the MaxPing value. If a player has a higher ping, he will be kicked from the server",
         pass_context=True)
-    async def maxPing(self, ctx, ping): 
-        self.epm_rcon.maxPing(ping)
+    async def maxPing(self, ctx, ping: int): 
+        await self.epm_rcon.maxPing(ping)
         msg = "Set maxPing to: "+ping
         await self.bot.send_message(ctx.message.channel, msg)       
 
@@ -215,8 +224,8 @@ class CommandRcon:
         pass_context=True)
     async def changePassword(self, ctx, *password): 
         password = " ".join(password)
-        self.epm_rcon.changePassword(password)
-        msg = "Set Password to: "+password
+        await self.epm_rcon.changePassword(password)
+        msg = "Set Password to: ``"+password+"``"
         await self.bot.send_message(ctx.message.channel, msg)        
         
     @commands.check(canUseCmds)   
@@ -224,7 +233,7 @@ class CommandRcon:
         brief="(Re)load the BE ban list from bans.txt",
         pass_context=True)
     async def loadBans(self, ctx): 
-        self.epm_rcon.loadBans()
+        await self.epm_rcon.loadBans()
         msg = "Loaded Bans!"
         await self.bot.send_message(ctx.message.channel, msg)    
         
@@ -233,7 +242,7 @@ class CommandRcon:
         brief="lists current players on the server",
         pass_context=True)
     async def players(self, ctx):
-        players = self.epm_rcon.getPlayersArray()
+        players = await self.epm_rcon.getPlayersArray()
         msgtable = prettytable.PrettyTable()
         msgtable.field_names = ["ID", "Name", "IP", "GUID"]
         msgtable.align["ID"] = "r"
@@ -270,7 +279,8 @@ class CommandRcon:
         brief="Gets a list of all Missions",
         pass_context=True)
     async def getMissions(self, ctx):
-        missions = self.epm_rcon.getMissions()
+        missions = await self.epm_rcon.getMissions()
+        missions = missions[1]
         while(len(missions)>0):
             if(len(missions)>1800):
                 await self.bot.send_message(ctx.message.channel, missions[:1800])
@@ -279,77 +289,64 @@ class CommandRcon:
                 await self.bot.send_message(ctx.message.channel, missions)
                 missions = ""
                 
-    # @commands.check(canUseCmds)   
-    # @commands.command(name='banPlayer',
-        # brief="Ban a player's BE GUID from the server. If time is not specified or 0, the ban will be permanent.",
-        # pass_context=True)
-    async def banPlayer(self, ctx, in_player, time=0, *message): 
+    @commands.check(canUseCmds)   
+    @commands.command(name='banPlayer',
+        brief="Ban a player's BE GUID from the server. If time is not specified or 0, the ban will be permanent.",
+        pass_context=True)
+    async def banPlayer(self, ctx, player_id, time=0, *message): 
         message = " ".join(message)
-        print("banPlayer", in_player, message)
+        print("banPlayer", player_id, message)
         matches = ["?"]
-        if(len(in_player) >3 and in_player.isdigit()==False):
+        if(len(player_id) >3 and player_id.isdigit()==False):
             #find player
             players = {}
-            players_list = self.epm_rcon.getPlayersArray()
+            players_list = await self.epm_rcon.getPlayersArray()[1]
             for cplayer in players_list:
                 players[cplayer[4]] = cplayer[0] 
                 
-            matches = get_close_matches(in_player, players.keys(), cutoff = 0.5, n = 3)   
+            matches = get_close_matches(player_id, players.keys(), cutoff = 0.5, n = 3)   
             if(len(matches) > 0):
                 player = players[matches[0]]
             else:
                 matches = ["?"]
-                player = in_player
+                player = player_id
         else:
-            player = in_player
+            player = int(player_id)
         if(len(message)<2):
-            self.epm_rcon.banPlayer(player=player, time=time)
+            await self.epm_rcon.banPlayer(player=player, time=time)
         else:
-            self.epm_rcon.banPlayer(player, message, time)
+            await self.epm_rcon.banPlayer(player, message, time)
             
-        msg = "Banned player: ``"+player+" - "+matches[0]+"`` with reason: "+message
+        msg = "Banned player: ``"+str(player)+" - "+matches[0]+"`` with reason: "+message
         await self.bot.send_message(ctx.message.channel, msg)    
         
         
-    # @commands.check(canUseCmds)   
-    # @commands.command(name='addBan',
-        # brief="Same as 'banPlayer', but allows to ban a player that is not currently on the server",
-        # pass_context=True)
-    async def addBan(self, ctx, in_player, time=0, *message): 
+    @commands.check(canUseCmds)   
+    @commands.command(name='addBan',
+        brief="Same as 'banPlayer', but allows to ban a player that is not currently on the server",
+        pass_context=True)
+    async def addBan(self, ctx, GUID, time=0, *message): 
         message = " ".join(message)
-        print("addBan", in_player, message)
+        player = player_id
         matches = ["?"]
-        if(len(in_player) >3 and in_player.isdigit()==False):
-            #find player
-            players = {}
-            players_list = self.epm_rcon.getPlayersArray()
-            for cplayer in players_list:
-                players[cplayer[4]] = cplayer[0] 
-                
-            matches = get_close_matches(in_player, players.keys(), cutoff = 0.5, n = 3)   
-            if(len(matches) > 0):
-                player = players[matches[0]]
-            else:
-                matches = ["?"]
-                player = in_player
-        else:
-            player = in_player
+        if(len(GUID) != 32):
+            raise Exception("Invalid GUID")
         if(len(message)<2):
-            self.epm_rcon.addBan(player=player, time=time)
+            await self.epm_rcon.addBan(player=player, time=time)
         else:
-            self.epm_rcon.addBan(player, message, time)
+            await self.epm_rcon.addBan(player, message, time)
             
-        msg = "Banned player: ``"+player+" - "+matches[0]+"`` with reason: "+message
+        msg = "Banned player: ``"+str(player)+" - "+matches[0]+"`` with reason: "+message
         await self.bot.send_message(ctx.message.channel, msg)   
 
-    # @commands.check(canUseCmds)   
-    # @commands.command(name='removeBan',
-        # brief="Removes a ban",
-        # pass_context=True)
-    async def removeBan(self, ctx, banID): 
-        self.epm_rcon.removeBan(banID)
+    @commands.check(canUseCmds)   
+    @commands.command(name='removeBan',
+        brief="Removes a ban",
+        pass_context=True)
+    async def removeBan(self, ctx, banID: int): 
+        await self.epm_rcon.removeBan(banID)
             
-        msg = "Removed ban: ``"+banID+"``"
+        msg = "Removed ban: ``"+str(banID)+"``"
         await self.bot.send_message(ctx.message.channel, msg)    
         
     @commands.check(canUseCmds)   
@@ -357,7 +354,7 @@ class CommandRcon:
         brief="Removes a ban",
         pass_context=True)
     async def getBans(self, ctx): 
-        bans = self.epm_rcon.getBansArray()
+        bans = await self.epm_rcon.getBansArray()
         bans.reverse() #news bans first
         msgtable = prettytable.PrettyTable()
         msgtable.field_names = ["ID", "GUID", "Time", "Reason"]
@@ -366,7 +363,7 @@ class CommandRcon:
         msgtable.align["IP"] = "l"
         msgtable.align["GUID"] = "l"
 
-        limit = 50
+        limit = 20
         i = 1
         new = False
         msg  = ""
@@ -398,18 +395,10 @@ class CommandRcon:
         brief="Gets the current version of the BE server",
         pass_context=True)
     async def getBEServerVersion(self, ctx): 
-        version = self.epm_rcon.getBEServerVersion()
-        msg = "BE version: ``"+version+"``"
+        version = await self.epm_rcon.getBEServerVersion()
+        msg = "BE version: ``"+str(version[1])+"``"
         await self.bot.send_message(ctx.message.channel, msg)      
     
-    ###################################################################################################
-    #####                                  Connection Cycle                                        ####
-    ###################################################################################################
-    async def maintain_connection(self):
-        while(True):
-            if(self.epm_rcon.disconnected == False):
-                self.epm_rcon.keepAlive()
-            await asyncio.sleep(1)
     ###################################################################################################
     #####                                  Debug Commands                                          ####
     ###################################################################################################
@@ -431,6 +420,6 @@ def setup(bot):
     global local_module
     module = CommandRcon(bot)
     local_module = module #access for @check decorators
-    #bot.loop.create_task(module.handle_exception("maintain_connection"))
+    bot.loop.create_task(module.handle_exception("keepConnection"))
     bot.add_cog(module)      
     
