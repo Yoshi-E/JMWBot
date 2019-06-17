@@ -5,7 +5,6 @@ from collections import Counter
 import concurrent.futures
 import json
 import os
-from modules.rcon import rcon
 import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions, CheckFailure
@@ -16,6 +15,8 @@ import prettytable
 from difflib import get_close_matches 
 import textwrap
 import time
+from modules.rcon import rcon
+
 logging.basicConfig(filename='error.log',
                     level=logging.INFO, 
                     format='%(asctime)s %(levelname)-8s %(message)s',
@@ -110,7 +111,20 @@ class CommandRcon:
 
 ###################################################################################################
 #####                                BEC Rcon custom commands                                  ####
-###################################################################################################   
+###################################################################################################  
+    @commands.check(canUseCmds)   
+    @commands.command(name='status',
+        brief="Current connection status",
+        pass_context=True)
+    async def status(self, ctx, limit=20): 
+        msg = ""
+        if(self.epm_rcon.disconnected==False):
+           msg+= "Connected to: "+ self.epm_rcon.serverIP+"\n"
+        else:
+            msg+= "Currently not connected: "+ self.epm_rcon.serverIP+"\n"
+        msg+= str(len(self.epm_rcon.serverMessage))+ " Messages collected"
+        await self.bot.send_message(ctx.message.channel, msg) 
+        
     @commands.check(canUseCmds)   
     @commands.command(name='getChat',
         brief="Sends a custom command to the server",
@@ -195,8 +209,8 @@ class CommandRcon:
         name = ctx.message.author.name
         if(len(message)<2):
             message = "Ping"
-        await self.epm_rcon.sayPlayer(player, name+": "+message)
-        msg = "Send msg: ``"+str(player)+" - "+matches[0]+"``"+message
+        await self.epm_rcon.sayPlayer(player_id, name+": "+message)
+        msg = "Send msg: ``"+str(player_id)+"``"+message
         await self.bot.send_message(ctx.message.channel, msg)
     
     @commands.check(canUseCmds)   
