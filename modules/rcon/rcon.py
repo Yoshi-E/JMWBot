@@ -29,7 +29,7 @@ class ARC():
         # Status of the connection
         self.disconnected = True
         # Stores all recent server message (Format: array([datetime, msg],...))
-        self.serverMessage = deque( maxlen=500) 
+        self.serverMessage = deque( maxlen=100) 
         # Event Handlers (Format: array([name, function],...)
         self.Events = []
         #Multi packet buffer
@@ -395,9 +395,9 @@ class ARC():
             except Exception as e:
                 self.disconnect() #connection lost
                 traceback.print_exc()
-            await asyncio.sleep(30) #package needs to be send every <45s
+            await asyncio.sleep(20) #package needs to be send every min:1s, max:44s 
   
-    #Keep the stream alive. Send package to BE server. Use None function before 45 seconds.
+    #Keep the stream alive. Send package to BE server. Use function before 45 seconds.
     def keepAlive(self):
         if (self.options['debug']):
             print('--Keep connection alive--'+"\n")
