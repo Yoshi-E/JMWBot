@@ -74,7 +74,7 @@ class readLog:
         splitat = line.find("[")
         r = line[splitat:]  #remove timestamp
         timestamp = line[:splitat]
-        return [time,r]
+        return [timestamp,r]
         
     def parseLine(self, line):
         r = self.splitTimestamp(line)[1]
