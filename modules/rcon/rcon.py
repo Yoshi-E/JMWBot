@@ -8,11 +8,24 @@ import asyncio
 import traceback
 from collections import deque
 import datetime
+import codecs
 #Author: Yoshi_E
 #Date: 2019.06.14
 #Python3.6 Implementation of data protocol: https://www.battleye.com/downloads/BERConProtocol.txt
 #Code based on 'felixms' https://github.com/felixms/arma-rcon-class-php
+import builtins as __builtin__
+import logging
 
+logging.basicConfig(filename='error.log',
+                    level=logging.INFO, 
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+
+def print(*args, **kwargs):
+    if(len(args)>0):
+        logging.info(args[0])
+    return __builtin__.print(*args, **kwargs)
+    
 class ARC():
 
     def __init__(self, serverIP, RConPassword, serverPort = 2302, options = {}):
@@ -316,6 +329,7 @@ class ARC():
      
     def received_ServerMessage(self, packet, message):
         self.serverMessage.append([datetime.datetime.now(), message])
+        #print()
         self.sendReciveConfirmation(packet[8]) #confirm with sequence id from packet  
         self.check_Event("received_ServerMessage", message)
     
@@ -327,6 +341,7 @@ class ARC():
                 self.serverCommandData.append([datetime.datetime.now(), "".join(self.MultiPackets)])
                 self.MultiPackets = []
         else: #Normal Package
+            #print(self.String2Hex(message))
             self.serverCommandData.append([datetime.datetime.now(), message])
         self.check_Event("received_CommandMessage", message)
             
@@ -370,20 +385,21 @@ class ARC():
                 answer = self.socket.recv(102400).decode(self.codec)
                 header =  answer[:7]
                 crc32_checksum = header[2:-1]
-                body = answer[9:]
+                body = codecs.decode(""+self.String2Hex(answer[9:]), "hex").decode() #some encoding magic (iso-8859-1(with utf-8 chars) --> utf-8)
                 packet_type = self.String2Hex(answer[7])
                 if(packet_type=="02"): 
                     self.received_ServerMessage(answer, body)
                 if(packet_type=="01"):
                     self.received_CommandMessage(answer, body)
                 if(packet_type=="00"): #"Login packet"
-                    if (ord(result[len(result)-1]) == 0): #Raise error when login failed
+                    if (ord(answer[len(answer)-1]) == 0): #Raise error when login failed
                         self.login_fail()
                         raise Exception('Login failed, wrong password or wrong port!')
                     else:
                         self.login_Sucess()
-            except Exception as e: #"no data recevied" error
-                pass
+            except Exception as e: 
+                if(type(e) != BlockingIOError): #ignore "no data recevied" error
+                    traceback.print_exc()
             if(answer==""):
                 await asyncio.sleep(0.5)
                 
@@ -393,8 +409,8 @@ class ARC():
             try:
                 await self.getBEServerVersion() #self.keepAlive()
             except Exception as e:
-                self.disconnect() #connection lost
                 traceback.print_exc()
+                self.disconnect() #connection lost
             await asyncio.sleep(20) #package needs to be send every min:1s, max:44s 
   
     #Keep the stream alive. Send package to BE server. Use function before 45 seconds.
