@@ -11,8 +11,10 @@ import datetime
 import codecs
 #Author: Yoshi_E
 #Date: 2019.06.14
+#Found on github: https://github.com/Yoshi-E/Python-BEC-RCon
 #Python3.6 Implementation of data protocol: https://www.battleye.com/downloads/BERConProtocol.txt
 #Code based on 'felixms' https://github.com/felixms/arma-rcon-class-php
+#License: https://creativecommons.org/licenses/by-nc-sa/4.0/
 import builtins as __builtin__
 import logging
 
@@ -138,7 +140,7 @@ class ARC():
     
     #Writes the given message to the socket
     def writeToSocket(self, message):
-        return self.socket.send(bytes(message.encode(self.codec))) #fwrite(self.socket, message)
+        return self.socket.send(bytes(message.encode(self.codec)))
     
     #Debug funcion to view special chars
     def String2Hex(self,string):

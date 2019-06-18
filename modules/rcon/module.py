@@ -365,7 +365,7 @@ class CommandRcon:
         
     @commands.check(canUseCmds)   
     @commands.command(name='getBans',
-        brief="Removes a ban",
+        brief="Gets a list of recent bans",
         pass_context=True)
     async def getBans(self, ctx): 
         bans = await self.epm_rcon.getBansArray()

@@ -68,6 +68,21 @@ class readLog:
             return parent
         parent.update(data)
         return parent
+    
+    def parseLine(self, line):
+        splitat = line.find("[")
+        r = line[splitat:]  #remove timestamp
+        timestamp = line[:splitat]
+        r = r.rstrip() #remove /n
+        #converting arma3 boolen working with python +converting rawnames to strings:
+        r = r.replace(",WEST]", ',"WEST"]')
+        r = r.replace(",EAST]", ',"EAST"]') #this still needs working
+        r = r.replace("true", "True")
+        r = r.replace("false", "False")
+        return r
+        
+    def lineHasPacket(self, line):
+        return (line.find("BattlEye") ==-1 and line.find("[") > 0 and "CTI_DataPacket" in line and line.rstrip()[-2:] == "]]")
         
     def scanfile(self, name):
         collected_rows = []
@@ -84,19 +99,11 @@ class readLog:
                 line = "Error"
             while line:
                 
-                if(line.find("BattlEye") ==-1 and line.find("[") > 0 and "CTI_DataPacket" in line and line.rstrip()[-2:] == "]]"):
+                if(self.lineHasPacket(line)):
                 #if("CTI_Mission_Performance: GameOver" in line):
-                    splitat = line.find("[")
-                    r = line[splitat:]  #remove timestamp
-                    timestamp = line[:splitat]
-                    r = r.rstrip() #remove /n
-                    #converting arma3 boolen working with python +converting rawnames to strings:
-                    r = r.replace(",WEST]", ',"WEST"]')
-                    r = r.replace(",EAST]", ',"EAST"]') #this still needs working
-                    r = r.replace("true", "True")
-                    r = r.replace("false", "False")
+                    
                     try:
-                        datarow = ast.literal_eval(r) #convert string into array object
+                        datarow = ast.literal_eval(self.parseLine(line)) #convert string into array object
                         datarow = dict(datarow)
                         if(datarow["CTI_DataPacket"] == "Header"):
                             #print("Map starting: "+datarow["Map"])
@@ -140,13 +147,16 @@ class readLog:
                             timestamp = "??:??:?? "
                             rows = []
                             #seeks forward until a new mission start was found, to ensure entries between end - start will be skipped
-                            #while line:
-                            #    try:
-                            #        line = fp.readline()
-                            #        if(line.find("BattlEye") ==-1 and "CTI_DataPacket" in line):
-                            #            break
-                            #    except:
-                            #        line = "Error"
+                            while line:
+                                try:
+                                    line = fp.readline()
+                                    if(self.lineHasPacket(line))
+                                        datarow = ast.literal_eval(self.parseLine(line))
+                                        datarow = dict(datarow)
+                                        if(datarow["CTI_DataPacket"] == "Header"):
+                                            break
+                                except:
+                                    line = "Error"
                     except Exception as e:
                         print(line)
                         print(e)
