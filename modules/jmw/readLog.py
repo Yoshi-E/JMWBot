@@ -69,10 +69,15 @@ class readLog:
         parent.update(data)
         return parent
     
-    def parseLine(self, line):
+    
+    def splitTimestamp(self, line):
         splitat = line.find("[")
         r = line[splitat:]  #remove timestamp
         timestamp = line[:splitat]
+        return [time,r]
+        
+    def parseLine(self, line):
+        r = self.splitTimestamp(line)[1]
         r = r.rstrip() #remove /n
         #converting arma3 boolen working with python +converting rawnames to strings:
         r = r.replace(",WEST]", ',"WEST"]')
@@ -90,6 +95,7 @@ class readLog:
         lastwinner = "????"
         lastmap = "unkown"
         timestamp = "??:??:?? "
+        skip = False
         date = os.path.getmtime(self.cfg.get('logs_path')+name)
         with open(self.cfg.get('logs_path')+name) as fp: 
             databuilder = {}
@@ -98,7 +104,7 @@ class readLog:
             except:
                 line = "Error"
             while line:
-                
+                timestamp = self.splitTimestamp(line)[0]
                 if(self.lineHasPacket(line)):
                 #if("CTI_Mission_Performance: GameOver" in line):
                     
@@ -109,6 +115,7 @@ class readLog:
                             #print("Map starting: "+datarow["Map"])
                             #rows.append(datarow)
                             lastmap = datarow["Map"]
+                            skip = False
                         if("Data_" in datarow["CTI_DataPacket"]):
                             if(len(databuilder)>0):
                                 #check if previous 'Data_x' is present
@@ -154,6 +161,7 @@ class readLog:
                                         datarow = ast.literal_eval(self.parseLine(line))
                                         datarow = dict(datarow)
                                         if(datarow["CTI_DataPacket"] == "Header"):
+                                            skip=True
                                             break
                                 except:
                                     line = "Error"
@@ -162,7 +170,8 @@ class readLog:
                         print(e)
                         line = "Error"
                 try:
-                    line = fp.readline()
+                    if(skip==False):
+                        line = fp.readline()
                 except:
                     line = "Error"
             collected_rows.append([rows.copy(),  "::currentGame::", lastmap,timestamp[:-1], date]) #get rows from current game
