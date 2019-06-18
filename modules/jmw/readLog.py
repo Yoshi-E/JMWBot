@@ -150,7 +150,7 @@ class readLog:
                             while line:
                                 try:
                                     line = fp.readline()
-                                    if(self.lineHasPacket(line))
+                                    if(self.lineHasPacket(line)):
                                         datarow = ast.literal_eval(self.parseLine(line))
                                         datarow = dict(datarow)
                                         if(datarow["CTI_DataPacket"] == "Header"):
