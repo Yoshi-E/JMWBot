@@ -84,7 +84,7 @@ class CommandRcon(commands.Cog):
     
     def rcon_on_msg_received(self, args):
         message=args[0]
-        print(message)    
+        #print(message)    
     
     def rcon_on_disconnect(self):
         print("Disconnected")
