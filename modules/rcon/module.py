@@ -100,7 +100,7 @@ class CommandRcon:
 ###################################################################################################  
     async def keepConnection(self):
         while(True):
-            await asyncio.sleep(60) #wait 60s before attemping reconnection
+            await asyncio.sleep(10) #wait 10s before attemping reconnection
             if(self.epm_rcon.disconnected == True):
                 self.epm_rcon.connect() #reconnect
                 print("Reconnecting to BEC Rcon")
