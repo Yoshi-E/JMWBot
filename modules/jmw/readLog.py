@@ -70,11 +70,11 @@ class readLog:
         return parent
     
     
-    def splitTimestamp(self, line):
-        splitat = line.find("[")
-        r = line[splitat:]  #remove timestamp
-        timestamp = line[:splitat]
-        print(timestamp)
+    def splitTimestamp(self, pline):
+        splitat = pline.find("[")
+        r = pline[splitat:]  #remove timestamp
+        timestamp = pline[:splitat]
+        print("TIME:",timestamp)
         return [timestamp,r]
         
     def parseLine(self, line):
