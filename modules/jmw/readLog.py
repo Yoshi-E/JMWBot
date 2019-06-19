@@ -83,12 +83,14 @@ class readLog:
         #converting arma3 boolen working with python +converting rawnames to strings:#
         #(?<!^|\]|\[)"(?!\]|\[$)
         #(?:^(?<!\])|(?<!\[))"(?:(?!\])|\[)
+        r = r.replace('\\', '') #Filter possible escape chars
         r = re.sub(r'(?:^(?<!\])|(?<!\[))"(?:(?!\])|\[)', "'", r) #removes invalid qoutes
         r = r.replace('""', ',"WEST"]')
         r = r.replace(",WEST]", ',"WEST"]')
         r = r.replace(",EAST]", ',"EAST"]') #this still needs working
         r = r.replace("true", "True")
         r = r.replace("false", "False")
+        print("TLINE:",r)
         return r
         
     def lineHasPacket(self, line):
