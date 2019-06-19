@@ -1,9 +1,6 @@
 ﻿import socket
-import os
-import sys
 import re
 import zlib
-import binascii
 import asyncio
 import traceback
 from collections import deque
@@ -279,7 +276,6 @@ class ARC():
         bansRaw = await self.getBans()
         bans = self.cleanList(bansRaw[1])
         str = re.findall(r'(\d+)\s+([0-9a-fA-F]+)\s([perm|\d]+)\s([\S ]+)', bans)
-        #PHP preg_match_all("#(\d+)\s+([0-9a-fA-F]+)\s([perm|\d]+)\s([\S ]+)#im", bans, str)
         return self.formatList(str)
 
     #Gets a list of all bans
@@ -293,7 +289,6 @@ class ARC():
         return None
 
     #Gets the current version of the BE server
-    #@return string The BE server version
     async def getBEServerVersion(self):
         await self.send('version')
         return await self.waitForResponse()
@@ -331,7 +326,6 @@ class ARC():
      
     def received_ServerMessage(self, packet, message):
         self.serverMessage.append([datetime.datetime.now(), message])
-        #print()
         self.sendReciveConfirmation(packet[8]) #confirm with sequence id from packet  
         self.check_Event("received_ServerMessage", message)
     
@@ -343,7 +337,6 @@ class ARC():
                 self.serverCommandData.append([datetime.datetime.now(), "".join(self.MultiPackets)])
                 self.MultiPackets = []
         else: #Normal Package
-            #print(self.String2Hex(message))
             self.serverCommandData.append([datetime.datetime.now(), message])
         self.check_Event("received_CommandMessage", message)
             
@@ -389,6 +382,9 @@ class ARC():
                 crc32_checksum = header[2:-1]
                 body = codecs.decode(""+self.String2Hex(answer[9:]), "hex").decode() #some encoding magic (iso-8859-1(with utf-8 chars) --> utf-8)
                 packet_type = self.String2Hex(answer[7])
+                if(self.options['debug']):
+                    print("Received Package type:",packet_type)
+                    print("Data:",body)
                 if(packet_type=="02"): 
                     self.received_ServerMessage(answer, body)
                 if(packet_type=="01"):
@@ -417,12 +413,11 @@ class ARC():
   
     #Keep the stream alive. Send package to BE server. Use function before 45 seconds.
     def keepAlive(self):
-        if (self.options['debug']):
+        if(self.options['debug']):
             print('--Keep connection alive--'+"\n")
         #loginMsg = 'BE'+chr(int(authCRC[0],16))+chr(int(authCRC[1],16))+chr(int(authCRC[2],16))+chr(int(authCRC[3],16))
         keepalive = 'BE'+chr(int("be",16))+chr(int("dc",16))+chr(int("c2",16))+chr(int("58",16))
         keepalive += chr(int('ff', 16))+chr(int('01',16))+chr(int('00',16))
-        #print("Alive:",self.String2Hex(keepalive))
         if (self.writeToSocket(keepalive) == False):
             raise Exception('Failed to send command!')
             return False #Failed

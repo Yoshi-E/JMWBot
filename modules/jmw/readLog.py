@@ -105,6 +105,7 @@ class readLog:
                 line = "Error"
             while line:
                 timestamp = self.splitTimestamp(line)[0]
+                print(timestamp)
                 if(self.lineHasPacket(line)):
                 #if("CTI_Mission_Performance: GameOver" in line):
                     
