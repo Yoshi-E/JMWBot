@@ -90,7 +90,7 @@ class readLog:
         r = r.replace(",EAST]", ',"EAST"]') #this still needs working
         r = r.replace("true", "True")
         r = r.replace("false", "False")
-        print("TLINE:",r)
+        print(r)
         return r
         
     def lineHasPacket(self, line):
@@ -173,7 +173,7 @@ class readLog:
                                 except:
                                     line = "Error"
                     except Exception as e:
-                        print(line, e)
+                        #print(line, e)
                         line = "Error"
                 try:
                     if(skip==False):
