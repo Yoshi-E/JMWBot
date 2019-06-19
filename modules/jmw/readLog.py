@@ -79,7 +79,10 @@ class readLog:
     def parseLine(self, line):
         r = self.splitTimestamp(line)[1]
         r = r.rstrip() #remove /n
-        #converting arma3 boolen working with python +converting rawnames to strings:
+        #converting arma3 boolen working with python +converting rawnames to strings:#
+        #(?<!^|\]|\[)"(?!\]|\[$)
+        #(?:^(?<!\])|(?<!\[))"(?:(?!\])|\[)
+        r = re.sub(r'(?:^(?<!\])|(?<!\[))"(?:(?!\])|\[)', "'", r) #removes invalid qoutes
         r = r.replace('""', ',"WEST"]')
         r = r.replace(",WEST]", ',"WEST"]')
         r = r.replace(",EAST]", ',"EAST"]') #this still needs working
@@ -105,7 +108,6 @@ class readLog:
             except:
                 line = "Error"
             while line:
-                
                 if(self.lineHasPacket(line)):
                 #if("CTI_Mission_Performance: GameOver" in line):
                     
