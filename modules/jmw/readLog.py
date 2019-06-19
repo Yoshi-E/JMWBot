@@ -84,7 +84,7 @@ class readLog:
         #(?<!^|\]|\[)"(?!\]|\[$)
         #(?:^(?<!\])|(?<!\[))"(?:(?!\])|\[)
         r = r.replace('\\', '') #Filter possible escape chars
-        r = re.sub(r'(?:^(?<!\])|(?<!\[))"(?:(?!\])|\[)', "#", r) #removes invalid qoutes
+        r = re.sub(r'(?:^(?<!\])|(?<!\[|,))"(?:(?!\]|,))', "'", r) #removes invalid qoutes
         r = r.replace('""', ',"WEST"]')
         r = r.replace(",WEST]", ',"WEST"]')
         r = r.replace(",EAST]", ',"EAST"]') #this still needs working
