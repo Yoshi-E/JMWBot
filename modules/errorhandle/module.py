@@ -4,20 +4,39 @@ from discord.ext import commands
 import discord
 
 
-class CommandErrorHandler:
+class CommandErrorHandler(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
-    async def on_command_error(self, error, ctx):
+        
+    async def sendLong(self, ctx, msg):
+        while(len(msg)>0):
+            if(len(msg)>1800):
+                await ctx.send(msg[:1800])
+                msg = msg[1800:]
+            else:
+                await ctx.send(msg)
+                msg = ""
+                
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
         """The event triggered when an error is raised while invoking a command.
         ctx   : Context
-        error : Exception"""  
+        error : Exception"""
+        stack = traceback.extract_stack()[:-3] + traceback.extract_tb(error.__traceback__)  # add limit=?? 
+        pretty = traceback.format_list(stack)
+        stacktrace = ''.join(pretty) + '\n  {} {}'.format(error.__class__,error)
+        await self.sendLong(ctx, (f'{ctx.command} has caused the following error: ```{stacktrace}```'))
+        # This prevents any commands with local handlers being handled here in on_command_error.
         if hasattr(ctx.command, 'on_error'):
             return
         
         ignored = (commands.CommandNotFound, commands.UserInputError)
+        
+        # Allows us to check for original exceptions raised and sent to CommandInvokeError.
+        # If nothing is found. We keep the exception passed to on_command_error.
         error = getattr(error, 'original', error)
         
+        # Anything in ignored will return and prevent anything happening.
         if isinstance(error, ignored):
             return
 
@@ -30,12 +49,10 @@ class CommandErrorHandler:
             except:
                 pass
 
-        elif isinstance(error, commands.BadArgument):
-            if ctx.command.qualified_name == 'tag list':
-                return await ctx.send('I could not find that member. Please try again.')
-            
+        # All other Errors not returned come here... And we can just print the default TraceBack.
         print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+                
 
 def setup(bot):
     bot.add_cog(CommandErrorHandler(bot))

@@ -18,7 +18,7 @@ def print(*args, **kwargs):
         logging.info(args[0])
     return __builtin__.print(*args, **kwargs)
 
-class Commandconfig:
+class Commandconfig(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         

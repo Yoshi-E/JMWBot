@@ -10,21 +10,10 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions, CheckFailure
 import ast
-import builtins as __builtin__
-import logging
 import sys
 
-logging.basicConfig(filename='error.log',
-                    level=logging.INFO, 
-                    format='%(asctime)s %(levelname)-8s %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
 
-def print(*args, **kwargs):
-    if(len(args)>0):
-        logging.info(args[0])
-    return __builtin__.print(*args, **kwargs)
-
-class CommandJMW:
+class CommandJMW(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.path = os.path.dirname(os.path.realpath(__file__))
@@ -63,7 +52,7 @@ class CommandJMW:
             if "nextgame" in self.user_data[user] and self.user_data[user]["nextgame"] == True:
                 print("sending DM to: "+str(user))
                 puser = await self.bot.get_user_info(user)
-                await self.bot.send_message(puser, msg)  
+                await puser.send(msg)  
                 self.user_data[user]["nextgame"] = False
         await self.set_user_data() #save changes
     
@@ -82,25 +71,25 @@ class CommandJMW:
         if(gameindex>=0 and gameindex <= 10):
             game = self.readLog.readData(admin, gameindex)   
             if(game == None):
-                await self.bot.send_message(channel, "No Data found, wrong log path? '"+self.cfg.get('logs_path')+"'")
+                await channel.send("No Data found, wrong log path? '"+self.cfg.get('logs_path')+"'")
                 return None
             timestamp = game["date"]+" "+game["time"]
             msg="Sorry, I could not find any games"
             if(admin == True): #post additional info
                 if(game["gameduration"] < 2):
                     gameindex+=1
-                    await self.bot.send_message(channel, "Selected game is too short, displaying lastgame="+str(gameindex)+" instead")
+                    await channel.send("Selected game is too short, displaying lastgame="+str(gameindex)+" instead")
                     game = self.readLog.readData(admin, gameindex)  
                 filename = game["picname"]
                 if(sendraw == True):
                     filename = game["dataname"]
                 log_graph = filename
                 msg="["+timestamp+"] "+str(game["gameduration"])+"min game. Winner:"+game["lastwinner"]
-                await self.bot.send_file(channel, log_graph, content=msg)
+                await channel.send(file=log_graph, content=msg)
                 com_east = "EAST_com:"+str(Counter(self.readLog.featchValues(game["data"], "commander_east")))
                 com_west = "WEST_com:"+str(Counter(self.readLog.featchValues(game["data"], "commander_west")))
-                await self.bot.send_message(channel, com_east)
-                await self.bot.send_message(channel, com_west)
+                await channel.send(com_east)
+                await channel.send(com_west)
             else: #normal dislay
                 if(game["gameduration"]<30):
                     if(game["gameduration"]<10):
@@ -110,15 +99,15 @@ class CommandJMW:
                     else:
                         loser = "WEST"
                     msg="["+timestamp+"] "+"A "+str(game["gameduration"])+"min game was just finished because "+loser+" lost their HQ."
-                    await self.bot.send_message(channel, msg)
+                    await channel.send(msg)
                 else:
                     msg="["+timestamp+"] Congratulation, "+game["lastwinner"]+"! You beat the other team after "+str(game["gameduration"])+"min of intense fighting. A new game is about to start, time to join!"
                     filename = game["picname"]
                     log_graph = filename
-                    await self.bot.send_file(channel, log_graph, content=msg)
+                    await channel.send(file=log_graph, content=msg)
 
         else:
-            await self.bot.send_message(channel, "Invalid Index. has to be >0 and <10")
+            await channel.send("Invalid Index. has to be >0 and <10")
 
                 
     #this will be used for watching for a game end     
@@ -132,7 +121,7 @@ class CommandJMW:
                 print("current log: "+current_log)
                 file = open(self.cfg.get("logs_path")+current_log, "r")
                 file.seek(0, 2)
-                while not self.bot.is_closed:
+                while (True):
                     where = file.tell()
                     try:
                         line = file.readline()
@@ -167,7 +156,7 @@ class CommandJMW:
                                     if(self.cfg.get("cycle_assist") == True):
                                         self.cfgreader.writeMission(self.cfgreader.parseMissions(), datarow["Map"])
                                     msg="Let the game go on! The Server is now continuing the mission."
-                                    await self.bot.send_message(channel, msg)
+                                    await channel.send(msg)
                             except Exception as e:
                                 print(line)
                                 print(e)
@@ -180,8 +169,6 @@ class CommandJMW:
     ###################################################################################################
     #####                                   Bot commands                                           ####
     ###################################################################################################
-
-    #await bot.send_message(message.channel, msg)
 
     @commands.command(  name='ping',
                         pass_context=True)
@@ -198,8 +185,7 @@ class CommandJMW:
                         description="The cycle assist rewrites an arma 3 config in a way that after crash the correct map is loaded.",
                         pass_context=True)
     @has_permissions(administrator=True)
-    async def command_cycleassist(self, ctx):
-        message = ctx.message
+    async def command_cycleassist(self, ):
         if(" " in message.content):
             val = message.content.split(" ")[1]
             if(val in ["false", "off", "0", "disable"]):
@@ -210,17 +196,16 @@ class CommandJMW:
                 msg = ':white_check_mark: Ok, Mission cycle assist enabled.'
         else:
             msg = ':question: Usage: cycleassist [true/false]'
-        await self.bot.send_message(message.channel, msg)    
+        await ctx.send(msg)    
 
     @commands.command(  name='cycleassistList',
                         brief="List the current cycle",
                         description="List the default order of mission playback",
                         pass_context=True)
     @has_permissions(administrator=True)
-    async def command_cycleassistList(self, ctx):
-        message = ctx.message
+    async def command_cycleassistList(self, ):
         msg = str(self.cfgreader.parseMissions()).replace("\\t","").replace("\\n","")
-        await self.bot.send_message(message.channel, msg)    
+        await ctx.send(msg)    
     
     
     
@@ -250,7 +235,7 @@ class CommandJMW:
             await self.set_user_data(tauthor, "nextgame" , True)
             msg = ':white_check_mark: Ok, I will send you a message when you can join for a new round.'
         puser = await self.bot.get_user_info(tauthor)
-        await self.bot.send_message(puser, msg)  
+        await puser.send(msg)  
 
         
     @commands.command(  name='lastgame',
@@ -301,9 +286,9 @@ class CommandJMW:
     @commands.command(name='restart',
         brief="terminates the bot and auto restarts",
         pass_context=True)
-    async def setRestart(self, ctx):
+    async def setRestart(self, ):
         if self.hasPermission(ctx.message.author, lvl=10):
-            await self.bot.send_message(ctx.message.channel, "Restarting...")
+            await ctx.send("Restarting...")
             sys.exit()     
     ###################################################################################################
     #####                                  Debug Commands                                          ####
@@ -316,8 +301,8 @@ class CommandJMW:
             except Exception as ex:
                 ex = str(ex)+"/n"+str(traceback.format_exc())
                 user=await self.bot.get_user_info("165810842972061697")
-                await self.bot.send_message(user, "Caught exception")
-                await self.bot.send_message(user, (ex[:1800] + '..') if len(ex) > 1800 else ex)
+                await user.send("Caught exception")
+                await user.send(ex[:1800] + '..' if len(ex) > 1800 else ex)
                 logging.error('Caught exception')
                 await asyncio.sleep(10)  
                   
