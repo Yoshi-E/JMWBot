@@ -74,7 +74,6 @@ class readLog:
         splitat = pline.find("[")
         r = pline[splitat:]  #remove timestamp
         timestamp = pline[:splitat]
-        print("TIME:",timestamp)
         return [timestamp,r]
         
     def parseLine(self, line):
@@ -106,7 +105,7 @@ class readLog:
             except:
                 line = "Error"
             while line:
-                timestamp = self.splitTimestamp(line)[0]
+                
                 if(self.lineHasPacket(line)):
                 #if("CTI_Mission_Performance: GameOver" in line):
                     
@@ -138,6 +137,7 @@ class readLog:
                             lastmap = datarow["Map"]
                             
                         if(datarow["CTI_DataPacket"] == "GameOver"):
+                            timestamp = self.splitTimestamp(line)[0]
                             lastmap = datarow["Map"]
                             if(datarow["Lost"]):
                                 if(datarow["Side"] == "WEST"):
