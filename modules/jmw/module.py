@@ -51,7 +51,7 @@ class CommandJMW(commands.Cog):
         for user in self.user_data:
             if "nextgame" in self.user_data[user] and self.user_data[user]["nextgame"] == True:
                 print("sending DM to: "+str(user))
-                puser = await self.bot.get_user_info(int(user))
+                puser = await self.bot.get_user(int(user))
                 await puser.send(msg)  
                 self.user_data[user]["nextgame"] = False
         await self.set_user_data() #save changes
@@ -226,15 +226,15 @@ class CommandJMW(commands.Cog):
         if(" " in message.content):
             val = message.content.split(" ")[1]
             if(val=="stop"):
-                await self.set_user_data(tauthor, "nextgame" , False)
+                await self.set_user_data(str(tauthor), "nextgame" , False)
                 msg = ':x: Ok, I will send no message'
             else:
                 msg = ':question: Sorry, I did not understand'
         else:
             #store data, to remind user later on
-            await self.set_user_data(tauthor, "nextgame" , True)
+            await self.set_user_data(str(tauthor), "nextgame" , True)
             msg = ':white_check_mark: Ok, I will send you a message when you can join for a new round.'
-        puser = await self.bot.get_user_info(tauthor)
+        puser = await self.bot.get_user(tauthor)
         await puser.send(msg)  
 
         
@@ -300,7 +300,7 @@ class CommandJMW(commands.Cog):
                 await coro()
             except Exception as ex:
                 ex = str(ex)+"/n"+str(traceback.format_exc())
-                user=await self.bot.get_user_info(165810842972061697)
+                user=await self.bot.get_user(165810842972061697)
                 await user.send("Caught exception")
                 await user.send(ex[:1800] + '..' if len(ex) > 1800 else ex)
                 logging.error('Caught exception')
