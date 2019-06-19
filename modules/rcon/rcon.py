@@ -303,7 +303,7 @@ class ARC():
         return await self.waitForResponse()
     
     #TODO name = str? confirm funcinality 
-    #Send a warning to a p﻿layer, it will increase the warncount if defined in the con﻿fig file﻿
+    #Send a warning to a player, it will increase the warncount if defined in the config file
     async def warn(self, name: str):
         await self.send('warn '+name)
         return await self.waitForResponse()   
@@ -329,26 +329,26 @@ class ARC():
     
     #TODO confirm funcinality 
     #Restart mission with current player slot selection
-    async def restart﻿(self):
-        await self.send('restart﻿')
+    async def restart(self):
+        await self.send('restart')
         return await self.waitForResponse()    
         
     #TODO confirm funcinality 
     #Restart the mission with new player slot selection
-    async def reassign﻿(self):
-        await self.send('reassign﻿')
+    async def reassign(self):
+        await self.send('reassign')
         return await self.waitForResponse()    
         
     #TODO confirm funcinality 
     #Kick N numbers of player based on join time. last joined players will get kicked.
-    async def makeroom﻿(self, number = 1):
-        await self.send('makeroom﻿ '+str(number))
+    async def makeroom(self, number = 1):
+        await self.send('makeroom '+str(number))
         return await self.waitForResponse()    
         
     #TODO confirm funcinality 
     #Show player info. Beid and join time.
-    async def pinfo﻿(self, name: str):
-        await self.send('pinfo ﻿'+str(name))
+    async def pinfo(self, name: str):
+        await self.send('pinfo '+str(name))
         return await self.waitForResponse()
 
 ###################################################################################################
