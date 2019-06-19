@@ -84,7 +84,7 @@ class readLog:
         #(?<!^|\]|\[)"(?!\]|\[$)
         #(?:^(?<!\])|(?<!\[))"(?:(?!\])|\[)
         r = r.replace('\\', '') #Filter possible escape chars
-        r = re.sub(r'(?:^(?<!\])|(?<!\[))"(?:(?!\])|\[)', "'", r) #removes invalid qoutes
+        r = re.sub(r'(?:^(?<!\])|(?<!\[))"(?:(?!\])|\[)', "#", r) #removes invalid qoutes
         r = r.replace('""', ',"WEST"]')
         r = r.replace(",WEST]", ',"WEST"]')
         r = r.replace(",EAST]", ',"EAST"]') #this still needs working
@@ -173,8 +173,7 @@ class readLog:
                                 except:
                                     line = "Error"
                     except Exception as e:
-                        print(line)
-                        print(e)
+                        print(line, e)
                         line = "Error"
                 try:
                     if(skip==False):
