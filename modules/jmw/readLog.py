@@ -74,12 +74,14 @@ class readLog:
         splitat = line.find("[")
         r = line[splitat:]  #remove timestamp
         timestamp = line[:splitat]
+        print(timestamp)
         return [timestamp,r]
         
     def parseLine(self, line):
         r = self.splitTimestamp(line)[1]
         r = r.rstrip() #remove /n
         #converting arma3 boolen working with python +converting rawnames to strings:
+        r = r.replace('""', ',"WEST"]')
         r = r.replace(",WEST]", ',"WEST"]')
         r = r.replace(",EAST]", ',"EAST"]') #this still needs working
         r = r.replace("true", "True")
@@ -105,7 +107,6 @@ class readLog:
                 line = "Error"
             while line:
                 timestamp = self.splitTimestamp(line)[0]
-                print(timestamp)
                 if(self.lineHasPacket(line)):
                 #if("CTI_Mission_Performance: GameOver" in line):
                     
