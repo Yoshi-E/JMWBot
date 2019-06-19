@@ -300,7 +300,7 @@ class CommandJMW(commands.Cog):
                 await coro()
             except Exception as ex:
                 ex = str(ex)+"/n"+str(traceback.format_exc())
-                user=await self.bot.get_user_info("165810842972061697")
+                user=await self.bot.get_user_info(165810842972061697)
                 await user.send("Caught exception")
                 await user.send(ex[:1800] + '..' if len(ex) > 1800 else ex)
                 logging.error('Caught exception')

@@ -161,11 +161,13 @@ class ARC():
 ###################################################################################################
 #####                                  BEC Commands                                            ####
 ###################################################################################################   
+#
+#                            *** Warning ***
+#     Depending on your configuation of BEC not all commands might work
+#                            *** Warning ***
 
     #Sends a custom command to the server
-    async def command(self, command):
-        if (is_string(command) == False):
-            raise Exception('Wrong parameter type!')
+    async def command(self, command: str):
         await self.send(command)
         return await self.waitForResponse()
 
@@ -179,16 +181,12 @@ class ARC():
         return None
 
     #Sends a global message to all players
-    async def sayGlobal(self, message):
-        if (type(message) != str):
-            raise Exception('Expected parameter 1 to be string, got %s' % type(message))
+    async def sayGlobal(self, message: str):
         await self.send("Say -1 "+message)
         return None
 
     #Sends a message to a specific player
-    async def sayPlayer(self, player, message):
-        if (type(player) != int or type(message) != str):
-            raise Exception('Wrong parameter type(s)!')
+    async def sayPlayer(self, player: int, message: str):
         await self.send("Say "+str(player)+" "+message)
         return None
 
@@ -198,16 +196,12 @@ class ARC():
         return None
 
     #Changes the MaxPing value. If a player has a higher ping, he will be kicked from the server
-    async def maxPing(self, ping):
-        if (type(ping) != int):
-            raise Exception('Expected parameter 1 to be integer, got %s' % type(ping))
-        await self.send("MaxPing "+ping)
+    async def maxPing(self, ping: int):
+        await self.send("MaxPing "+str(ping))
         return None
     
     #Changes the RCon password
-    async def changePassword(self, password):
-        if (type(password) != str):
-            raise Exception('Expected parameter 1 to be string, got %s' % type(password))
+    async def changePassword(self, password: str):
         await self.send("RConPassword password")
         return None
     
@@ -232,6 +226,11 @@ class ARC():
     #Gets a list of all bans
     async def getMissions(self):
         await self.send('missions')
+        return await self.waitForResponse()    
+        
+    #Loads a mission
+    async def loadMission(self, mission: str):
+        await self.send('mission '+mission)
         return await self.waitForResponse()
 
     #Ban a player's BE GUID from the server. If time is not specified or 0, the ban will be permanent.
@@ -284,8 +283,73 @@ class ARC():
     #Gets the current version of the BE server
     async def getBEServerVersion(self):
         await self.send('version')
+        return await self.waitForResponse()    
+        
+    #Gets the current uptime of the server
+    async def getUptime(self):
+        await self.send('uptime')
         return await self.waitForResponse()
+    
+    #TODO name = str? confirm funcinality 
+    #Add a temporary admin into group
+    async def grant(self, name: str):
+        await self.send('grant '+name)
+        return await self.waitForResponse()    
+        
+    #TODO name = str? confirm funcinality 
+    #Add a temporary admin into group
+    async def degrant(self, name: str):
+        await self.send('degrant '+name)
+        return await self.waitForResponse()
+    
+    #TODO name = str? confirm funcinality 
+    #Send a warning to a p﻿layer, it will increase the warncount if defined in the con﻿fig file﻿
+    async def warn(self, name: str):
+        await self.send('warn '+name)
+        return await self.waitForResponse()   
 
+    #TODO confirm funcinality 
+    #Locks the server. No one will be able to join
+    async def lock(self):
+        await self.send('lock')
+        return await self.waitForResponse()
+    
+    #TODO confirm funcinality 
+    #Unlocks the Server
+    async def unlock(self):
+        await self.send('unlock')
+        return await self.waitForResponse()
+    
+    #TODO confirm funcinality 
+    #Unlocks the Server
+    #args: [x, "abort", "info"] x= time in seconds till shutdown
+    async def shutdown(self, arg):
+        await self.send('shutdown '+str(arg))
+        return await self.waitForResponse()    
+    
+    #TODO confirm funcinality 
+    #Restart mission with current player slot selection
+    async def restart﻿(self):
+        await self.send('restart﻿')
+        return await self.waitForResponse()    
+        
+    #TODO confirm funcinality 
+    #Restart the mission with new player slot selection
+    async def reassign﻿(self):
+        await self.send('reassign﻿')
+        return await self.waitForResponse()    
+        
+    #TODO confirm funcinality 
+    #Kick N numbers of player based on join time. last joined players will get kicked.
+    async def makeroom﻿(self, number = 1):
+        await self.send('makeroom﻿ '+str(number))
+        return await self.waitForResponse()    
+        
+    #TODO confirm funcinality 
+    #Show player info. Beid and join time.
+    async def pinfo﻿(self, name: str):
+        await self.send('pinfo ﻿'+str(name))
+        return await self.waitForResponse()
 
 ###################################################################################################
 #####                                  event handler                                           ####
@@ -355,6 +419,7 @@ class ARC():
         self.on_command_fail()
         self.sendLock = False
         self.disconnect() #Connection Lost
+        raise Exception("Command timed out")
         
             
     def sendReciveConfirmation(self, sequence):
