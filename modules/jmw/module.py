@@ -85,7 +85,7 @@ class CommandJMW(commands.Cog):
                     filename = game["dataname"]
                 log_graph = filename
                 msg="["+timestamp+"] "+str(game["gameduration"])+"min game. Winner:"+game["lastwinner"]
-                await channel.send(file=log_graph, content=msg)
+                await channel.send(file=discord.File(log_graph), content=msg)
                 com_east = "EAST_com:"+str(Counter(self.readLog.featchValues(game["data"], "commander_east")))
                 com_west = "WEST_com:"+str(Counter(self.readLog.featchValues(game["data"], "commander_west")))
                 await channel.send(com_east)
@@ -104,7 +104,7 @@ class CommandJMW(commands.Cog):
                     msg="["+timestamp+"] Congratulation, "+game["lastwinner"]+"! You beat the other team after "+str(game["gameduration"])+"min of intense fighting. A new game is about to start, time to join!"
                     filename = game["picname"]
                     log_graph = filename
-                    await channel.send(file=log_graph, content=msg)
+                    await channel.send(file=discord.File(log_graph), content=msg)
 
         else:
             await channel.send("Invalid Index. has to be >0 and <10")
