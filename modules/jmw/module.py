@@ -51,7 +51,7 @@ class CommandJMW(commands.Cog):
         for user in self.user_data:
             if "nextgame" in self.user_data[user] and self.user_data[user]["nextgame"] == True:
                 print("sending DM to: "+str(user))
-                puser = await self.bot.get_user_info(user)
+                puser = await self.bot.get_user_info(int(user))
                 await puser.send(msg)  
                 self.user_data[user]["nextgame"] = False
         await self.set_user_data() #save changes
@@ -113,7 +113,7 @@ class CommandJMW(commands.Cog):
     #this will be used for watching for a game end     
     async def watch_Log(self):
         await self.bot.wait_until_ready()
-        channel = self.bot.get_channel(self.cfg.get("Channel_post_status"))
+        channel = self.bot.get_channel(int(self.cfg.get("Channel_post_status")))
         while(True):
             logs = self.readLog.getLogs()
             if(len(logs) > 0):
