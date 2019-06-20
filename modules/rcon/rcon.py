@@ -308,35 +308,33 @@ class ARC():
         await self.send('warn '+name)
         return await self.waitForResponse()   
 
-    #TODO confirm funcinality 
     #Locks the server. No one will be able to join
     async def lock(self):
-        await self.send('lock')
+        await self.send('#lock')
         return await self.waitForResponse()
     
-    #TODO confirm funcinality 
     #Unlocks the Server
     async def unlock(self):
-        await self.send('unlock')
+        await self.send('#unlock')
         return await self.waitForResponse()
     
     #TODO confirm funcinality 
     #Unlocks the Server
     #args: [x, "abort", "info"] x= time in seconds till shutdown
     async def shutdown(self, arg):
-        await self.send('shutdown '+str(arg))
+        await self.send('#shutdown '+str(arg))
         return await self.waitForResponse()    
     
     #TODO confirm funcinality 
     #Restart mission with current player slot selection
     async def restart(self):
-        await self.send('restart')
+        await self.send('#restart')
         return await self.waitForResponse()    
         
     #TODO confirm funcinality 
     #Restart the mission with new player slot selection
     async def reassign(self):
-        await self.send('reassign')
+        await self.send('#reassign')
         return await self.waitForResponse()    
         
     #TODO confirm funcinality 

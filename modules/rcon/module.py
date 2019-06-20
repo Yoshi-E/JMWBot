@@ -68,10 +68,11 @@ class CommandRcon(commands.Cog):
     
     #sends a message thats longer than what discord can handel
     async def sendLong(self, ctx, msg):
-        while(len(msg)>0):
-            if(len(msg)>1800):
-                await ctx.send(msg[:1800])
-                msg = msg[1800:]
+        discord_limit = 1900 #discord limit is 2000
+        while(len(msg)>0): 
+            if(len(msg)>discord_limit): 
+                await ctx.send(msg[:discord_limit])
+                msg = msg[discord_limit:]
             else:
                 await ctx.send(msg)
                 msg = ""
@@ -161,7 +162,7 @@ class CommandRcon(commands.Cog):
         message = self.setEncoding(message)
         data = await self.epm_rcon.command(message)
         msg = "Executed command: ``"+str(message)+"`` wich returned: "+str(data)
-        await ctx.message.channel.send(msg)    
+        self.sendLong(ctx,msg)
         
     @commands.check(canUseCmds)   
     @commands.command(name='kickPlayer',
@@ -244,7 +245,7 @@ class CommandRcon(commands.Cog):
         brief="lists current players on the server",
         pass_context=True)
     async def players(self, ctx):
-        players = await self.epm_rcon.getPlayersArray()
+        players = await self.epm_rcon.getPlayersArray()[1]
         msgtable = prettytable.PrettyTable()
         msgtable.field_names = ["ID", "Name", "IP", "GUID"]
         msgtable.align["ID"] = "r"
