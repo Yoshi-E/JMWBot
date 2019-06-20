@@ -214,7 +214,7 @@ class ARC():
     async def getPlayers(self):
         await self.send('players')
         result = await self.waitForResponse()
-        return result[1] #strip timedate
+        return result #strip timedate
 
     #Gets a list of all players currently on the server as an array
     async def getPlayersArray(self):

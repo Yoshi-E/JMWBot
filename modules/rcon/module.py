@@ -245,7 +245,7 @@ class CommandRcon(commands.Cog):
         brief="lists current players on the server",
         pass_context=True)
     async def players(self, ctx):
-        players = await self.epm_rcon.getPlayersArray()[1]
+        players = await self.epm_rcon.getPlayersArray()
         msgtable = prettytable.PrettyTable()
         msgtable.field_names = ["ID", "Name", "IP", "GUID"]
         msgtable.align["ID"] = "r"
