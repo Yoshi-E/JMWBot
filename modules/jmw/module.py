@@ -283,10 +283,10 @@ class CommandJMW(commands.Cog):
         if self.hasPermission(message.author, lvl=10):
             await self.processGame(message.channel, admin, val, True)
     
-    @commands.command(name='restart',
+    @commands.command(name='r',
         brief="terminates the bot and auto restarts",
         pass_context=True)
-    async def setRestart(self, ):
+    async def setRestart(self, ctx):
         if self.hasPermission(ctx.message.author, lvl=10):
             await ctx.send("Restarting...")
             sys.exit()     
