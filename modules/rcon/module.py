@@ -11,11 +11,18 @@ import traceback
 import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions, CheckFailure
-import ast
 import prettytable
-from difflib import get_close_matches 
-import textwrap
-import time
+
+#Example Structure (used here):
+# discord_bot/
+# ├── bot.py       
+# ├── modules/
+# │     └── rcon/
+# │          ├── __init__.py
+# │          ├── module.py
+# │          ├── rcon.py
+# │          └── rcon_cfg.json
+
 from modules.rcon import rcon
 
 class CommandRcon(commands.Cog):
@@ -63,8 +70,8 @@ class CommandRcon(commands.Cog):
 #####                                   Bot commands                                           ####
 ###################################################################################################   
     def canUseCmds(ctx):
-        roles = ["Admin", "Developer"]
-        admin_ids = [165810842972061697] #can be used in PMS #
+        roles = ["Admin", "Developer"] #Does not work in PMs for now
+        admin_ids = [165810842972061697] #can be used in PMS
         msg = ctx.message.author.name+"#"+str(ctx.message.author.id)+": "+ctx.message.content
         print(msg)
         if(ctx.author.id in admin_ids):
@@ -77,19 +84,15 @@ class CommandRcon(commands.Cog):
 ###################################################################################################
 #####                                BEC Rcon Event handler                                    ####
 ###################################################################################################  
-    async def keepConnection(self):
-        while(True):
-            await asyncio.sleep(10) #wait 10s before attemping reconnection
-            if(self.epm_rcon.disconnected == True):
-                self.epm_rcon.connect() #reconnect
-                print("Reconnecting to BEC Rcon")
-    
     def rcon_on_msg_received(self, args):
         message=args[0]
-        #print(message)    
+        #print(message) or post them into a discord channel
     
-    def rcon_on_disconnect(self):
+    async def rcon_on_disconnect(self):
         print("Disconnected")
+        await asyncio.sleep(10)
+        print("Reconnecting to BEC Rcon")
+        self.epm_rcon.reconnect()
         
     async def sendLong(self, ctx, msg):
         while(len(msg)>0):
@@ -102,6 +105,19 @@ class CommandRcon(commands.Cog):
 ###################################################################################################
 #####                                BEC Rcon custom commands                                  ####
 ###################################################################################################  
+    @commands.check(canUseCmds)   
+    @commands.command(name='debug',
+        brief="Toggles RCon debug mode",
+        pass_context=True)
+    async def cmd_debug(self, ctx, limit=20): 
+        if(self.epm_rcon.options['debug']==True):
+            self.epm_rcon.options['debug'] = False
+        else:
+            self.epm_rcon.options['debug'] = True
+       
+        msg= "Set debug mode to:"+str(self.epm_rcon.options['debug'])
+        await ctx.message.channel.send(msg)     
+    
     @commands.check(canUseCmds)   
     @commands.command(name='status',
         brief="Current connection status",
@@ -131,13 +147,7 @@ class CommandRcon(commands.Cog):
         while(i<=start):
             pair = data[i]
             time = pair[0]
-            msg+= time.strftime("%H:%M:%S")+" | "+ pair[1]+"\n"
-            i += 1
-            if(len(msg)>1800): #splits message into multiple parts (discord max limit)
-                await ctx.message.channel.send(msg) 
-                msg=""
-        if(len(msg)>0):
-            await ctx.message.channel.send(msg) 
+        self.sendLong(ctx, msg)
 ###################################################################################################
 #####                                   BEC Rcon commands                                      ####
 ###################################################################################################   
@@ -405,12 +415,6 @@ class CommandRcon(commands.Cog):
                 logging.error('Caught exception')
                 await asyncio.sleep(10)  
     
-local_module = None
 def setup(bot):
-    global local_module
-    module = CommandRcon(bot)
-    local_module = module #access for @check decorators
-    bot.loop.create_task(module.handle_exception("keepConnection"))
-    
-    bot.add_cog(module)    
+    bot.add_cog(CommandRcon(bot))    
     

@@ -6,6 +6,7 @@ import traceback
 from collections import deque
 import datetime
 import codecs
+import inspect
 #Author: Yoshi_E
 #Date: 2019.06.14
 #Found on github: https://github.com/Yoshi-E/Python-BEC-RCon
@@ -138,7 +139,6 @@ class ARC():
 
     #Generates the password's CRC32 data
     def getAuthCRC(self):
-        #str = self.String2Hex(chr(255)+chr(0)+self.rconPassword.strip())
         str = (chr(255)+chr(0)+self.rconPassword.strip()).encode(self.codec)
         authCRC = '%x' % zlib.crc32(bytes(str))
         authCRC = [authCRC[-2:], authCRC[-4:-2], authCRC[-6:-4], authCRC[0:2]] #working
@@ -360,16 +360,23 @@ class ARC():
             self.Events.append([name,func])
         else:
             raise Exception("Failed to add unkown event: "+name)
+
             
     def check_Event(self, parent, *args):
         for event in self.Events:
             func = event[1]
-            #print(func,pass_self, args)
-            if(event[0]==parent):
-                if(len(args)>0):
-                    func(args)
-                else:
-                    func()
+            if(inspect.iscoroutinefunction(func)): #is async
+                if(event[0]==parent):
+                    if(len(args)>0):
+                        asyncio.ensure_future(func(args))
+                    else:
+                        asyncio.ensure_future(func())
+            else:
+                if(event[0]==parent):
+                    if(len(args)>0):
+                        func(args)
+                    else:
+                        func()
 ###################################################################################################
 #####                                  event functions                                         ####
 ###################################################################################################
@@ -470,9 +477,9 @@ class ARC():
         while (self.disconnected == False):
             #package needs to be send every min:1s, max:44s 
             diff = datetime.datetime.now() - self.lastReceived
-            if(diff.total_seconds() > 10): 
+            if(diff.total_seconds() >= 40): 
                 await self.keepAlive()
-            await asyncio.sleep(4)  
+            await asyncio.sleep(2)  
   
     #Keep the stream alive. Send package to BE server. Use function before 45 seconds.
     async def keepAlive(self):
