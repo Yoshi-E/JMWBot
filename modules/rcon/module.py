@@ -151,7 +151,7 @@ class CommandRcon(commands.Cog):
         while(i<=start):
             pair = data[i]
             time = pair[0]
-            msg += str(time)+ " | "+pair[1]+"\n"
+            msg += time.strftime("%H:%M:%S")+" | "+ pair[1]+"\n"
             i+=1
         await self.sendLong(ctx, msg)
 ###################################################################################################
