@@ -419,7 +419,7 @@ class ARC():
         for i in range(0,timeout):
             if(d < len(self.serverCommandData)): #new command package was received
                 self.sendLock = False #release the lock
-                return self.serverCommandData.pop()
+                return self.serverCommandData.pop()[1]
             await asyncio.sleep(0.1)
         if(self.options['debug']):
             print("Failed to keep connection - Disconnected")

@@ -54,7 +54,7 @@ class CommandRcon(commands.Cog):
 #####                                  common functions                                        ####
 ###################################################################################################
     def creatcfg(self):
-        self.rcon_settings["ip"] = "000.000.000.000"
+        self.rcon_settings["ip"] = "192.168.000.001"
         self.rcon_settings["password"] = "<Enter Rcon Password here>"
         self.rcon_settings["port"] = 3302
         self.rcon_settings["timeoutSec"] = 1
@@ -65,15 +65,23 @@ class CommandRcon(commands.Cog):
     #converts unicode to ascii, until utf-8 is supported by rcon
     def setEncoding(self, msg):
         return bytes(msg.encode()).decode("ascii","ignore") 
-
+    
+    #sends a message thats longer than what discord can handel
+    async def sendLong(self, ctx, msg):
+        while(len(msg)>0):
+            if(len(msg)>1800):
+                await ctx.send(msg[:1800])
+                msg = msg[1800:]
+            else:
+                await ctx.send(msg)
+                msg = ""
 ###################################################################################################
 #####                                   Bot commands                                           ####
 ###################################################################################################   
     def canUseCmds(ctx):
         roles = ["Admin", "Developer"] #Does not work in PMs for now
         admin_ids = [165810842972061697] #can be used in PMS
-        msg = ctx.message.author.name+"#"+str(ctx.message.author.id)+": "+ctx.message.content
-        print(msg)
+        print(ctx.message.author.name+"#"+str(ctx.message.author.id)+": "+ctx.message.content)
         if(ctx.author.id in admin_ids):
             return True
         if(hasattr(ctx.author, 'roles')):
@@ -94,14 +102,6 @@ class CommandRcon(commands.Cog):
         print("Reconnecting to BEC Rcon")
         self.epm_rcon.reconnect()
         
-    async def sendLong(self, ctx, msg):
-        while(len(msg)>0):
-            if(len(msg)>1800):
-                await ctx.send(msg[:1800])
-                msg = msg[1800:]
-            else:
-                await ctx.send(msg)
-                msg = ""
 ###################################################################################################
 #####                                BEC Rcon custom commands                                  ####
 ###################################################################################################  
@@ -159,8 +159,8 @@ class CommandRcon(commands.Cog):
     async def command(self, ctx, *message): 
         message = " ".join(message)
         message = self.setEncoding(message)
-        await self.epm_rcon.command(message)
-        msg = "Executed command: ``"+message+"``"
+        data = await self.epm_rcon.command(message)
+        msg = "Executed command: ``"+str(message)+"`` wich returned: "+str(data)
         await ctx.message.channel.send(msg)    
         
     @commands.check(canUseCmds)   
@@ -283,7 +283,6 @@ class CommandRcon(commands.Cog):
         pass_context=True)
     async def getMissions(self, ctx):
         missions = await self.epm_rcon.getMissions()
-        missions = missions[1]
         await self.sendLong(ctx, missions)
                 
     @commands.check(canUseCmds)   
@@ -293,23 +292,6 @@ class CommandRcon(commands.Cog):
     async def banPlayer(self, ctx, player_id, time=0, *message): 
         message = " ".join(message)
         message = self.setEncoding(message)
-        print("banPlayer", player_id, message)
-        matches = ["?"]
-        if(len(player_id) >3 and player_id.isdigit()==False):
-            #find player
-            players = {}
-            players_list = await self.epm_rcon.getPlayersArray()[1]
-            for cplayer in players_list:
-                players[cplayer[4]] = cplayer[0] 
-                
-            matches = get_close_matches(player_id, players.keys(), cutoff = 0.5, n = 3)   
-            if(len(matches) > 0):
-                player = players[matches[0]]
-            else:
-                matches = ["?"]
-                player = player_id
-        else:
-            player = int(player_id)
         if(len(message)<2):
             await self.epm_rcon.banPlayer(player=player, time=time)
         else:
@@ -395,9 +377,18 @@ class CommandRcon(commands.Cog):
         pass_context=True)
     async def getBEServerVersion(self, ctx): 
         version = await self.epm_rcon.getBEServerVersion()
-        msg = "BE version: ``"+str(version[1])+"``"
-        await ctx.message.channel.send(msg)      
-    
+        msg = "BE version: ``"+str(version)+"``"
+        await ctx.message.channel.send(msg)         
+        
+    @commands.check(canUseCmds)   
+    @commands.command(name='getUptime',
+        brief="Gets the current uptime of the server",
+        pass_context=True)
+    async def getUptime(self, ctx): 
+        data = await self.epm_rcon.getUptime()
+        msg = "Uptime: ``"+str(data)+"``"
+        await ctx.message.channel.send(msg)       
+
     ###################################################################################################
     #####                                  Debug Commands & Error Handeling                 ####
     ###################################################################################################
