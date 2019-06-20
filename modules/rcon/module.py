@@ -166,7 +166,7 @@ class CommandRcon(commands.Cog):
         message = self.setEncoding(message)
         data = await self.epm_rcon.command(message)
         msg = "Executed command: ``"+str(message)+"`` wich returned: "+str(data)
-        self.sendLong(ctx,msg)
+        await self.sendLong(ctx,msg)
         
     @commands.check(canUseCmds)   
     @commands.command(name='kickPlayer',

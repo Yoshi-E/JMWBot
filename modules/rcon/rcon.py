@@ -229,6 +229,20 @@ class ARC():
         playersRaw = await self.getPlayers()
         players = self.cleanList(playersRaw)
         str = re.findall(r"(\d+)\s+(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\b)\s+(\d+)\s+([0-9a-fA-F]+)\(\w+\)\s([\S ]+)", players)
+        return self.formatList(str)    
+        
+    #Gets a list of all admins connected to the server
+    async def getAdmins(self):
+        await self.send('admins')
+        result = await self.waitForResponse()
+        return result #strip timedate
+        
+    #TODO test for funcinality
+    #Gets a list of all players currently on the server as an array
+    async def getAdminsArray(self):
+        adminsRaw = await self.getAdmins()
+        admins = self.cleanList(adminsRaw)
+        str = re.findall(r"(\d+)\s+(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\b)\s+(\d+)\s+([0-9a-fA-F]+)\(\w+\)\s([\S ]+)", admins)
         return self.formatList(str)
     
     #Gets a list of all bans
