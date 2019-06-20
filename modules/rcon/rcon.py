@@ -69,10 +69,10 @@ class ARC():
             return None
         if(self.options['debug']):
             print("Disconnected")
-        self.on_disconnect()
         self.socket.close()
         self.socket = None
         self.disconnected = True
+        self.on_disconnect()
     
     #Creates a connection to the server
     def connect(self):

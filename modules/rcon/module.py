@@ -147,7 +147,6 @@ class CommandRcon(commands.Cog):
         else:
             end = 0
         i = end
-        print(start,end)
         while(i<=start):
             pair = data[i]
             time = pair[0]
