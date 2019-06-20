@@ -93,12 +93,14 @@ class CommandRcon(commands.Cog):
 ###################################################################################################
 #####                                BEC Rcon Event handler                                    ####
 ###################################################################################################  
+    #function called when a new message is received by rcon
     def rcon_on_msg_received(self, args):
         message=args[0]
         #print(message) or post them into a discord channel
     
+    #event supports async functions
+    #function is called when rcon disconnects
     async def rcon_on_disconnect(self):
-        print("Disconnected")
         await asyncio.sleep(10)
         print("Reconnecting to BEC Rcon")
         self.epm_rcon.reconnect()
@@ -148,6 +150,7 @@ class CommandRcon(commands.Cog):
         while(i<=start):
             pair = data[i]
             time = pair[0]
+            msg += time+ " | "+pair[0]
         self.sendLong(ctx, msg)
 ###################################################################################################
 #####                                   BEC Rcon commands                                      ####
