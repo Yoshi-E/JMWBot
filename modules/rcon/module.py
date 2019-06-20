@@ -147,11 +147,13 @@ class CommandRcon(commands.Cog):
         else:
             end = 0
         i = end
+        print(start,end)
         while(i<=start):
             pair = data[i]
             time = pair[0]
-            msg += time+ " | "+pair[0]
-        self.sendLong(ctx, msg)
+            msg += str(time)+ " | "+pair[1]+"\n"
+            i+=1
+        await self.sendLong(ctx, msg)
 ###################################################################################################
 #####                                   BEC Rcon commands                                      ####
 ###################################################################################################   

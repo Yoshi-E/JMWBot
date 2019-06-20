@@ -40,6 +40,9 @@ class ARC():
         self.lastReceived = datetime.datetime.now()
         # Locks Sending until space to send is available 
         self.sendLock = False
+        #number of commands waiting to be send (limited to 10)
+        #prevents overflow from to many queued commands
+        self.activeSend = 0 
         # Stores all recent command returned data (Format: array([datetime, msg],...))
         self.serverCommandData = deque( maxlen=10) 
         
@@ -113,7 +116,10 @@ class ARC():
 
     #sends the RCon command, but waits until command is confirmed before sending another one
     async def send(self, command):
+        self.activeSend += 1
         for i in range(0,10 * self.options['timeoutSec']):
+            if(self.activeSend > 10):
+                break
             if(self.sendLock == False): #Lock released by waitForResponse()
                 self.sendLock = True
                 if (self.disconnected):
@@ -123,9 +129,11 @@ class ARC():
                 msg = head+command
                 if (self.writeToSocket(msg) == False):
                     raise Exception('Failed to send command!')
+                self.activeSend -= 1   
                 return True
             else:
                 await asyncio.sleep(0.1) #watis 0.1 second before checking again
+        self.activeSend -= 1
         raise Exception("Failed to send in time: "+command)
     
     #Writes the given message to the socket
