@@ -36,15 +36,15 @@ class CommandRcon(commands.Cog):
             self.creatcfg() #make empty cfg file
             raise Exception("Error: You have to configure the rcon_cfg first!")
         
-        self.epm_rcon = bec_rcon.ARC(self.rcon_settings["ip"], 
+        self.arma_rcon = bec_rcon.ARC(self.rcon_settings["ip"], 
                                  self.rcon_settings["password"], 
                                  self.rcon_settings["port"], 
                                  {'timeoutSec' : self.rcon_settings["timeoutSec"]}
                                 )
 
         #Add Event Handlers
-        self.epm_rcon.add_Event("received_ServerMessage", self.rcon_on_msg_received)
-        self.epm_rcon.add_Event("on_disconnect", self.rcon_on_disconnect)
+        self.arma_rcon.add_Event("received_ServerMessage", self.rcon_on_msg_received)
+        self.arma_rcon.add_Event("on_disconnect", self.rcon_on_disconnect)
 
     
         
@@ -104,7 +104,7 @@ class CommandRcon(commands.Cog):
     async def rcon_on_disconnect(self):
         await asyncio.sleep(10)
         print("Reconnecting to BEC Rcon")
-        self.epm_rcon.reconnect()
+        self.arma_rcon.reconnect()
         
 ###################################################################################################
 #####                                BEC Rcon custom commands                                  ####
@@ -114,12 +114,12 @@ class CommandRcon(commands.Cog):
         brief="Toggles RCon debug mode",
         pass_context=True)
     async def cmd_debug(self, ctx, limit=20): 
-        if(self.epm_rcon.options['debug']==True):
-            self.epm_rcon.options['debug'] = False
+        if(self.arma_rcon.options['debug']==True):
+            self.arma_rcon.options['debug'] = False
         else:
-            self.epm_rcon.options['debug'] = True
+            self.arma_rcon.options['debug'] = True
        
-        msg= "Set debug mode to:"+str(self.epm_rcon.options['debug'])
+        msg= "Set debug mode to:"+str(self.arma_rcon.options['debug'])
         await ctx.message.channel.send(msg)     
     
     @commands.check(canUseCmds)   
@@ -128,11 +128,11 @@ class CommandRcon(commands.Cog):
         pass_context=True)
     async def status(self, ctx, limit=20): 
         msg = ""
-        if(self.epm_rcon.disconnected==False):
-           msg+= "Connected to: "+ self.epm_rcon.serverIP+"\n"
+        if(self.arma_rcon.disconnected==False):
+           msg+= "Connected to: "+ self.arma_rcon.serverIP+"\n"
         else:
-            msg+= "Currently not connected: "+ self.epm_rcon.serverIP+"\n"
-        msg+= str(len(self.epm_rcon.serverMessage))+ " Messages collected"
+            msg+= "Currently not connected: "+ self.arma_rcon.serverIP+"\n"
+        msg+= str(len(self.arma_rcon.serverMessage))+ " Messages collected"
         await ctx.message.channel.send(msg) 
         
     @commands.check(canUseCmds)   
@@ -141,7 +141,7 @@ class CommandRcon(commands.Cog):
         pass_context=True)
     async def getChat(self, ctx, limit=20): 
         msg = ""
-        data = self.epm_rcon.serverMessage.copy()
+        data = self.arma_rcon.serverMessage.copy()
         start = len(data)-1
         if(start > limit):
             end = start-limit
@@ -165,7 +165,7 @@ class CommandRcon(commands.Cog):
     async def command(self, ctx, *message): 
         message = " ".join(message)
         message = self.setEncoding(message)
-        data = await self.epm_rcon.command(message)
+        data = await self.arma_rcon.command(message)
         if(len(data) == 0):
             msg = "Executed command: ``"+str(message)+"`` and returned nothing (confirmed its execution)"
         else:
@@ -179,7 +179,7 @@ class CommandRcon(commands.Cog):
     async def kickPlayer(self, ctx, player_id: int, *message): 
         message = " ".join(message)
         message = self.setEncoding(message)
-        await self.epm_rcon.kickPlayer(player_id, message)
+        await self.arma_rcon.kickPlayer(player_id, message)
             
         msg = "kicked player: "+str(player_id)
         await ctx.message.channel.send(msg)
@@ -192,7 +192,7 @@ class CommandRcon(commands.Cog):
         name = ctx.message.author.name
         message = " ".join(message)
         message = self.setEncoding(message)
-        await self.epm_rcon.sayGlobal(name+": "+message)
+        await self.arma_rcon.sayGlobal(name+": "+message)
         msg = "Send: ``"+message+"``"
         await ctx.message.channel.send(msg)    
         
@@ -206,7 +206,7 @@ class CommandRcon(commands.Cog):
         name = ctx.message.author.name
         if(len(message)<2):
             message = "Ping"
-        await self.epm_rcon.sayPlayer(player_id, name+": "+message)
+        await self.arma_rcon.sayPlayer(player_id, name+": "+message)
         msg = "Send msg: ``"+str(player_id)+"``"+message
         await ctx.message.channel.send(msg)
     
@@ -215,7 +215,7 @@ class CommandRcon(commands.Cog):
         brief="Loads the 'scripts.txt' file without the need to restart the server",
         pass_context=True)
     async def loadScripts(self, ctx): 
-        await self.epm_rcon.loadScripts()
+        await self.arma_rcon.loadScripts()
         msg = "Loaded Scripts!"
         await ctx.message.channel.send(msg)    
             
@@ -224,7 +224,7 @@ class CommandRcon(commands.Cog):
         brief="Changes the MaxPing value. If a player has a higher ping, he will be kicked from the server",
         pass_context=True)
     async def maxPing(self, ctx, ping: int): 
-        await self.epm_rcon.maxPing(ping)
+        await self.arma_rcon.maxPing(ping)
         msg = "Set maxPing to: "+ping
         await ctx.message.channel.send(msg)       
 
@@ -234,7 +234,7 @@ class CommandRcon(commands.Cog):
         pass_context=True)
     async def changePassword(self, ctx, *password): 
         password = " ".join(password)
-        await self.epm_rcon.changePassword(password)
+        await self.arma_rcon.changePassword(password)
         msg = "Set Password to: ``"+password+"``"
         await ctx.message.channel.send(msg)        
         
@@ -243,7 +243,7 @@ class CommandRcon(commands.Cog):
         brief="(Re)load the BE ban list from bans.txt",
         pass_context=True)
     async def loadBans(self, ctx): 
-        await self.epm_rcon.loadBans()
+        await self.arma_rcon.loadBans()
         msg = "Loaded Bans!"
         await ctx.message.channel.send(msg)    
         
@@ -252,7 +252,7 @@ class CommandRcon(commands.Cog):
         brief="Lists current players on the server",
         pass_context=True)
     async def players(self, ctx):
-        players = await self.epm_rcon.getPlayersArray()
+        players = await self.arma_rcon.getPlayersArray()
         msgtable = prettytable.PrettyTable()
         msgtable.field_names = ["ID", "Name", "IP", "GUID"]
         msgtable.align["ID"] = "r"
@@ -289,7 +289,7 @@ class CommandRcon(commands.Cog):
         brief="Lists current admins on the server",
         pass_context=True)
     async def admins(self, ctx):
-        admins = await self.epm_rcon.getAdminsArray()
+        admins = await self.arma_rcon.getAdminsArray()
         msgtable = prettytable.PrettyTable()
         msgtable.field_names = ["ID", "IP"]
         msgtable.align["ID"] = "r"
@@ -324,7 +324,7 @@ class CommandRcon(commands.Cog):
         brief="Gets a list of all Missions",
         pass_context=True)
     async def getMissions(self, ctx):
-        missions = await self.epm_rcon.getMissions()
+        missions = await self.arma_rcon.getMissions()
         await self.sendLong(ctx, missions)
         
     @commands.check(canUseCmds)   
@@ -332,7 +332,7 @@ class CommandRcon(commands.Cog):
         brief="Loads a mission",
         pass_context=True)
     async def loadMission(self, ctx, mission: str):
-        missions = await self.epm_rcon.getMissions(mission)
+        missions = await self.arma_rcon.getMissions(mission)
         msg = "Loaded mission: ``"+str(missions)+"``"
         await ctx.message.channel.send(msg)  
     
@@ -344,9 +344,9 @@ class CommandRcon(commands.Cog):
         message = " ".join(message)
         message = self.setEncoding(message)
         if(len(message)<2):
-            await self.epm_rcon.banPlayer(player=player, time=time)
+            await self.arma_rcon.banPlayer(player=player, time=time)
         else:
-            await self.epm_rcon.banPlayer(player, message, time)
+            await self.arma_rcon.banPlayer(player, message, time)
             
         msg = "Banned player: ``"+str(player)+" - "+matches[0]+"`` with reason: "+message
         await ctx.message.channel.send(msg)    
@@ -363,9 +363,9 @@ class CommandRcon(commands.Cog):
         if(len(GUID) != 32):
             raise Exception("Invalid GUID")
         if(len(message)<2):
-            await self.epm_rcon.addBan(player=player, time=time)
+            await self.arma_rcon.addBan(player=player, time=time)
         else:
-            await self.epm_rcon.addBan(player, message, time)
+            await self.arma_rcon.addBan(player, message, time)
             
         msg = "Banned player: ``"+str(player)+" - "+matches[0]+"`` with reason: "+message
         await ctx.message.channel.send(msg)   
@@ -375,7 +375,7 @@ class CommandRcon(commands.Cog):
         brief="Removes a ban",
         pass_context=True)
     async def removeBan(self, ctx, banID: int): 
-        await self.epm_rcon.removeBan(banID)
+        await self.arma_rcon.removeBan(banID)
             
         msg = "Removed ban: ``"+str(banID)+"``"
         await ctx.message.channel.send(msg)    
@@ -385,7 +385,7 @@ class CommandRcon(commands.Cog):
         brief="Removes a ban",
         pass_context=True)
     async def getBans(self, ctx): 
-        bans = await self.epm_rcon.getBansArray()
+        bans = await self.arma_rcon.getBansArray()
         bans.reverse() #news bans first
         msgtable = prettytable.PrettyTable()
         msgtable.field_names = ["ID", "GUID", "Time", "Reason"]
@@ -426,7 +426,7 @@ class CommandRcon(commands.Cog):
         brief="Gets the current version of the BE server",
         pass_context=True)
     async def getBEServerVersion(self, ctx): 
-        version = await self.epm_rcon.getBEServerVersion()
+        version = await self.arma_rcon.getBEServerVersion()
         msg = "BE version: ``"+str(version)+"``"
         await ctx.message.channel.send(msg)         
         
@@ -435,7 +435,7 @@ class CommandRcon(commands.Cog):
         brief="Locks the server. No one will be able to join",
         pass_context=True)
     async def lock(self, ctx): 
-        data = await self.epm_rcon.lock()
+        data = await self.arma_rcon.lock()
         msg = "Locked the Server"
         await ctx.message.channel.send(msg)    
 
@@ -444,7 +444,7 @@ class CommandRcon(commands.Cog):
         brief="Unlocks the Server",
         pass_context=True)
     async def unlock(self, ctx): 
-        data = await self.epm_rcon.unlock()
+        data = await self.arma_rcon.unlock()
         msg = "Unlocked the Server"
         await ctx.message.channel.send(msg)       
     
@@ -453,7 +453,7 @@ class CommandRcon(commands.Cog):
         brief="Shutdowns the Server",
         pass_context=True)
     async def shutdown(self, ctx): 
-        data = await self.epm_rcon.shutdown()
+        data = await self.arma_rcon.shutdown()
         msg = "Shutdown the Server"
         await ctx.message.channel.send(msg)           
         
@@ -462,7 +462,7 @@ class CommandRcon(commands.Cog):
         brief="Restart mission with current player slot selection",
         pass_context=True)
     async def restart(self, ctx): 
-        data = await self.epm_rcon.restart()
+        data = await self.arma_rcon.restart()
         msg = "Restarting the Mission"
         await ctx.message.channel.send(msg)          
     
@@ -471,7 +471,7 @@ class CommandRcon(commands.Cog):
         brief="Shuts down and restarts the server immediately",
         pass_context=True)
     async def restartServer(self, ctx): 
-        data = await self.epm_rcon.restartServer()
+        data = await self.arma_rcon.restartServer()
         msg = "Restarting the Server"
         await ctx.message.channel.send(msg)           
         
@@ -480,7 +480,7 @@ class CommandRcon(commands.Cog):
         brief="Shuts down and restarts the server after mission ends",
         pass_context=True)
     async def restartserveraftermission(self, ctx): 
-        data = await self.epm_rcon.restartserveraftermission()
+        data = await self.arma_rcon.restartserveraftermission()
         msg = "Restarting the Server after mission ends"
         await ctx.message.channel.send(msg)       
     
@@ -489,7 +489,7 @@ class CommandRcon(commands.Cog):
         brief="Shuts down the server after mission ends",
         pass_context=True)
     async def shutdownserveraftermission(self, ctx): 
-        data = await self.epm_rcon.shutdownserveraftermission()
+        data = await self.arma_rcon.shutdownserveraftermission()
         msg = "Restarting the Server after mission ends"
         await ctx.message.channel.send(msg)       
     
@@ -498,7 +498,7 @@ class CommandRcon(commands.Cog):
         brief="Shuts down the server after mission ends",
         pass_context=True)
     async def reassign(self, ctx): 
-        data = await self.epm_rcon.reassign()
+        data = await self.arma_rcon.reassign()
         msg = "Restart the mission with new player slot selection"
         await ctx.message.channel.send(msg)          
     
@@ -507,7 +507,7 @@ class CommandRcon(commands.Cog):
         brief="Shows performance information in the dedicated server console. Interval 0 means to stop monitoring.",
         pass_context=True)
     async def monitords(self, ctx, interval: int): 
-        data = await self.epm_rcon.monitords(interval)
+        data = await self.arma_rcon.monitords(interval)
         msg = "Restart the mission with new player slot selection"
         await ctx.message.channel.send(msg)        
         
@@ -516,7 +516,7 @@ class CommandRcon(commands.Cog):
         brief="Users can vote for the mission selection.",
         pass_context=True)
     async def goVote(self, ctx): 
-        data = await self.epm_rcon.goVote()
+        data = await self.arma_rcon.goVote()
         msg = "Restart the mission with new player slot selection"
         await ctx.message.channel.send(msg)       
 
