@@ -138,7 +138,7 @@ class CommandRcon(commands.Cog):
         
     @commands.check(canUseCmds)   
     @commands.command(name='getChat',
-        brief="Sends a custom command to the server",
+        brief="Get the last ingame chat messages",
         pass_context=True)
     async def getChat(self, ctx, limit=20): 
         msg = ""
@@ -250,7 +250,7 @@ class CommandRcon(commands.Cog):
         
     @commands.check(canUseCmds)   
     @commands.command(name='players',
-        brief="lists current players on the server",
+        brief="Lists current players on the server",
         pass_context=True)
     async def players(self, ctx):
         players = await self.epm_rcon.getPlayersArray()
@@ -287,7 +287,7 @@ class CommandRcon(commands.Cog):
     
     @commands.check(canUseCmds)   
     @commands.command(name='admins',
-        brief="lists current admins on the server",
+        brief="Lists current admins on the server",
         pass_context=True)
     async def admins(self, ctx):
         admins = await self.epm_rcon.getAdminsArray()
@@ -354,7 +354,7 @@ class CommandRcon(commands.Cog):
         
     @commands.check(canUseCmds)   
     @commands.command(name='addBan',
-        brief="Same as 'banPlayer', but allows to ban a player that is not currently on the server",
+        brief="Ban a player with GUID (even if they are offline)",
         pass_context=True)
     async def addBan(self, ctx, GUID: str, time=0, *message): 
         message = " ".join(message)
