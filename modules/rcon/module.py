@@ -20,10 +20,9 @@ import prettytable
 # │     └── rcon/
 # │          ├── __init__.py
 # │          ├── module.py
-# │          ├── rcon.py
 # │          └── rcon_cfg.json
 
-from modules.rcon import rcon
+import bec_rcon
 
 class CommandRcon(commands.Cog):
     def __init__(self, bot):
@@ -37,7 +36,7 @@ class CommandRcon(commands.Cog):
             self.creatcfg() #make empty cfg file
             raise Exception("Error: You have to configure the rcon_cfg first!")
         
-        self.epm_rcon = rcon.ARC(self.rcon_settings["ip"], 
+        self.epm_rcon = bec_rcon.ARC(self.rcon_settings["ip"], 
                                  self.rcon_settings["password"], 
                                  self.rcon_settings["port"], 
                                  {'timeoutSec' : self.rcon_settings["timeoutSec"]}
