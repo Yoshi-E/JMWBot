@@ -96,7 +96,9 @@ class CommandRcon(commands.Cog):
         for pair in data: #checks all recent chat messages
             msg = pair[1]
             msg_player = self.getPlayerFromMessage(msg)
-            if(msg_player != False and player_name == msg_player): #if player wrote something return True
+            if(msg_player != False and player_name == msg_player or 
+               (" "+player_name+" disconnected") in msg or
+               (player_name in msg and " has been kicked by BattlEye" in msg)): #if player wrote something return True
                 return True
         return False
 
@@ -149,11 +151,13 @@ class CommandRcon(commands.Cog):
         pass_context=True)
     async def checkAFK(self, ctx, player_id: int): 
         players = await self.arma_rcon.getPlayersArray()
-        player_name = ""
+        player_name = None
         for player in players:
             if(int(player[0]) == player_id):
                 player_name = player[4]
-        if(player_name == ""):
+        if(player_name.endswith(" (Lobby)")): #Strip lobby from name
+            player_name = player_name[:-8]
+        if(player_name == None):
             await ctx.send("Player not found")
             return
         msg= "Starting AFK check for: ``"+str(player_name)+"``"
