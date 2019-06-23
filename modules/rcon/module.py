@@ -96,8 +96,7 @@ class CommandRcon(commands.Cog):
         for pair in data: #checks all recent chat messages
             msg = pair[1]
             msg_player = self.getPlayerFromMessage(msg)
-            if(msg_player != False): #if player wrote something return True
-                print("msg_player:",msg_player, "#", msg)
+            if(msg_player != False and player_name == msg_player): #if player wrote something return True
                 return True
         return False
 
