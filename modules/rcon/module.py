@@ -97,6 +97,7 @@ class CommandRcon(commands.Cog):
             msg = pair[1]
             msg_player = self.getPlayerFromMessage(msg)
             if(msg_player != False): #if player wrote something return True
+                print("msg_player:",msg_player, "#", msg)
                 return True
         return False
 
