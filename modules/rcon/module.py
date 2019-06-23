@@ -29,6 +29,8 @@ class CommandRcon(commands.Cog):
         self.bot = bot
         self.path = os.path.dirname(os.path.realpath(__file__))
         
+        self.arma_chat_channels = ["Side", "Global", "Vehicle", "Direct", "Group", "Command"]
+        
         self.rcon_settings = {}
         if(os.path.isfile(self.path+"/rcon_cfg.json")):
             self.rcon_settings = json.load(open(self.path+"/rcon_cfg.json","r"))
@@ -45,7 +47,6 @@ class CommandRcon(commands.Cog):
         #Add Event Handlers
         self.arma_rcon.add_Event("received_ServerMessage", self.rcon_on_msg_received)
         self.arma_rcon.add_Event("on_disconnect", self.rcon_on_disconnect)
-
     
         
         
@@ -66,7 +67,7 @@ class CommandRcon(commands.Cog):
         return bytes(msg.encode()).decode("ascii","ignore") 
     
     #sends a message thats longer than what discord can handel
-    async def sendLong(self, ctx, msg):
+    async def sendLong(self, ctx, msg: str):
         discord_limit = 1900 #discord limit is 2000
         while(len(msg)>0): 
             if(len(msg)>discord_limit): 
@@ -75,6 +76,30 @@ class CommandRcon(commands.Cog):
             else:
                 await ctx.send(msg)
                 msg = ""
+                
+    def getPlayerFromMessage(self, message: str):
+        if(":" in message):
+            header, body = message.split(":", 1)
+            if(self.isChannel(header)): #was written in a channel
+                player_name = header.split(") ")[1]
+                return player_name
+        return False
+        
+    def isChannel(self, msg):
+        for channel in self.arma_chat_channels:
+            if(channel in msg):
+                return True
+        return False
+        
+    def playerTypesMessage(self, player_name):
+        data = self.arma_rcon.serverMessage.copy()
+        for pair in data: #checks all recent chat messages
+            msg = pair[1]
+            msg_player = self.getPlayerFromMessage(msg)
+            if(msg_player != False): #if player wrote something return True
+                return True
+        return False
+
 ###################################################################################################
 #####                                   Bot commands                                           ####
 ###################################################################################################   
@@ -98,6 +123,15 @@ class CommandRcon(commands.Cog):
     def rcon_on_msg_received(self, args):
         message=args[0]
         #print(message) or post them into a discord channel
+        if(":" in message):
+            header, body = message.split(":", 1)
+            if(self.isChannel(header)): #was written in a channel
+                player_name = header.split(") ")[1]
+                #print(player_name)
+                #print(body)
+            #else: is join or disconnect, or similaar
+        
+        
     
     #event supports async functions
     #function is called when rcon disconnects
@@ -110,6 +144,58 @@ class CommandRcon(commands.Cog):
 #####                                BEC Rcon custom commands                                  ####
 ###################################################################################################  
     @commands.check(canUseCmds)   
+    @commands.command(name='checkAFK',
+        brief="Checks if a player is AFK (5min)",
+        pass_context=True)
+    async def checkAFK(self, ctx, player_id: int): 
+        players = await self.arma_rcon.getPlayersArray()
+        player_name = ""
+        for player in players:
+            if(int(player[0]) == player_id):
+                player_name = player[4]
+        if(player_name == ""):
+            await ctx.send("Player not found")
+            return
+        msg= "Starting AFK check for: ``"+str(player_name)+"``"
+        await ctx.send(msg)  
+        already_active = False
+        for i in range(0, 300): #checks for 5min (10*30s)
+            if(self.playerTypesMessage(player_name)):
+                if(i==0):
+                    already_active = True
+                await ctx.send("Player responded in chat. Canceling AFK check.")  
+                if(already_active == False):
+                    await self.arma_rcon.sayPlayer(player_id,  "Thank you for responding in chat.")
+                return
+            if((i % 30) == 0):
+                for k in range(0, 3):
+                    await self.arma_rcon.sayPlayer(player_id, "Type something in chat or you will be kicked for being AFK. ("+str(round(i/30)+1)+"/10)")
+            await asyncio.sleep(1)
+        if(self.playerTypesMessage(player_name)):
+            if(i==0):
+                already_active = True
+            await ctx.send("Player responded in chat. Canceling AFK check.")  
+            if(already_active == False):
+                await self.arma_rcon.sayPlayer(player_id, "Thank you for responding in chat.")
+            return
+        else:
+            await self.arma_rcon.kickPlayer(player_id, "AFK too long")
+            await ctx.send("``"+str(player_name)+"`` did not respond and was kicked for being AFK") 
+            
+    # @commands.check(canUseCmds)   
+    # @commands.command(name='steamChat',
+        # brief="Toggles RCon debug mode",
+        # pass_context=True)
+    # async def cmd_debug(self, ctx, time_min=1): 
+        # if(self.arma_rcon.options['debug']==True):
+            # self.arma_rcon.options['debug'] = False
+        # else:
+            # self.arma_rcon.options['debug'] = True
+       
+        # msg= "Set debug mode to:"+str(self.arma_rcon.options['debug'])
+        # await ctx.send(msg)     
+    
+    @commands.check(canUseCmds)   
     @commands.command(name='debug',
         brief="Toggles RCon debug mode",
         pass_context=True)
@@ -120,7 +206,7 @@ class CommandRcon(commands.Cog):
             self.arma_rcon.options['debug'] = True
        
         msg= "Set debug mode to:"+str(self.arma_rcon.options['debug'])
-        await ctx.message.channel.send(msg)     
+        await ctx.send(msg)     
     
     @commands.check(canUseCmds)   
     @commands.command(name='status',
@@ -133,7 +219,7 @@ class CommandRcon(commands.Cog):
         else:
             msg+= "Currently not connected: "+ self.arma_rcon.serverIP+"\n"
         msg+= str(len(self.arma_rcon.serverMessage))+ " Messages collected"
-        await ctx.message.channel.send(msg) 
+        await ctx.send(msg) 
         
     @commands.check(canUseCmds)   
     @commands.command(name='getChat',
@@ -182,7 +268,7 @@ class CommandRcon(commands.Cog):
         await self.arma_rcon.kickPlayer(player_id, message)
             
         msg = "kicked player: "+str(player_id)
-        await ctx.message.channel.send(msg)
+        await ctx.send(msg)
             
     @commands.check(canUseCmds)   
     @commands.command(name='say',
@@ -194,7 +280,7 @@ class CommandRcon(commands.Cog):
         message = self.setEncoding(message)
         await self.arma_rcon.sayGlobal(name+": "+message)
         msg = "Send: ``"+message+"``"
-        await ctx.message.channel.send(msg)    
+        await ctx.send(msg)    
         
     @commands.check(canUseCmds)   
     @commands.command(name='sayPlayer',
@@ -208,7 +294,7 @@ class CommandRcon(commands.Cog):
             message = "Ping"
         await self.arma_rcon.sayPlayer(player_id, name+": "+message)
         msg = "Send msg: ``"+str(player_id)+"``"+message
-        await ctx.message.channel.send(msg)
+        await ctx.send(msg)
     
     @commands.check(canUseCmds)   
     @commands.command(name='loadScripts',
@@ -217,7 +303,7 @@ class CommandRcon(commands.Cog):
     async def loadScripts(self, ctx): 
         await self.arma_rcon.loadScripts()
         msg = "Loaded Scripts!"
-        await ctx.message.channel.send(msg)    
+        await ctx.send(msg)    
             
     @commands.check(canUseCmds)   
     @commands.command(name='maxPing',
@@ -226,7 +312,7 @@ class CommandRcon(commands.Cog):
     async def maxPing(self, ctx, ping: int): 
         await self.arma_rcon.maxPing(ping)
         msg = "Set maxPing to: "+ping
-        await ctx.message.channel.send(msg)       
+        await ctx.send(msg)       
 
     @commands.check(canUseCmds)   
     @commands.command(name='changePassword',
@@ -236,7 +322,7 @@ class CommandRcon(commands.Cog):
         password = " ".join(password)
         await self.arma_rcon.changePassword(password)
         msg = "Set Password to: ``"+password+"``"
-        await ctx.message.channel.send(msg)        
+        await ctx.send(msg)        
         
     @commands.check(canUseCmds)   
     @commands.command(name='loadBans',
@@ -245,7 +331,7 @@ class CommandRcon(commands.Cog):
     async def loadBans(self, ctx): 
         await self.arma_rcon.loadBans()
         msg = "Loaded Bans!"
-        await ctx.message.channel.send(msg)    
+        await ctx.send(msg)    
         
     @commands.check(canUseCmds)   
     @commands.command(name='players',
@@ -274,7 +360,7 @@ class CommandRcon(commands.Cog):
                     msg += "```"
                     msg += str(msgtable)
                     msg += "```"
-                    await ctx.message.channel.send(msg)
+                    await ctx.send(msg)
                     msgtable.clear_rows()
                     msg = ""
                     new = True
@@ -282,7 +368,7 @@ class CommandRcon(commands.Cog):
             msg += "```"
             msg += str(msgtable)
             msg += "```"
-            await ctx.message.channel.send(msg)    
+            await ctx.send(msg)    
     
     @commands.check(canUseCmds)   
     @commands.command(name='admins',
@@ -309,7 +395,7 @@ class CommandRcon(commands.Cog):
                     msg += "```"
                     msg += str(msgtable)
                     msg += "```"
-                    await ctx.message.channel.send(msg)
+                    await ctx.send(msg)
                     msgtable.clear_rows()
                     msg = ""
                     new = True
@@ -317,7 +403,7 @@ class CommandRcon(commands.Cog):
             msg += "```"
             msg += str(msgtable)
             msg += "```"
-            await ctx.message.channel.send(msg)  
+            await ctx.send(msg)  
             
     @commands.check(canUseCmds)   
     @commands.command(name='getMissions',
@@ -334,7 +420,7 @@ class CommandRcon(commands.Cog):
     async def loadMission(self, ctx, mission: str):
         missions = await self.arma_rcon.getMissions(mission)
         msg = "Loaded mission: ``"+str(missions)+"``"
-        await ctx.message.channel.send(msg)  
+        await ctx.send(msg)  
     
     @commands.check(canUseCmds)   
     @commands.command(name='banPlayer',
@@ -349,7 +435,7 @@ class CommandRcon(commands.Cog):
             await self.arma_rcon.banPlayer(player, message, time)
             
         msg = "Banned player: ``"+str(player)+" - "+matches[0]+"`` with reason: "+message
-        await ctx.message.channel.send(msg)    
+        await ctx.send(msg)    
         
     @commands.check(canUseCmds)   
     @commands.command(name='addBan',
@@ -368,7 +454,7 @@ class CommandRcon(commands.Cog):
             await self.arma_rcon.addBan(player, message, time)
             
         msg = "Banned player: ``"+str(player)+" - "+matches[0]+"`` with reason: "+message
-        await ctx.message.channel.send(msg)   
+        await ctx.send(msg)   
 
     @commands.check(canUseCmds)   
     @commands.command(name='removeBan',
@@ -378,7 +464,7 @@ class CommandRcon(commands.Cog):
         await self.arma_rcon.removeBan(banID)
             
         msg = "Removed ban: ``"+str(banID)+"``"
-        await ctx.message.channel.send(msg)    
+        await ctx.send(msg)    
         
     @commands.check(canUseCmds)   
     @commands.command(name='getBans',
@@ -408,7 +494,7 @@ class CommandRcon(commands.Cog):
                     msg += "```"
                     msg += str(msgtable)
                     msg += "```"
-                    await ctx.message.channel.send(msg)
+                    await ctx.send(msg)
                     msgtable.clear_rows()
                     msg = ""
                     new = True
@@ -416,10 +502,10 @@ class CommandRcon(commands.Cog):
             msg += "```"
             msg += str(msgtable)
             msg += "```"
-            await ctx.message.channel.send(msg)   
+            await ctx.send(msg)   
         if(i>=limit):
             msg = "Limit of "+str(limit)+" reached. There are still "+str(len(bans)-i)+" more bans"
-            await ctx.message.channel.send(msg)   
+            await ctx.send(msg)   
             
     @commands.check(canUseCmds)   
     @commands.command(name='getBEServerVersion',
@@ -428,7 +514,7 @@ class CommandRcon(commands.Cog):
     async def getBEServerVersion(self, ctx): 
         version = await self.arma_rcon.getBEServerVersion()
         msg = "BE version: ``"+str(version)+"``"
-        await ctx.message.channel.send(msg)         
+        await ctx.send(msg)         
         
     @commands.check(canUseCmds)   
     @commands.command(name='lock',
@@ -437,7 +523,7 @@ class CommandRcon(commands.Cog):
     async def lock(self, ctx): 
         data = await self.arma_rcon.lock()
         msg = "Locked the Server"
-        await ctx.message.channel.send(msg)    
+        await ctx.send(msg)    
 
     @commands.check(canUseCmds)   
     @commands.command(name='unlock',
@@ -446,7 +532,7 @@ class CommandRcon(commands.Cog):
     async def unlock(self, ctx): 
         data = await self.arma_rcon.unlock()
         msg = "Unlocked the Server"
-        await ctx.message.channel.send(msg)       
+        await ctx.send(msg)       
     
     @commands.check(canUseCmds)   
     @commands.command(name='shutdown',
@@ -455,7 +541,7 @@ class CommandRcon(commands.Cog):
     async def shutdown(self, ctx): 
         data = await self.arma_rcon.shutdown()
         msg = "Shutdown the Server"
-        await ctx.message.channel.send(msg)           
+        await ctx.send(msg)           
         
     @commands.check(canUseCmds)   
     @commands.command(name='restart',
@@ -464,7 +550,7 @@ class CommandRcon(commands.Cog):
     async def restart(self, ctx): 
         data = await self.arma_rcon.restart()
         msg = "Restarting the Mission"
-        await ctx.message.channel.send(msg)          
+        await ctx.send(msg)          
     
     @commands.check(canUseCmds)   
     @commands.command(name='restartServer',
@@ -473,7 +559,7 @@ class CommandRcon(commands.Cog):
     async def restartServer(self, ctx): 
         data = await self.arma_rcon.restartServer()
         msg = "Restarting the Server"
-        await ctx.message.channel.send(msg)           
+        await ctx.send(msg)           
         
     @commands.check(canUseCmds)   
     @commands.command(name='restartM',
@@ -482,7 +568,7 @@ class CommandRcon(commands.Cog):
     async def restartserveraftermission(self, ctx): 
         data = await self.arma_rcon.restartserveraftermission()
         msg = "Restarting the Server after mission ends"
-        await ctx.message.channel.send(msg)       
+        await ctx.send(msg)       
     
     @commands.check(canUseCmds)   
     @commands.command(name='shutdownM',
@@ -491,7 +577,7 @@ class CommandRcon(commands.Cog):
     async def shutdownserveraftermission(self, ctx): 
         data = await self.arma_rcon.shutdownserveraftermission()
         msg = "Restarting the Server after mission ends"
-        await ctx.message.channel.send(msg)       
+        await ctx.send(msg)       
     
     @commands.check(canUseCmds)   
     @commands.command(name='reassign',
@@ -500,7 +586,7 @@ class CommandRcon(commands.Cog):
     async def reassign(self, ctx): 
         data = await self.arma_rcon.reassign()
         msg = "Restart the mission with new player slot selection"
-        await ctx.message.channel.send(msg)          
+        await ctx.send(msg)          
     
     @commands.check(canUseCmds)   
     @commands.command(name='monitords',
@@ -509,7 +595,7 @@ class CommandRcon(commands.Cog):
     async def monitords(self, ctx, interval: int): 
         data = await self.arma_rcon.monitords(interval)
         msg = "Restart the mission with new player slot selection"
-        await ctx.message.channel.send(msg)        
+        await ctx.send(msg)        
         
     @commands.check(canUseCmds)   
     @commands.command(name='goVote',
@@ -518,7 +604,7 @@ class CommandRcon(commands.Cog):
     async def goVote(self, ctx): 
         data = await self.arma_rcon.goVote()
         msg = "Restart the mission with new player slot selection"
-        await ctx.message.channel.send(msg)       
+        await ctx.send(msg)       
 
 def setup(bot):
     bot.add_cog(CommandRcon(bot))    
