@@ -13,6 +13,7 @@ from discord.ext import commands
 from discord.ext.commands import has_permissions, CheckFailure
 import prettytable
 import geoip2.database
+from collections import deque
 #Example Structure (used here):
 # discord_bot/
 # ├── bot.py       
@@ -38,7 +39,6 @@ class CommandRcon(commands.Cog):
             self.creatcfg() #make empty cfg file
             raise Exception("Error: You have to configure the rcon_cfg first!")
         
-        #self.countryMap = { "US": ":flag_ }
         self.ipReader = geoip2.database.Reader(self.path+"/GeoLite2-Country.mmdb")
         self.arma_rcon = bec_rcon.ARC(self.rcon_settings["ip"], 
                                  self.rcon_settings["password"], 
@@ -49,8 +49,12 @@ class CommandRcon(commands.Cog):
         #Add Event Handlers
         self.arma_rcon.add_Event("received_ServerMessage", self.rcon_on_msg_received)
         self.arma_rcon.add_Event("on_disconnect", self.rcon_on_disconnect)
-    
-        
+        #Extend the chat storage
+        data = self.arma_rcon.serverMessage.copy()
+        self.arma_rcon.serverMessage = deque(maxlen=500) #Default: 100
+        data.reverse()
+        for d in data:
+            self.arma_rcon.serverMessage.append(d)
         
 ###################################################################################################
 #####                                  common functions                                        ####
@@ -95,8 +99,13 @@ class CommandRcon(commands.Cog):
         
     def playerTypesMessage(self, player_name):
         data = self.arma_rcon.serverMessage.copy()
+        data.reverse()
         for pair in data: #checks all recent chat messages
             msg = pair[1]
+            diff = datetime.datetime.now() - pair[0]
+            #cancel search if chat is older than 25min
+            if(diff.total_seconds() > 0 and diff.total_seconds()/60 >= 25): 
+                break
             msg_player = self.getPlayerFromMessage(msg)
             if(msg_player != False and player_name == msg_player or 
                (" "+player_name+" disconnected") in msg or
@@ -329,6 +338,15 @@ class CommandRcon(commands.Cog):
     async def loadScripts(self, ctx): 
         await self.arma_rcon.loadScripts()
         msg = "Loaded Scripts!"
+        await ctx.send(msg)        
+     
+    @commands.check(canUseCmds)   
+    @commands.command(name='loadEvents',
+        brief="Loads Events",
+        pass_context=True)
+    async def loadEvents(self, ctx): 
+        await self.arma_rcon.loadEvents()
+        msg = "Loaded Events!"
         await ctx.send(msg)    
             
     @commands.check(canUseCmds)   
