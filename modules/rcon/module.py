@@ -422,7 +422,7 @@ class CommandRcon(commands.Cog):
         brief="Loads a mission",
         pass_context=True)
     async def loadMission(self, ctx, mission: str):
-        missions = await self.arma_rcon.getMissions(mission)
+        missions = await self.arma_rcon.loadMission(mission)
         msg = "Loaded mission: ``"+str(missions)+"``"
         await ctx.send(msg)  
     
