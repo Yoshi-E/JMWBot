@@ -12,7 +12,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions, CheckFailure
 import prettytable
-
+import geoip2.database
 #Example Structure (used here):
 # discord_bot/
 # ├── bot.py       
@@ -38,6 +38,8 @@ class CommandRcon(commands.Cog):
             self.creatcfg() #make empty cfg file
             raise Exception("Error: You have to configure the rcon_cfg first!")
         
+        #self.countryMap = { "US": ":flag_ }
+        self.ipReader = geoip2.database.Reader(self.path+"/GeoLite2-Country.mmdb")
         self.arma_rcon = bec_rcon.ARC(self.rcon_settings["ip"], 
                                  self.rcon_settings["password"], 
                                  self.rcon_settings["port"], 
@@ -244,6 +246,26 @@ class CommandRcon(commands.Cog):
             msg += time.strftime("%H:%M:%S")+" | "+ pair[1]+"\n"
             i+=1
         await self.sendLong(ctx, msg)
+        
+    @commands.check(canUseCmds)   
+    @commands.command(name='players+',
+        brief="Lists current players on the server",
+        pass_context=True)
+    async def playersPlus(self, ctx):
+        players = await self.arma_rcon.getPlayersArray()
+
+        limit = 100
+        i = 1
+        new = False
+        msg  = "Players: \n"
+        for player in players:
+            if(i <= limit):
+                id,ip,ping,guid,name = player
+                #fetch country
+                response = self.ipReader.country(ip.split(":")[0])
+                msg+= "#{} | :flag_{}: {}".format(id, str(response.country.iso_code).lower(), name)+"\n"
+
+        await self.sendLong(ctx, msg)
 ###################################################################################################
 #####                                   BEC Rcon commands                                      ####
 ###################################################################################################   
@@ -422,7 +444,9 @@ class CommandRcon(commands.Cog):
         brief="Loads a mission",
         pass_context=True)
     async def loadMission(self, ctx, mission: str):
-        missions = await self.arma_rcon.loadMission(mission)
+        if(mission.endswith(".pbo",-4)): #Strips PBO
+            mission = mission[:-4]
+        await self.arma_rcon.loadMission(mission)
         msg = "Loaded mission: ``"+str(missions)+"``"
         await ctx.send(msg)  
     
