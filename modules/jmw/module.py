@@ -70,9 +70,6 @@ class CommandJMW(commands.Cog):
     async def processGame(self, channel, admin=False, gameindex=1, sendraw=False):
         try:
             game = self.readLog.readData(admin, gameindex)   
-            if(game == None):
-                await channel.send("No Data found, wrong log path? '"+self.cfg.get('logs_path')+"'")
-                return None
             timestamp = game["date"]+" "+game["time"]
             msg="Sorry, I could not find any games"
             if(admin == True): #post additional info
@@ -114,7 +111,7 @@ class CommandJMW(commands.Cog):
     async def watch_Log(self):
         await self.bot.wait_until_ready()
         channel = self.bot.get_channel(int(self.cfg.get("Channel_post_status")))
-        while(True):
+        while(True): #Wait till a log file exsists
             logs = self.readLog.getLogs()
             if(len(logs) > 0):
                 current_log = logs[-1]
@@ -132,20 +129,14 @@ class CommandJMW(commands.Cog):
                         file.seek(where)
                         if(current_log != self.readLog.getLogs()[-1]):
                             current_log = self.readLog.getLogs()[-1] #update to new recent log
+                            self.readLog.scanfile(log) #Update Reader to new file as well
                             file = open(self.cfg.get("logs_path")+current_log, "r")
                             print("current log: "+current_log)
                     else:
                         #newline found
                         if(line.find("BattlEye") ==-1 and line.find("[") > 0 and "CTI_DataPacket" in line and line.rstrip()[-2:] == "]]"):
                             try:
-                                splitat = line.find("[")
-                                r = line[splitat:]  #remove timestamp
-                                timestamp = line[:splitat]
-                                r = r.rstrip() #remove /n
-                                r = r.replace(",WEST]", ',"WEST"]')
-                                r = r.replace(",EAST]", ',"EAST"]') #this still needs working
-                                r = r.replace("true", "True")
-                                r = r.replace("false", "False")
+                                r = self.readLog.parseLine(line)
                                 datarow = ast.literal_eval(r) #convert string into array object
                                 datarow = dict(datarow)
                                 if(datarow["CTI_DataPacket"] == "GameOver"):

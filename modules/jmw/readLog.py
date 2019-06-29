@@ -37,13 +37,13 @@ class readLog:
         for log in reversed(logs):
             print("Pre-scanning: "+log)
             self.scanfile(log)
-            if(len(tempdataRows)+len(self.dataRows) < self.maxDataRows):
+            if(len(tempdataRows)+len(self.dataRows) <= self.maxDataRows):
                 tempdataRows.extendleft(reversed(self.dataRows))
                 self.dataRows = deque(maxlen=self.maxDataRows)
             else:
                 #TODO only merge some parts (to fill complelty)
                 break
-            if(len(tempdataRows)>=3000):
+            if(len(tempdataRows)>=self.maxDataRows):
                 break
         self.dataRows = tempdataRows
     #get the log files from folder and sort them by oldest first
@@ -191,6 +191,7 @@ class readLog:
             try:
                 datarow = ast.literal_eval(self.parseLine(line)) #convert string into array object
                 datarow = dict(datarow)
+                
                 if(datarow["CTI_DataPacket"] == "Header"):
                     datarow["timestamp"] = self.splitTimestamp(line)[0]
                     self.dataRows.append(datarow)
@@ -215,6 +216,7 @@ class readLog:
                 if(datarow["CTI_DataPacket"] == "GameOver"):
                     datarow["timestamp"] = self.splitTimestamp(line)[0] #finish time
                     self.dataRows.append(datarow) #Append Gameover / End
+                
             except Exception as e:
                 print(e)
                 print(line)
