@@ -22,9 +22,10 @@ class CommandErrorHandler(commands.Cog):
         """The event triggered when an error is raised while invoking a command.
         ctx   : Context
         error : Exception"""
-        stack = traceback.extract_stack()[:-3] + traceback.extract_tb(error.__traceback__)  # add limit=?? 
+        stack = traceback.extract_stack()[:-3] + traceback.extract_tb(error.__traceback__)
         pretty = traceback.format_list(stack)
-        stacktrace = ''.join(pretty) + '\n  {} {}'.format(error.__class__,error)
+        #stacktrace = ''.join(pretty) + '\n  {} {}'.format(error.__class__,error)
+        stacktrace = str(error)
         await self.sendLong(ctx, (f'{ctx.command} has caused the following error: ```{stacktrace}```'))
         # This prevents any commands with local handlers being handled here in on_command_error.
         if hasattr(ctx.command, 'on_error'):

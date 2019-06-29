@@ -272,7 +272,12 @@ class CommandRcon(commands.Cog):
                 id,ip,ping,guid,name = player
                 #fetch country
                 response = self.ipReader.country(ip.split(":")[0])
-                msg+= "#{} | :flag_{}: {}".format(id, str(response.country.iso_code).lower(), name)+"\n"
+                region = str(response.country.iso_code).lower()
+                if(region == "none"):
+                    flag = ":question:" #symbol if no country was found
+                else:
+                    flag = ":flag_{}:".format(region)
+                msg+= "#{} | {} {}".format(id, flag, name)+"\n"
 
         await self.sendLong(ctx, msg)
 ###################################################################################################
