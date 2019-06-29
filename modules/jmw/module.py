@@ -68,7 +68,7 @@ class CommandJMW(commands.Cog):
         return False
 
     async def processGame(self, channel, admin=False, gameindex=1, sendraw=False):
-        if(gameindex>=0 and gameindex <= 10):
+        try:
             game = self.readLog.readData(admin, gameindex)   
             if(game == None):
                 await channel.send("No Data found, wrong log path? '"+self.cfg.get('logs_path')+"'")
@@ -106,8 +106,8 @@ class CommandJMW(commands.Cog):
                     log_graph = filename
                     await channel.send(file=discord.File(log_graph), content=msg)
 
-        else:
-            await channel.send("Invalid Index. has to be >0 and <10")
+        except Exception as e:
+            await channel.send("Unable to find game: "+str(e))
 
                 
     #this will be used for watching for a game end     
@@ -242,22 +242,11 @@ class CommandJMW(commands.Cog):
                         brief="Posts a summary of select game",
                         description="Takes up to 2 arguments, 1st: index of the game, 2nd: sending 'normal'",
                         pass_context=True)
-    async def command_lastgame(self, ctx):
+    async def command_lastgame(self, ctx, index=0):
         message = ctx.message
         admin = True
-        if(" " in message.content):
-            args = message.content.split(" ")
-            val = args[1]
-            if(val.isdigit()):
-                val = int(val)
-            else:
-                val = 1
-            if(len(args)>2):
-                admin = False
-        else:
-            val = 1
         if self.hasPermission(message.author, lvl=10):
-            await self.processGame(message.channel, admin, val)
+            await self.processGame(message.channel, admin, index)
 
         
         
@@ -266,22 +255,11 @@ class CommandJMW(commands.Cog):
                         brief="sends the slected game as raw .json",
                         description="Takes up to 2 arguments, 1st: index of the game, 2nd: sending 'normal'",
                         pass_context=True)
-    async def command_lastdata(self, ctx):
+    async def command_lastdata(self, ctx, index=0):
         message = ctx.message
         admin = True
-        if(" " in message.content):
-            args = message.content.split(" ")
-            val = args[1]
-            if(val.isdigit()):
-                val = int(val)
-            else:
-                val = 1
-            if(len(args)>2):
-                admin = False
-        else:
-            val = 1
         if self.hasPermission(message.author, lvl=10):
-            await self.processGame(message.channel, admin, val, True)
+            await self.processGame(message.channel, admin, index, True)
     
     @commands.command(name='r',
         brief="terminates the bot and auto restarts",

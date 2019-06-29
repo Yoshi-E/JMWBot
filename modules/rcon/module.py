@@ -126,7 +126,7 @@ class CommandRcon(commands.Cog):
             return True
         if(hasattr(ctx.author, 'roles')):
             for role in ctx.author.roles:
-                if(role in roles):
+                if(str(role) in roles):
                     return True        
         return False
 ###################################################################################################
