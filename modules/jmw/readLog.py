@@ -13,6 +13,8 @@ import collections
 import traceback
 import sys
 import itertools
+import asyncio
+
 logging.basicConfig(filename='error.log',
                     level=logging.INFO, 
                     format='%(asctime)s %(levelname)-8s %(message)s',
@@ -31,9 +33,10 @@ class readLog:
         #all data rows are stored in here, limited to prevent memory leaks
         self.dataRows=deque(maxlen=self.maxDataRows)
         
-        #scan most recent log.
+        #scan most recent log. Until enough data is collected
         logs = self.getLogs()
         tempdataRows = deque(maxlen=self.maxDataRows)
+        self.Events = []
         for log in reversed(logs):
             print("Pre-scanning: "+log)
             self.scanfile(log)
@@ -46,6 +49,10 @@ class readLog:
             if(len(tempdataRows)>=self.maxDataRows):
                 break
         self.dataRows = tempdataRows
+        
+        #Start Watchlog
+        asyncio.ensure_future(self.watch_log())
+
     #get the log files from folder and sort them by oldest first
     def getLogs(self):
         if(os.path.exists(self.cfg.get('logs_path'))):
@@ -185,7 +192,7 @@ class readLog:
         r = r.replace("false", "False")
         return r
             
-    def processLogLine(self, line, databuilder):
+    def processLogLine(self, line, databuilder, active=False):
         #check if line contains a datapacket
         if(line.find("BattlEye") ==-1 and line.find("[") > 0 and "CTI_DataPacket" in line and line.rstrip()[-2:] == "]]"):
             try:
@@ -195,6 +202,8 @@ class readLog:
                 if(datarow["CTI_DataPacket"] == "Header"):
                     datarow["timestamp"] = self.splitTimestamp(line)[0]
                     self.dataRows.append(datarow)
+                    if(active):
+                        self.on_missionHeader(datarow)
                 if("Data_" in datarow["CTI_DataPacket"]):
                     if(len(databuilder)>0):
                         #check if previous 'Data_x' is present
@@ -204,6 +213,8 @@ class readLog:
                             if("EOD" in datarow["CTI_DataPacket"]):
                                 databuilder["CTI_DataPacket"] = "Data"
                                 self.dataRows.append(databuilder.copy())
+                                if(active):
+                                    self.on_missionData(databuilder.copy())
                                 databuilder = {}
                     elif(datarow["CTI_DataPacket"] == "Data_1"):
                         #add first element
@@ -216,6 +227,8 @@ class readLog:
                 if(datarow["CTI_DataPacket"] == "GameOver"):
                     datarow["timestamp"] = self.splitTimestamp(line)[0] #finish time
                     self.dataRows.append(datarow) #Append Gameover / End
+                    if(active):
+                        self.on_missionGameOver(datarow)
                 
             except Exception as e:
                 print(e)
@@ -224,7 +237,7 @@ class readLog:
                 traceback.print_exc()
         return databuilder
 
-    #this function will continusly scan the newest log for new data entries.    
+    #this function will continusly scan a log for data entries. They are stored in self.dataRows
     def scanfile(self, name):
         with open(self.cfg.get('logs_path')+name) as fp: 
             databuilder = {}
@@ -238,7 +251,78 @@ class readLog:
                     line = fp.readline()
                 except:
                     line = "Error"
-    
+                    
+    async def watch_log(self):
+        databuilder = {}
+        while(True): #Wait till a log file exsists
+            logs = self.getLogs()
+            if(len(logs) > 0):
+                current_log = logs[-1]
+                print("current log: "+current_log)
+                file = open(self.cfg.get("logs_path")+current_log, "r")
+                file.seek(0, 2) #jump to the end of the file
+                while (True):
+                    where = file.tell()
+                    try:
+                        line = file.readline()
+                    except:
+                        line = "Error"
+                    if not line:
+                        await asyncio.sleep(10)
+                        file.seek(where)
+                        if(current_log != self.getLogs()[-1]):
+                            old_log = current_log
+                            current_log = self.getLogs()[-1] #update to new recent log
+                            self.scanfile(log) #Log most likely empty, but a quick scan cant hurt.
+                            file = open(self.cfg.get("logs_path")+current_log, "r")
+                            print("current log: "+current_log)
+                            self.on_newLog(old_log, current_log)
+                    else:
+                        databuilder = self.processLogLine(line, databuilder, True)
+            else:
+                await asyncio.sleep(10*60)
+###################################################################################################
+#####                                  Event Handeler                                          ####
+###################################################################################################   
+    def add_Event(self, name: str, func):
+        events = ["on_missionHeader", "on_missionData", "on_missionGameOver", "on_newLog"]
+        if(name in events):
+            self.Events.append([name,func])
+        else:
+            raise Exception("Failed to add unkown event: "+name)
+
+            
+    def check_Event(self, parent, *args):
+        for event in self.Events:
+            func = event[1]
+            if(inspect.iscoroutinefunction(func)): #is async
+                if(event[0]==parent):
+                    if(len(args)>0):
+                        asyncio.ensure_future(func(args))
+                    else:
+                        asyncio.ensure_future(func())
+            else:
+                if(event[0]==parent):
+                    if(len(args)>0):
+                        func(args)
+                    else:
+                        func()
+###################################################################################################
+#####                                  Event functions                                         ####
+################################################################################################### 
+    def on_missionHeader(self, data):
+        self.check_Event("on_missionHeader", data)    
+        
+    def on_missionData(self, data):
+        self.check_Event("on_missionData", data)    
+        
+    def on_missionGameOver(self, data):
+        self.check_Event("on_missionGameOver", data)    
+        
+    def on_newLog(self, oldLog, newLog):
+        self.check_Event("on_newLog", oldLog, newLog)
+
+   
 ###################################################################################################
 #####                                  Graph Generation                                        ####
 ###################################################################################################   

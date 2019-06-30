@@ -5,7 +5,6 @@ from collections import Counter
 import json
 import os
 from modules.jmw.readLog import readLog
-from modules.jmw import a3cfgreader
 import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions, CheckFailure
@@ -25,8 +24,9 @@ class CommandJMW(commands.Cog):
         else: 
             sys.exit("Module 'Commandconfig' not loaded, but required")
         
-        self.cfgreader = a3cfgreader.readcfg(self.cfg.get("config_path"), self.path+"/"+"mission_cycle.cfg")
         self.readLog = readLog(self.cfg)    
+        self.readLog.add_Event("on_missionHeader", self.gameStart)
+        self.readLog.add_Event("on_missionGameOver", self.gameEnd)
         
         self.user_data = {}
         if(os.path.isfile(self.path+"/userdata.json")):
@@ -106,57 +106,21 @@ class CommandJMW(commands.Cog):
         except Exception as e:
             await channel.send("Unable to find game: "+str(e))
 
-                
-    #this will be used for watching for a game end     
-    async def watch_Log(self):
-        await self.bot.wait_until_ready()
+    
+
+
+    async def gameEnd(self, data):
         channel = self.bot.get_channel(int(self.cfg.get("Channel_post_status")))
-        while(True): #Wait till a log file exsists
-            logs = self.readLog.getLogs()
-            if(len(logs) > 0):
-                current_log = logs[-1]
-                print("current log: "+current_log)
-                file = open(self.cfg.get("logs_path")+current_log, "r")
-                file.seek(0, 2)
-                while (True):
-                    where = file.tell()
-                    try:
-                        line = file.readline()
-                    except:
-                        line = "Error"
-                    if not line:
-                        await asyncio.sleep(10)
-                        file.seek(where)
-                        if(current_log != self.readLog.getLogs()[-1]):
-                            current_log = self.readLog.getLogs()[-1] #update to new recent log
-                            self.readLog.scanfile(log) #Update Reader to new file as well
-                            file = open(self.cfg.get("logs_path")+current_log, "r")
-                            print("current log: "+current_log)
-                    else:
-                        #newline found
-                        if(line.find("BattlEye") ==-1 and line.find("[") > 0 and "CTI_DataPacket" in line and line.rstrip()[-2:] == "]]"):
-                            try:
-                                r = self.readLog.parseLine(line)
-                                datarow = ast.literal_eval(r) #convert string into array object
-                                datarow = dict(datarow)
-                                if(datarow["CTI_DataPacket"] == "GameOver"):
-                                    await self.dm_users_new_game()
-                                    await self.processGame(channel)
-                                    self.readLog.readData(True, 1) #Generate advaced data as well, for later use.
-                                if(datarow["CTI_DataPacket"] == "Header"):
-                                    if(self.cfg.get("cycle_assist") == True):
-                                        self.cfgreader.writeMission(self.cfgreader.parseMissions(), datarow["Map"])
-                                    msg="Let the game go on! The Server is now continuing the mission."
-                                    await channel.send(msg)
-                            except Exception as e:
-                                print(line)
-                                print(e)
-            else:
-                await asyncio.sleep(10*60)
-    #TODO
-    def updateConfigMap(self, Map):
-        _readcfg = readcfg(self.cfg.get("config_path"), self.path+"/"+"mission_cycle.cfg")
-        cycle = _readcfg.parseMissions()
+        await self.dm_users_new_game()
+        await self.processGame(channel)
+        self.readLog.readData(True, 1) #Generate advaced data as well, for later use.  
+        
+    async def gameStart(self, data):
+        channel = self.bot.get_channel(int(self.cfg.get("Channel_post_status")))
+        msg="Let the game go on! The Server is now continuing the mission."
+        await channel.send(msg)
+        
+
     ###################################################################################################
     #####                                   Bot commands                                           ####
     ###################################################################################################
@@ -167,39 +131,7 @@ class CommandJMW(commands.Cog):
         msg = 'Pong!'
         await self.bot.say(msg)
     
-    
-    ####################################
-    #Cycle Assist                      #
-    ####################################
-    @commands.command(  name='cycleassist',
-                        brief="Enables the Cycle assist",
-                        description="The cycle assist rewrites an arma 3 config in a way that after crash the correct map is loaded.",
-                        pass_context=True)
-    @has_permissions(administrator=True)
-    async def command_cycleassist(self, ):
-        if(" " in message.content):
-            val = message.content.split(" ")[1]
-            if(val in ["false", "off", "0", "disable"]):
-                self.cfg.set("cycle_assist", False)
-                msg = ':x: Ok, Mission cycle assist disabled'
-            else:
-                self.cfg.set("cycle_assist", True)
-                msg = ':white_check_mark: Ok, Mission cycle assist enabled.'
-        else:
-            msg = ':question: Usage: cycleassist [true/false]'
-        await ctx.send(msg)    
 
-    @commands.command(  name='cycleassistList',
-                        brief="List the current cycle",
-                        description="List the default order of mission playback",
-                        pass_context=True)
-    @has_permissions(administrator=True)
-    async def command_cycleassistList(self, ):
-        msg = str(self.cfgreader.parseMissions()).replace("\\t","").replace("\\n","")
-        await ctx.send(msg)    
-    
-    
-    
     ####################################
     #Game tools                        #
     ####################################
