@@ -14,6 +14,7 @@ import traceback
 import sys
 import itertools
 import asyncio
+import inspect
 
 logging.basicConfig(filename='error.log',
                     level=logging.INFO, 
