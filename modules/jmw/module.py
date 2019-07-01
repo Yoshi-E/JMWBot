@@ -190,7 +190,15 @@ class CommandJMW(commands.Cog):
         if self.hasPermission(ctx.message.author, lvl=10):
             await ctx.send("Dumping {} packets to file".format(len(self.readLog.dataRows)))
             with open(self.path+"/dump.json", 'w') as outfile:
-                json.dump(list(self.readLog.dataRows), outfile)  
+                json.dump(list(self.readLog.dataRows), outfile)      
+    
+    @commands.command(name='getData',
+        brief="gets recent log entry (0 = first, -1 = last)",
+        pass_context=True)
+    async def getData(self, ctx, index=0):
+        if self.hasPermission(ctx.message.author, lvl=10):
+            msg = "There are {} packets: ```{}```".format(len(self.readLog.dataRows), self.readLog.dataRows[index])
+            await ctx.send(msg)
                 
     @commands.command(name='r',
         brief="terminates the bot",
