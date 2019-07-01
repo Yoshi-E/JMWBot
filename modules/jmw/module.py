@@ -183,9 +183,17 @@ class CommandJMW(commands.Cog):
         admin = True
         if self.hasPermission(message.author, lvl=10):
             await self.processGame(message.channel, admin, index, True)
-    
+    @commands.command(name='dump',
+        brief="dumps array data into a dump.json file",
+        pass_context=True)
+    async def dump(self, ctx):
+        if self.hasPermission(ctx.message.author, lvl=10):
+            await ctx.send("Dumping {} packets to file".format(len(self.readLog.dataRows)))
+            with open(self.path+"/dump.json", 'w') as outfile:
+                json.dump(list(self.readLog.dataRows), outfile)  
+                
     @commands.command(name='r',
-        brief="terminates the bot and auto restarts",
+        brief="terminates the bot",
         pass_context=True)
     async def setRestart(self, ctx):
         if self.hasPermission(ctx.message.author, lvl=10):
