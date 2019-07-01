@@ -245,13 +245,13 @@ class readLog:
             try:
                 line = fp.readline()
             except:
-                line = "Error"
+                line = None
             while line:
                 databuilder = self.processLogLine(line, databuilder)
                 try:
                     line = fp.readline()
                 except:
-                    line = "Error"
+                    line = None
                     
     async def watch_log(self):
         databuilder = {}
@@ -262,24 +262,28 @@ class readLog:
                 print("current log: "+current_log)
                 file = open(self.cfg.get("logs_path")+current_log, "r")
                 file.seek(0, 2) #jump to the end of the file
-                while (True):
-                    where = file.tell()
-                    try:
-                        line = file.readline()
-                    except:
-                        line = "Error"
-                    if not line:
-                        await asyncio.sleep(10)
-                        file.seek(where)
-                        if(current_log != self.getLogs()[-1]):
-                            old_log = current_log
-                            current_log = self.getLogs()[-1] #update to new recent log
-                            self.scanfile(log) #Log most likely empty, but a quick scan cant hurt.
-                            file = open(self.cfg.get("logs_path")+current_log, "r")
-                            print("current log: "+current_log)
-                            self.on_newLog(old_log, current_log)
-                    else:
-                        databuilder = self.processLogLine(line, databuilder, True)
+                try:
+                    while (True):
+                        where = file.tell()
+                        try:
+                            line = file.readline()
+                        except:
+                            line = None
+                        if not line:
+                            await asyncio.sleep(10)
+                            file.seek(where)
+                            if(current_log != self.getLogs()[-1]):
+                                old_log = current_log
+                                current_log = self.getLogs()[-1] #update to new recent log
+                                self.scanfile(current_log) #Log most likely empty, but a quick scan cant hurt.
+                                file = open(self.cfg.get("logs_path")+current_log, "r")
+                                print("current log: "+current_log)
+                                self.on_newLog(old_log, current_log)
+                        else:
+                            databuilder = self.processLogLine(line, databuilder, True)
+                except Exception as e:
+                    print(e)
+                    traceback.print_exc()
             else:
                 await asyncio.sleep(10*60)
 ###################################################################################################
