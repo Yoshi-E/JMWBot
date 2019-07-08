@@ -120,6 +120,16 @@ class CommandJMW(commands.Cog):
         msg="Let the game go on! The Server is now continuing the mission."
         await channel.send(msg)
         
+    #sends a message thats longer than what discord can handel
+    async def sendLong(self, ctx, msg: str):
+        discord_limit = 1900 #discord limit is 2000
+        while(len(msg)>0): 
+            if(len(msg)>discord_limit): 
+                await ctx.send(msg[:discord_limit])
+                msg = msg[discord_limit:]
+            else:
+                await ctx.send(msg)
+                msg = ""
 
     ###################################################################################################
     #####                                   Bot commands                                           ####
@@ -198,7 +208,7 @@ class CommandJMW(commands.Cog):
     async def getData(self, ctx, index=0):
         if self.hasPermission(ctx.message.author, lvl=10):
             msg = "There are {} packets: ```{}```".format(len(self.readLog.dataRows), self.readLog.dataRows[index])
-            await ctx.send(msg)
+            await self.sendLong(ctx,msg)
                 
     @commands.command(name='r',
         brief="terminates the bot",
