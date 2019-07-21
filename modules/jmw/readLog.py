@@ -56,9 +56,9 @@ class readLog:
 
     #get the log files from folder and sort them by oldest first
     def getLogs(self):
-        if(os.path.exists(self.cfg.get('logs_path'))):
+        if(os.path.exists(self.cfg['logs_path'])):
             files = []
-            for file in os.listdir(self.cfg.get('logs_path')):
+            for file in os.listdir(self.cfg['logs_path']):
                 if file.endswith(".log"):
                     files.append(file)
             return sorted(files)
@@ -240,7 +240,7 @@ class readLog:
 
     #this function will continusly scan a log for data entries. They are stored in self.dataRows
     def scanfile(self, name):
-        with open(self.cfg.get('logs_path')+name) as fp: 
+        with open(self.cfg['logs_path']+name) as fp: 
             databuilder = {}
             try:
                 line = fp.readline()
@@ -260,7 +260,7 @@ class readLog:
             if(len(logs) > 0):
                 current_log = logs[-1]
                 print("current log: "+current_log)
-                file = open(self.cfg.get("logs_path")+current_log, "r")
+                file = open(self.cfg["logs_path"]+current_log, "r")
                 file.seek(0, 2) #jump to the end of the file
                 try:
                     while (True):
@@ -276,7 +276,7 @@ class readLog:
                                 old_log = current_log
                                 current_log = self.getLogs()[-1] #update to new recent log
                                 #self.scanfile(current_log) #Log most likely empty, but a quick scan cant hurt.
-                                file = open(self.cfg.get("logs_path")+current_log, "r")
+                                file = open(self.cfg["logs_path"]+current_log, "r")
                                 print("current log: "+current_log)
                                 self.on_newLog(old_log, current_log)
                         else:
@@ -479,10 +479,10 @@ class readLog:
                 zplots[-1].set_title(pdata["title"])
         
         #create folders to for images / raw data
-        if not os.path.exists(self.path+"/"+self.cfg.get('data_path')):
-            os.makedirs(self.path+"/"+self.cfg.get('data_path'))
-        if not os.path.exists(self.path+"/"+self.cfg.get('image_path')):
-            os.makedirs(self.path+"/"+self.cfg.get('image_path'))
+        if not os.path.exists(self.path+"/"+self.cfg['data_path']):
+            os.makedirs(self.path+"/"+self.cfg['data_path'])
+        if not os.path.exists(self.path+"/"+self.cfg['image_path']):
+            os.makedirs(self.path+"/"+self.cfg['image_path'])
         
         t=""
         if(lastwinner=="currentGame"):
@@ -490,8 +490,8 @@ class readLog:
         if(admin==True):
             t +="-ADV"
                         #path / date # time # duration # winner # addtional_tags
-        filename_pic =(self.path+"/"+self.cfg.get('image_path')+fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.png').replace("\\","/")
-        filename =    (self.path+"/"+self.cfg.get('data_path')+ fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.json').replace("\\","/")
+        filename_pic =(self.path+"/"+self.cfg['image_path']+fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.png').replace("\\","/")
+        filename =    (self.path+"/"+self.cfg['data_path']+ fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.json').replace("\\","/")
         
         #save image
         fig.savefig(filename_pic, dpi=100, pad_inches=3)

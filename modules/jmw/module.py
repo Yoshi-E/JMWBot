@@ -11,16 +11,14 @@ from discord.ext.commands import has_permissions, CheckFailure
 import ast
 import sys
 
-
 class CommandJMW(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.path = os.path.dirname(os.path.realpath(__file__))
         
-        
         #checking depencies 
         if("Commandconfig" in bot.cogs.keys()):
-            self.cfg = bot.cogs["Commandconfig"]
+            self.cfg = bot.cogs["Commandconfig"].cfg
         else: 
             sys.exit("Module 'Commandconfig' not loaded, but required")
         
@@ -32,8 +30,6 @@ class CommandJMW(commands.Cog):
         if(os.path.isfile(self.path+"/userdata.json")):
             self.user_data = json.load(open(self.path+"/userdata.json","r"))
     
-        
-        
 ###################################################################################################
 #####                                  common functions                                        ####
 ###################################################################################################
@@ -57,7 +53,7 @@ class CommandJMW(commands.Cog):
         await self.set_user_data() #save changes
     
     def hasPermission(self, author, lvl=1):
-        roles = self.cfg.get('Roles')
+        roles = self.cfg['Roles']
         if(roles['Default'] >= lvl):
             return True
             
@@ -110,13 +106,13 @@ class CommandJMW(commands.Cog):
 
 
     async def gameEnd(self, data):
-        channel = self.bot.get_channel(int(self.cfg.get("Channel_post_status")))
+        channel = self.bot.get_channel(int(self.cfg["Channel_post_status"]))
         await self.dm_users_new_game()
         await self.processGame(channel)
         self.readLog.readData(True, 1) #Generate advaced data as well, for later use.  
         
     async def gameStart(self, data):
-        channel = self.bot.get_channel(int(self.cfg.get("Channel_post_status")))
+        channel = self.bot.get_channel(int(self.cfg["Channel_post_status"]))
         msg="Let the game go on! The Server is now continuing the mission."
         await channel.send(msg)
         

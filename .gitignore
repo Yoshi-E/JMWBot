@@ -116,3 +116,4 @@ error.log
 modules/jmw/userdata.json
 modules/jmw/mission_cycle.cfg
 modules/rcon/rcon_cfg.json
+*.json

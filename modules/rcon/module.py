@@ -14,59 +14,72 @@ from discord.ext.commands import has_permissions, CheckFailure
 import prettytable
 import geoip2.database
 from collections import deque
-#Example Structure (used here):
-# discord_bot/
-# ├── bot.py       
-# ├── modules/
-# │     └── rcon/
-# │          ├── __init__.py
-# │          ├── module.py
-# │          └── rcon_cfg.json
+import time
+
 
 import bec_rcon
 
+new_path = os.path.dirname(os.path.realpath(__file__))+'/../core/'
+if new_path not in sys.path:
+    sys.path.append(new_path)
+from utils import CommandChecker, RateBucket, CoreConfig
+
+ 
 class CommandRcon(commands.Cog):
+
     def __init__(self, bot):
         self.bot = bot
         self.path = os.path.dirname(os.path.realpath(__file__))
-        
+        self.check_dependencies()
+
         self.arma_chat_channels = ["Side", "Global", "Vehicle", "Direct", "Group", "Command"]
         
-        self.rcon_settings = {}
-        if(os.path.isfile(self.path+"/rcon_cfg.json")):
-            self.rcon_settings = json.load(open(self.path+"/rcon_cfg.json","r"))
-        else:
-            self.creatcfg() #make empty cfg file
-            raise Exception("Error: You have to configure the rcon_cfg first!")
+        self.rcon_settings = self.gobal_cfg.new(self.path+"/rcon_cfg.json", self.path+"/rcon_cfg.default_json")
         
         self.ipReader = geoip2.database.Reader(self.path+"/GeoLite2-Country.mmdb")
+        
+        asyncio.ensure_future(self.on_ready())
+        
+    async def on_ready(self):
+        await self.bot.wait_until_ready()
+        self.RateBucket = RateBucket(self.streamMsg)
+        if("streamChat" in self.rcon_settings and self.rcon_settings["streamChat"] > 0):
+            self.streamChat = self.bot.get_channel(self.rcon_settings["streamChat"])
+            #self.streamChat.send("TEST")
+        else:
+            self.streamChat = None
+        
+        self.setupRcon()
+            
+    def setupRcon(self, serverMessage=None):
         self.arma_rcon = bec_rcon.ARC(self.rcon_settings["ip"], 
                                  self.rcon_settings["password"], 
                                  self.rcon_settings["port"], 
                                  {'timeoutSec' : self.rcon_settings["timeoutSec"]}
                                 )
-
+        
         #Add Event Handlers
         self.arma_rcon.add_Event("received_ServerMessage", self.rcon_on_msg_received)
         self.arma_rcon.add_Event("on_disconnect", self.rcon_on_disconnect)
-        #Extend the chat storage
-        data = self.arma_rcon.serverMessage.copy()
-        self.arma_rcon.serverMessage = deque(maxlen=500) #Default: 100
-        data.reverse()
-        for d in data:
-            self.arma_rcon.serverMessage.append(d)
-        
+        if(serverMessage):
+            self.arma_rcon.serverMessage = serverMessage
+        else:   
+            #Extend the chat storage
+            data = self.arma_rcon.serverMessage.copy()
+            self.arma_rcon.serverMessage = deque(maxlen=500) #Default: 100
+            data.reverse()
+            for d in data:
+                self.arma_rcon.serverMessage.append(d)
 ###################################################################################################
 #####                                  common functions                                        ####
 ###################################################################################################
-    def creatcfg(self):
-        self.rcon_settings["ip"] = "192.168.000.001"
-        self.rcon_settings["password"] = "<Enter Rcon Password here>"
-        self.rcon_settings["port"] = 3302
-        self.rcon_settings["timeoutSec"] = 1
-        #save data
-        with open(self.path+"/rcon_cfg.json", 'w') as outfile:
-            json.dump(self.rcon_settings, outfile, sort_keys=True, indent=4, separators=(',', ': '))
+
+    def check_dependencies(self):
+                 #checking depencies 
+        if("Commandconfig" in self.bot.cogs.keys()):
+            self.gobal_cfg = self.bot.cogs["Commandconfig"].cfg
+        else: 
+            sys.exit("Module 'Commandconfig' not loaded, but required")
     
     #converts unicode to ascii, until utf-8 is supported by rcon
     def setEncoding(self, msg):
@@ -112,7 +125,20 @@ class CommandRcon(commands.Cog):
                (player_name in msg and " has been kicked by BattlEye" in msg)): #if player wrote something return True
                 return True
         return False
-
+    
+    async def streamMsg(self, message_list):
+        msg = "\n".join(message_list)
+        if(len(msg.strip())>0):
+            await self.streamChat.send(msg)
+        
+    def escapeMarkdown(self, msg):
+        #Markdown: *_`~#
+        msg = msg.replace("*", "\*")
+        msg = msg.replace("_", "\_")
+        msg = msg.replace("`", "\`")
+        msg = msg.replace("~", "\~")
+        msg = msg.replace("#", "\#")
+        return msg
 ###################################################################################################
 #####                                   Bot commands                                           ####
 ###################################################################################################   
@@ -126,7 +152,7 @@ class CommandRcon(commands.Cog):
             return True
         if(hasattr(ctx.author, 'roles')):
             for role in ctx.author.roles:
-                if(str(role) in roles):
+                if(role in roles):
                     return True        
         return False
 ###################################################################################################
@@ -134,7 +160,7 @@ class CommandRcon(commands.Cog):
 ###################################################################################################  
     #function called when a new message is received by rcon
     def rcon_on_msg_received(self, args):
-        message=args[0]
+        message=self.escapeMarkdown(args[0])
         #print(message) or post them into a discord channel
         if(":" in message):
             header, body = message.split(":", 1)
@@ -143,7 +169,9 @@ class CommandRcon(commands.Cog):
                 #print(player_name)
                 #print(body)
             #else: is join or disconnect, or similaar
-        
+        if(self.streamChat != None):
+            self.RateBucket.add(message)
+    
         
     
     #event supports async functions
@@ -151,11 +179,33 @@ class CommandRcon(commands.Cog):
     async def rcon_on_disconnect(self):
         await asyncio.sleep(10)
         print("Reconnecting to BEC Rcon")
-        self.arma_rcon.reconnect()
+        self.setupRcon(self.arma_rcon.serverMessage) #restarts form scratch
+        #self.arma_rcon.reconnect()
         
 ###################################################################################################
 #####                                BEC Rcon custom commands                                  ####
 ###################################################################################################  
+     
+    @commands.command(name='streamChat',
+        brief="Streams the arma 3 chat live into the current channel",
+        pass_context=True)
+    @CommandChecker.check
+    async def stream(self, ctx): 
+        self.streamChat = ctx
+        self.rcon_settings["streamChat"] = ctx.message.channel.id
+        
+        await ctx.send("Streaming chat...")
+    
+    @commands.check(canUseCmds)   
+    @commands.command(name='stopStream',
+        brief="Stops the stream",
+        pass_context=True)
+    async def streamStop(self, ctx): 
+        self.streamChat = None
+        self.rcon_settings["streamChat"] = None
+        await ctx.send("Stream stopped")
+            
+
     @commands.check(canUseCmds)   
     @commands.command(name='checkAFK',
         brief="Checks if a player is AFK (5min)",
