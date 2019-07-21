@@ -1,5 +1,15 @@
 {  
     "TOKEN":"WRITE_TOKEN_HERE",
     "BOT_PREFIX":"!",
-    "listChannels": []
+    "listChannels": [],
+    "user_path": "",
+    "Channel_post_status": 0,
+    "Roles": {
+        "Default": 0,
+        "Admin": 10,
+        "Developer": 10
+    },
+    "image_path": "images/",
+    "data_path": "data/",
+    "logs_path": "D:/Server/discord/"
 }
