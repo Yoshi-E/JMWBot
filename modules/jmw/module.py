@@ -11,6 +11,12 @@ from discord.ext.commands import has_permissions, CheckFailure
 import ast
 import sys
 
+new_path = os.path.dirname(os.path.realpath(__file__))+'/../core/'
+if new_path not in sys.path:
+    sys.path.append(new_path)
+from utils import CommandChecker, sendLong
+
+
 class CommandJMW(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -52,17 +58,6 @@ class CommandJMW(commands.Cog):
                 self.user_data[user]["nextgame"] = False
         await self.set_user_data() #save changes
     
-    def hasPermission(self, author, lvl=1):
-        roles = self.cfg['Roles']
-        if(roles['Default'] >= lvl):
-            return True
-            
-        if hasattr(author, 'roles'):
-            for role in roles:
-                if (roles[role] >= lvl and role.lower() in [y.name.lower() for y in author.roles]):
-                    return True
-        return False
-
     async def processGame(self, channel, admin=False, gameindex=1, sendraw=False):
         try:
             game = self.readLog.readData(admin, gameindex)   
@@ -116,17 +111,6 @@ class CommandJMW(commands.Cog):
         msg="Let the game go on! The Server is now continuing the mission."
         await channel.send(msg)
         
-    #sends a message thats longer than what discord can handel
-    async def sendLong(self, ctx, msg: str):
-        discord_limit = 1900 #discord limit is 2000
-        while(len(msg)>0): 
-            if(len(msg)>discord_limit): 
-                await ctx.send(msg[:discord_limit])
-                msg = msg[discord_limit:]
-            else:
-                await ctx.send(msg)
-                msg = ""
-
     ###################################################################################################
     #####                                   Bot commands                                           ####
     ###################################################################################################
@@ -171,11 +155,11 @@ class CommandJMW(commands.Cog):
                         brief="Posts a summary of select game",
                         description="Takes up to 2 arguments, 1st: index of the game, 2nd: sending 'normal'",
                         pass_context=True)
+    @commands.check(CommandChecker.checkAdmin)
     async def command_lastgame(self, ctx, index=0):
         message = ctx.message
         admin = True
-        if self.hasPermission(message.author, lvl=10):
-            await self.processGame(message.channel, admin, index)
+        await self.processGame(message.channel, admin, index)
 
         
         
@@ -184,35 +168,35 @@ class CommandJMW(commands.Cog):
                         brief="sends the slected game as raw .json",
                         description="Takes up to 2 arguments, 1st: index of the game, 2nd: sending 'normal'",
                         pass_context=True)
+    @commands.check(CommandChecker.checkAdmin)
     async def command_lastdata(self, ctx, index=0):
         message = ctx.message
         admin = True
-        if self.hasPermission(message.author, lvl=10):
-            await self.processGame(message.channel, admin, index, True)
+        await self.processGame(message.channel, admin, index, True)
     @commands.command(name='dump',
         brief="dumps array data into a dump.json file",
         pass_context=True)
+    @commands.check(CommandChecker.checkAdmin)
     async def dump(self, ctx):
-        if self.hasPermission(ctx.message.author, lvl=10):
-            await ctx.send("Dumping {} packets to file".format(len(self.readLog.dataRows)))
-            with open(self.path+"/dump.json", 'w') as outfile:
-                json.dump(list(self.readLog.dataRows), outfile)      
+        await ctx.send("Dumping {} packets to file".format(len(self.readLog.dataRows)))
+        with open(self.path+"/dump.json", 'w') as outfile:
+            json.dump(list(self.readLog.dataRows), outfile)      
     
     @commands.command(name='getData',
         brief="gets recent log entry (0 = first, -1 = last)",
         pass_context=True)
+    @commands.check(CommandChecker.checkAdmin)
     async def getData(self, ctx, index=0):
-        if self.hasPermission(ctx.message.author, lvl=10):
-            msg = "There are {} packets: ```{}```".format(len(self.readLog.dataRows), self.readLog.dataRows[index])
-            await self.sendLong(ctx,msg)
+        msg = "There are {} packets: ```{}```".format(len(self.readLog.dataRows), self.readLog.dataRows[index])
+        await sendLong(ctx,msg)
                 
     @commands.command(name='r',
         brief="terminates the bot",
         pass_context=True)
+    @commands.check(CommandChecker.checkAdmin)
     async def setRestart(self, ctx):
-        if self.hasPermission(ctx.message.author, lvl=10):
-            await ctx.send("Restarting...")
-            sys.exit()     
+        await ctx.send("Restarting...")
+        sys.exit()     
     ###################################################################################################
     #####                                  Debug Commands                                          ####
     ###################################################################################################

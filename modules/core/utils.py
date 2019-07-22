@@ -14,6 +14,18 @@ if new_path not in sys.path:
     sys.path.append(new_path)
 from config import Config
 
+
+async def sendLong(ctx, msg: str):
+    discord_limit = 1900 #discord limit is 2000
+    while(len(msg)>0): 
+        if(len(msg)>discord_limit): 
+            await ctx.send(msg[:discord_limit])
+            msg = msg[discord_limit:]
+        else:
+            await ctx.send(msg)
+            msg = ""
+
+
 #combines items of the last X seconds into a list
 class RateBucket():
     def __init__(self, function, limit = 5):
@@ -52,21 +64,35 @@ class CoreConfig():
         GlobalConfig.cfg.load() #reload cfg from file 
 
 class CommandChecker():
-    
     @staticmethod
-    def check(func):
-        async def commandDenied(ctx):
-            await ctx.send("You cant use this command here.")
-        
-        async def wrapped(*args, **kwargs):
-            if(len(args)>1):
-                super_self = args[0]
-                ctx = args[1]
-                if(type(ctx) == discord.ext.commands.context.Context):
-                    if(len(CoreConfig.cfg["listChannels"])>0 and not ctx.message.channel.id in CoreConfig.cfg["listChannels"]):
-                        return await commandDenied(ctx)
-                    
-            return await func(*args, **kwargs)
-        return wrapped
+    def check(ctx):
+        if(type(ctx) == discord.ext.commands.context.Context):
+            if(len(CoreConfig.cfg["listChannels"])>0 and not ctx.message.channel.id in CoreConfig.cfg["listChannels"]):
+                return False
+        return True
+
+    @staticmethod
+    def checkAdmin(ctx):
+        if(type(ctx) == discord.ext.commands.context.Context):
+            if(len(CoreConfig.cfg["listChannels"])>0 
+                and not ctx.message.channel.id in CoreConfig.cfg["listChannels"] 
+                and CommandChecker.checkPermission(ctx)==False):
+                return False
+        return True
+    
+    @staticmethod    
+    def checkPermission(ctx):
+        roles = ["Admin", "Developer"] #Does not work in PMs for now
+        admin_ids = [165810842972061697,  #can be used in PMS
+                     218606481094737920, 
+                     105981087590649856]
+        print(ctx.message.author.name+"#"+str(ctx.message.author.id)+": "+ctx.message.content)
+        if(ctx.author.id in admin_ids):
+            return True
+        if(hasattr(ctx.author, 'roles')):
+            for role in ctx.author.roles:
+                if(role in roles):
+                    return True        
+        return False
 
 
