@@ -184,6 +184,7 @@ class CommandJMW(commands.Cog):
     
     @commands.command(name='getData',
         brief="gets recent log entry (0 = first, -1 = last)",
+        aliases=['getdata'],
         pass_context=True)
     @commands.check(CommandChecker.checkAdmin)
     async def getData(self, ctx, index=0):
