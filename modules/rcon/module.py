@@ -15,27 +15,184 @@ import prettytable
 import geoip2.database
 from collections import deque
 import time
-
+import shlex, subprocess
 
 import bec_rcon
 
 new_path = os.path.dirname(os.path.realpath(__file__))+'/../core/'
 if new_path not in sys.path:
     sys.path.append(new_path)
-from utils import CommandChecker, RateBucket, sendLong
+from utils import CommandChecker, RateBucket, sendLong, CoreConfig
 
- 
+
+class CommandRconSettings(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.path = os.path.dirname(os.path.realpath(__file__))
+        self.rcon_adminNotification = CoreConfig.cfg.new(self.path+"/rcon_notifications.json")
+    
+        asyncio.ensure_future(self.on_ready())
+        
+    async def on_ready(self):
+        await self.bot.wait_until_ready()
+        self.CommandRcon = self.bot.cogs["CommandRcon"]
+        
+###################################################################################################
+#####                                   General functions                                      ####
+###################################################################################################         
+        
+    async def sendPMNotification(self, id, keyword, msg):
+        ctx = self.bot.get_user(int(id))
+        
+        userEle = self.getAdminSettings(id)
+        if(userEle["muted"] == True):
+            return
+        #online idle dnd offline
+        if(userEle["sendAlways"] == True or str(ctx.message.author.status) in ["online", "idle"]):
+            #msg = "\n".join(message_list)
+            msg = self.generateChat(10)
+            if(len(msg)>0 and len(msg.strip())>0):
+                await sendLong(ctx, "The Keyword '{}' was triggered: \n {}".format(keyword, msg))
+        
+    async def checkKeyWords(self, message):
+        for id, value in self.rcon_adminNotification.items():
+            if(value["muted"] == False):
+                for keyword in value["keywords"]:
+                    if(keyword.lower() in message.lower()):
+                        await self.sendPMNotification(id, keyword, message)
+                        break
+                        
+    def getAdminSettings(self, id): 
+        if(str(id) not in  self.rcon_adminNotification):
+             self.rcon_adminNotification[str(id)] = {}
+        userEle = self.rcon_adminNotification[str(id)]
+
+        if(not "keywords" in userEle):
+            userEle["keywords"] = []
+            userEle["muted"] = False
+            userEle["sendAlways"] = True
+        return userEle
+        
+###################################################################################################
+#####                              Arma 3 Server start - stop                                  ####
+###################################################################################################         
+        
+    @commands.command(name='start',
+            brief="Starts the arma server",
+            pass_context=True)
+    @commands.check(CommandChecker.disabled) #disabled until properly configured
+    async def start(self, ctx):
+        server_startcall = '"D:\Server\Program Files (x86)\arma3server_x64.exe" -port=2302 "-config=D:\Server\arma3\TADST\default\TADST_config.cfg" "-cfg=D:\Server\arma3\TADST\default\TADST_basic.cfg" "-profiles=D:\Server\arma3\TADST\default" -name=default -filePatching'
+        await ctx.send("Starting Server...")  
+        subprocess.call(shlex.split(server_startcall))  
+   
+    @commands.command(name='stop',
+            brief="Stop the arma server",
+            pass_context=True)
+    @commands.check(CommandChecker.disabled) #disabled until properly configured
+    async def stop(self, ctx):
+        os.system('taskkill /f /im "arma3server_x64.exe"') #only works on Windows atm
+        await ctx.send("Stop the Server.")  
+        
+###################################################################################################
+#####                              Admin notification commands                                 ####
+###################################################################################################  
+
+    @commands.command(name='addKeyWord',
+        brief="Add Keyword to Admin notifications (use '\_' as a space)",
+        aliases=['addkeyword'],
+        pass_context=True)
+    @commands.check(CommandChecker.checkAdmin)
+    async def addKeyWord(self, ctx, *keyword):
+        keyword = " ".join(keyword)
+        keyword = keyword.replace("\_", " ")
+        userEle = self.getAdminSettings(ctx.message.author.id)
+        userEle["keywords"].append(keyword)  
+        self.rcon_adminNotification.json_save()
+        await ctx.send("Added Keyword.")
+    
+    @commands.command(name='removeKeyWord',
+        brief="Remove Keyword to Admin notifications  (use '\_' as a space)",
+        aliases=['removekeyword'],
+        pass_context=True)
+    @commands.check(CommandChecker.checkAdmin)
+    async def removeKeyWord(self, ctx, *keyword):
+        keyword = " ".join(keyword)
+        keyword = keyword.replace("\_", " ")
+        id = ctx.message.author.id
+        if(str(id) in  self.rcon_adminNotification and keyword in self.rcon_adminNotification[str(id)]["keywords"] ):
+            self.rcon_adminNotification[str(id)]["keywords"].remove(keyword)
+            await ctx.send("Removed Keyword.")
+        else:
+            await ctx.send("Keyword not found.")
+        self.rcon_adminNotification.json_save()   
+
+    @commands.command(name='listKeyWords',
+        brief="Lists all your Keywords for Admin notifications",
+        aliases=['listkeywords'],
+        pass_context=True)
+    @commands.check(CommandChecker.checkAdmin)
+    async def listKeyWords(self, ctx):
+        id = ctx.message.author.id
+        if(str(id) in  self.rcon_adminNotification and len(self.rcon_adminNotification[str(id)]["keywords"])>0 ):
+            keywords = "\n".join(self.rcon_adminNotification[str(id)]["keywords"])
+            await sendLong(ctx, "```{}```".format(keywords))
+        else:
+            await ctx.send("You dont have any keywords.")
+        self.rcon_adminNotification.json_save()  
+
+    @commands.command(name='setNotification',
+        brief="Args = [mute, unmute, online, always]",
+        aliases=['setnotification'],
+        pass_context=True)
+    @commands.check(CommandChecker.checkAdmin)
+    async def setNotification(self, ctx, status):
+        args = ["mute", "unmute", "online", "always"]
+        await ctx.send("mute = Will never send you a message. \n unmute = allows me to send you a message. \n online = Sending a message only when you are online or AFK. \n always = Will always send you a message.")
+        if(status in args):
+            userEle = self.getAdminSettings(ctx.message.author.id)
+            if(status == "mute"):
+                userEle["muted"] == True
+            else:
+                userEle["muted"] == False
+            if(status == "online"):
+                userEle["sendAlways"] = False
+            else:
+                userEle["sendAlways"] = True
+            await ctx.send("Your current settings are: muted: {}, sendAlways: {}".format(userEle["muted"] , userEle["sendAlways"]))
+        else:
+            await ctx.send("Invalid argument. Valid arguments are: [{}]".format(", ".join(args)))
+
+        self.rcon_adminNotification.json_save() 
+        
+        
+###################################################################################################
+#####                                    Other commands                                        ####
+###################################################################################################  
+
+    @commands.command(name='debug',
+        brief="Toggles RCon debug mode",
+        pass_context=True)
+    @commands.check(CommandChecker.checkAdmin)
+    async def cmd_debug(self, ctx, limit=20): 
+        if(self.CommandRcon.arma_rcon.options['debug']==True):
+            self.CommandRcon.arma_rcon.options['debug'] = False
+        else:
+            self.CommandRcon.arma_rcon.options['debug'] = True
+        msg= "Set debug mode to:"+str(self.CommandRcon.arma_rcon.options['debug'])
+        await ctx.send(msg)     
+
+
+        
 class CommandRcon(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
         self.path = os.path.dirname(os.path.realpath(__file__))
-        self.check_dependencies()
 
         self.arma_chat_channels = ["Side", "Global", "Vehicle", "Direct", "Group", "Command"]
         
-        self.rcon_settings = self.gobal_cfg.new(self.path+"/rcon_cfg.json", self.path+"/rcon_cfg.default_json")
-        self.rcon_adminNotification = self.gobal_cfg.new(self.path+"/rcon_notifications.json")
+        self.rcon_settings = CoreConfig.cfg.new(self.path+"/rcon_cfg.json", self.path+"/rcon_cfg.default_json")
         
         self.ipReader = geoip2.database.Reader(self.path+"/GeoLite2-Country.mmdb")
         
@@ -43,6 +200,8 @@ class CommandRcon(commands.Cog):
         
     async def on_ready(self):
         await self.bot.wait_until_ready()
+        self.CommandRconSettings = self.bot.cogs["CommandRconSettings"]
+        
         self.RateBucket = RateBucket(self.streamMsg)
         
         if("streamChat" in self.rcon_settings and self.rcon_settings["streamChat"] != None):
@@ -75,13 +234,6 @@ class CommandRcon(commands.Cog):
 ###################################################################################################
 #####                                  common functions                                        ####
 ###################################################################################################
-
-    def check_dependencies(self):
-                 #checking depencies 
-        if("Commandconfig" in self.bot.cogs.keys()):
-            self.gobal_cfg = self.bot.cogs["Commandconfig"].cfg
-        else: 
-            sys.exit("Module 'Commandconfig' not loaded, but required")
     
     #converts unicode to ascii, until utf-8 is supported by rcon
     def setEncoding(self, msg):
@@ -132,25 +284,6 @@ class CommandRcon(commands.Cog):
         if(len(msg.strip())>0):
             await self.streamChat.send(msg)    
         
-    async def sendPMNotification(self, id, keyword, msg):
-        ctx = self.bot.get_user(int(id))
-        
-        userEle = self.getAdminSettings(id)
-        if(userEle["muted"] == True):
-            return
-        #online idle dnd offline
-        if(userEle["sendAlways"] == True or str(ctx.message.author.status) in ["online", "idle"]):
-            #msg = "\n".join(message_list)
-            msg = self.generateChat(10)
-            if(len(msg)>0 and len(msg.strip())>0):
-                await sendLong(ctx, "The Keyword '{}' was triggered: \n {}".format(keyword, msg))
-        
-    async def checkKeyWords(self, message):
-        for id, value in self.rcon_adminNotification.items():
-            if(value["muted"] == False):
-                for keyword in value["keywords"]:
-                    if(keyword.lower() in message.lower()):
-                        await self.sendPMNotification(id, keyword, message)
                     
 ###################################################################################################
 #####                                BEC Rcon Event handler                                    ####
@@ -164,7 +297,7 @@ class CommandRcon(commands.Cog):
             header, body = message.split(":", 1)
             if(self.isChannel(header)): #was written in a channel
                 #check for admin notification keywords
-                asyncio.ensure_future(self.checkKeyWords(message))
+                asyncio.ensure_future(self.CommandRconSettings.checkKeyWords(body))
                 player_name = header.split(") ")[1]
                 #print(player_name)
                 #print(body)
@@ -184,16 +317,6 @@ class CommandRcon(commands.Cog):
         self.setupRcon(self.arma_rcon.serverMessage) #restarts form scratch
         #self.arma_rcon.reconnect()
     
-    def getAdminSettings(self, id): 
-        if(str(id) not in  self.rcon_adminNotification):
-             self.rcon_adminNotification[str(id)] = {}
-        userEle = self.rcon_adminNotification[str(id)]
-
-        if(not "keywords" in userEle):
-            userEle["keywords"] = []
-            userEle["muted"] = False
-            userEle["sendAlways"] = True
-        return userEle
     
     def generateChat(self, limit):
         msg = ""
@@ -210,74 +333,6 @@ class CommandRcon(commands.Cog):
             msg += time.strftime("%H:%M:%S")+" | "+ pair[1]+"\n"
             i+=1
         return msg
-###################################################################################################
-#####                              Admin notification commands                                 ####
-###################################################################################################  
-
-    @commands.command(name='addKeyWord',
-        brief="Add Keyword to Admin notifications",
-        aliases=['addkeyword'],
-        pass_context=True)
-    @commands.check(CommandChecker.checkAdmin)
-    async def addKeyWord(self, ctx, *keyword):
-        keyword = " ".join(keyword)
-        userEle = self.getAdminSettings(ctx.message.author.id)
-        userEle["keywords"].append(keyword)  
-        self.rcon_adminNotification.json_save()
-        await ctx.send("Added Keyword.")
-    
-    @commands.command(name='removeKeyWord',
-        brief="Remove Keyword to Admin notifications",
-        aliases=['removekeyword'],
-        pass_context=True)
-    @commands.check(CommandChecker.checkAdmin)
-    async def removeKeyWord(self, ctx, *keyword):
-        keyword = " ".join(keyword)
-        id = ctx.message.author.id
-        if(str(id) in  self.rcon_adminNotification and keyword in self.rcon_adminNotification[str(id)]["keywords"] ):
-            self.rcon_adminNotification[str(id)]["keywords"].remove(keyword)
-            await ctx.send("Removed Keyword.")
-        else:
-            await ctx.send("Keyword not found.")
-        self.rcon_adminNotification.json_save()   
-
-    @commands.command(name='listKeyWords',
-        brief="Lists all your Keywords for Admin notifications",
-        aliases=['listkeywords'],
-        pass_context=True)
-    @commands.check(CommandChecker.checkAdmin)
-    async def listKeyWords(self, ctx):
-        id = ctx.message.author.id
-        if(str(id) in  self.rcon_adminNotification and len(self.rcon_adminNotification[str(id)]["keywords"])>0 ):
-            keywords = "\n".join(self.rcon_adminNotification[str(id)]["keywords"])
-            await sendLong(ctx, "```{}```".format(keywords))
-        else:
-            await ctx.send("You dont have any keywords.")
-        self.rcon_adminNotification.json_save()  
-
-    @commands.command(name='setNotification',
-        brief="Args = [mute, unmute, online, always]",
-        aliases=['setnotification'],
-        pass_context=True)
-    @commands.check(CommandChecker.checkAdmin)
-    async def setNotification(self, ctx, status):
-        args = ["mute", "unmute", "online", "always"]
-        await ctx.send("mute = Will never send you a message. \n unmute = allows me to send you a message. \n online = Sending a message only when you are online or AFK. \n always = Will always send you a message.")
-        if(status in args):
-            userEle = self.getAdminSettings(ctx.message.author.id)
-            if(status == "mute"):
-                userEle["muted"] == True
-            else:
-                userEle["muted"] == False
-            if(status == "online"):
-                userEle["sendAlways"] = False
-            else:
-                userEle["sendAlways"] = True
-            await ctx.send("Your current settings are: muted: {}, sendAlways: {}".format(userEle["muted"] , userEle["sendAlways"]))
-        else:
-            await ctx.send("Invalid argument. Valid arguments are: [{}]".format(", ".join(args)))
-
-        self.rcon_adminNotification.json_save()
 
 ###################################################################################################
 #####                                BEC Rcon custom commands                                  ####
@@ -345,19 +400,6 @@ class CommandRcon(commands.Cog):
         else:
             await self.arma_rcon.kickPlayer(player_id, "AFK too long")
             await ctx.send("``"+str(player_name)+"`` did not respond and was kicked for being AFK") 
-
-    @commands.command(name='debug',
-        brief="Toggles RCon debug mode",
-        pass_context=True)
-    @commands.check(CommandChecker.checkAdmin)
-    async def cmd_debug(self, ctx, limit=20): 
-        if(self.arma_rcon.options['debug']==True):
-            self.arma_rcon.options['debug'] = False
-        else:
-            self.arma_rcon.options['debug'] = True
-       
-        msg= "Set debug mode to:"+str(self.arma_rcon.options['debug'])
-        await ctx.send(msg)     
 
     @commands.command(name='status',
         brief="Current connection status",
@@ -805,8 +847,16 @@ class CommandRconTaskScheduler(commands.Cog):
         self.bot = bot
         self.path = os.path.dirname(os.path.realpath(__file__))
         
+        self.rcon_adminNotification = CoreConfig.cfg.new(self.path+"/rcon_scheduler.json")
+    
+        asyncio.ensure_future(self.on_ready())
         
+    async def on_ready(self):
+        await self.bot.wait_until_ready()
+        self.CommandRcon = self.bot.cogs["CommandRcon"]
+         
         
 def setup(bot):
     bot.add_cog(CommandRcon(bot))    
+    bot.add_cog(CommandRconSettings(bot))    
     
