@@ -40,3 +40,7 @@ These entries have to generated server side and for this version can be found he
 Right now it is very important that the data array is logged in a format that can be interpreted by python as a valid data structure.
 Valid: [{"Data1": 10}, {"Data1": "String"}, ["Data2"]]
 Invalid: ["Data": String]
+
+## Donate
+
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/YoshiEU)
