@@ -3,6 +3,7 @@
 # Discord 1.2.2
 import asyncio
 from collections import Counter
+from collections import deque
 import concurrent.futures
 import json
 import os
@@ -13,16 +14,16 @@ from discord.ext import commands
 from discord.ext.commands import has_permissions, CheckFailure
 import prettytable
 import geoip2.database
-from collections import deque
-import time
+import datetime
 import shlex, subprocess
+import psutil
 
 import bec_rcon
 
 new_path = os.path.dirname(os.path.realpath(__file__))+'/../core/'
 if new_path not in sys.path:
     sys.path.append(new_path)
-from utils import CommandChecker, RateBucket, sendLong, CoreConfig
+from utils import CommandChecker, RateBucket, sendLong, CoreConfig, Tools
 
 
 class CommandRconSettings(commands.Cog):
@@ -30,7 +31,7 @@ class CommandRconSettings(commands.Cog):
         self.bot = bot
         self.path = os.path.dirname(os.path.realpath(__file__))
         self.rcon_adminNotification = CoreConfig.cfg.new(self.path+"/rcon_notifications.json")
-    
+        self.server_pid = None
         asyncio.ensure_future(self.on_ready())
         
     async def on_ready(self):
@@ -77,27 +78,51 @@ class CommandRconSettings(commands.Cog):
 #####                              Arma 3 Server start - stop                                  ####
 ###################################################################################################         
     def start_server(self):
-        server_startcall = '"D:\Server\Program Files (x86)\arma3server_x64.exe" -port=2302 "-config=D:\Server\arma3\TADST\default\TADST_config.cfg" "-cfg=D:\Server\arma3\TADST\default\TADST_basic.cfg" "-profiles=D:\Server\arma3\TADST\default" -name=default -filePatching'
-        subprocess.call(shlex.split(server_startcall))  
+        
+        #subprocess.call(shlex.split(self.CommandRcon.rcon_settings["start_server"]))  
+        self.server_pid = subprocess.Popen(shlex.split(self.CommandRcon.rcon_settings["start_server"]))  
         
     def stop_server(self):
-        os.system('taskkill /f /im "arma3server_x64.exe"') #only works on Windows atm
+        if(self.server_pid != None):
+            self.server_pid.kill()
+            self.server_pid = None
+        else:
+            return False
+            
+    def stop_all_server(self):
+        for proc in psutil.process_iter():
+            if(proc.name()==self.CommandRcon.rcon_settings["stop_server"]):
+                proc.kill()
+        #os.system('taskkill /f /im {}'.format(self.CommandRcon.rcon_settings["stop_server"])) 
         
     @commands.command(name='start',
             brief="Starts the arma server",
             pass_context=True)
-    @commands.check(CommandChecker.disabled) #disabled until properly configured
+    @commands.check(CommandChecker.checkAdmin) #disabled until properly configured
     async def start(self, ctx):
         await ctx.send("Starting Server...")  
         self.start_server()
+        self.CommandRcon.autoReconnect = True
    
     @commands.command(name='stop',
-            brief="Stop the arma server",
+            brief="Stops the arma server (If server was started with !start)",
             pass_context=True)
-    @commands.check(CommandChecker.disabled) #disabled until properly configured
+    @commands.check(CommandChecker.checkAdmin) #disabled until properly configured
     async def stop(self, ctx):
-        
-        await ctx.send("Stop the Server.")  
+        self.CommandRcon.autoReconnect = False
+        if(self.stop_server()==False):
+            await ctx.send("Failed to stop server. You might want to try '!stop_all' to stop all arma 3 instances")
+        else:
+            await ctx.send("Stopped the Server.")      
+
+    @commands.command(name='stopall',
+            brief="Stop all configured arma servers",
+            pass_context=True)
+    @commands.check(CommandChecker.checkAdmin) #disabled until properly configured
+    async def stop_all(self, ctx):
+        self.CommandRcon.autoReconnect = False
+        self.stop_all_server()
+        await ctx.send("Stop all Servers.")  
         
 ###################################################################################################
 #####                              Admin notification commands                                 ####
@@ -197,7 +222,7 @@ class CommandRcon(commands.Cog):
         self.arma_chat_channels = ["Side", "Global", "Vehicle", "Direct", "Group", "Command"]
         
         self.rcon_settings = CoreConfig.cfg.new(self.path+"/rcon_cfg.json", self.path+"/rcon_cfg.default_json")
-        
+        self.lastReconnect = deque()
         self.ipReader = geoip2.database.Reader(self.path+"/GeoLite2-Country.mmdb")
         
         asyncio.ensure_future(self.on_ready())
@@ -296,6 +321,8 @@ class CommandRcon(commands.Cog):
     def rcon_on_msg_received(self, args):
         message=self.escapeMarkdown(args[0])
 
+        if("CommandRconIngameComs" in self.bot.cogs):
+            asyncio.ensure_future(RconCommandEngine.parseCommand(message))
         #example: getting player name
         if(":" in message):
             header, body = message.split(":", 1)
@@ -317,11 +344,23 @@ class CommandRcon(commands.Cog):
     #function is called when rcon disconnects
     async def rcon_on_disconnect(self):
         await asyncio.sleep(10)
-        print("Reconnecting to BEC Rcon")
-        self.setupRcon(self.arma_rcon.serverMessage) #restarts form scratch
-        #self.arma_rcon.reconnect()
-    
-    
+
+        # cleanup old records
+        try:
+            while self.lastReconnect[0] < datetime.datetime.now() - datetime.timedelta(seconds=60):
+                self.lastReconnect.popleft()
+        except IndexError:
+            pass # there are no records in the queue.
+        if len(self.lastReconnect) > self.rcon_settings["max_reconnects_per_minute"]:
+            print("Stopped Reconnecting - Too many reconnects!")
+            if(self.streamChat):
+                await self.streamChat.send(":warning: Stopped Reconnecting - Too many reconnects!\n Reconnect with '!reconnect'")
+        else:
+            self.lastReconnect.append(datetime.datetime.now())
+            print("Reconnecting to BEC Rcon")
+            self.setupRcon(self.arma_rcon.serverMessage) #restarts form scratch (due to weird behaviour on reconnect)
+
+
     def generateChat(self, limit):
         msg = ""
         data = self.arma_rcon.serverMessage.copy()
@@ -342,6 +381,15 @@ class CommandRcon(commands.Cog):
 #####                                BEC Rcon custom commands                                  ####
 ###################################################################################################  
 
+    @commands.command(name='reconnect',
+        brief="Streams the arma 3 chat live into the current channel",
+        aliases=['reconnectrcon'],
+        pass_context=True)
+    @commands.check(CommandChecker.checkAdmin)
+    async def stream(self, ctx): 
+        self.setupRcon(self.arma_rcon.serverMessage)
+        await ctx.send("Reconnected Rcon")    
+     
     @commands.command(name='streamChat',
         brief="Streams the arma 3 chat live into the current channel",
         aliases=['streamchat'],
@@ -851,16 +899,104 @@ class CommandRconTaskScheduler(commands.Cog):
         self.bot = bot
         self.path = os.path.dirname(os.path.realpath(__file__))
         
-        self.rcon_adminNotification = CoreConfig.cfg.new(self.path+"/rcon_scheduler.json")
+        #self.rcon_adminNotification = CoreConfig.cfg.new(self.path+"/rcon_scheduler.json")
     
         asyncio.ensure_future(self.on_ready())
         
     async def on_ready(self):
         await self.bot.wait_until_ready()
         self.CommandRcon = self.bot.cogs["CommandRcon"]
-         
-        
-def setup(bot):
-    bot.add_cog(CommandRcon(bot))    
-    bot.add_cog(CommandRconSettings(bot))    
+
+
+class RconCommandEngine(object):
+    commands = []
+    channels = ["Side", "Global", "Vehicle", "Direct", "Group", "Command"]
+    command_prefix = "?"
+    cogs = None
     
+    @staticmethod
+    def isChannel(msg):
+        for channel in RconCommandEngine.channels:
+            if(channel in msg):
+                return channel
+        return False
+    
+    @staticmethod
+    async def parseCommand(message: str):
+        if(": " in message):
+            header, body = message.split(": ", 1)
+            channel = RconCommandEngine.isChannel(header)
+            if(channel): #was written in a channel
+                user = header.split(") ")[1]
+                msg = body.split(" ")
+                com = msg[0]
+                if(RconCommandEngine.command_prefix==com[0]):
+                    com = com[1:]
+                    if(len(msg)>0):
+                        args = msg[1:]
+                    else:
+                        args = None
+                    for name, func, parameters in RconCommandEngine.commands:
+                        if(name==com):
+                            if(len(parameters) > 2):
+                                await func(channel, user, *args)
+                            else:
+                                await func(channel, user)
+                                
+                            return True
+        return False
+            
+    @staticmethod
+    def command(*args, **kwargs):
+        def arguments(function):
+            if("name" in kwargs):
+                name = kwargs["name"]
+            else:
+                name =  function.__name__
+
+            if(name in Tools.column(RconCommandEngine.commands, 0)):
+                raise Exception("Command '{}' already exists".format(name))
+            #init
+            async def wrapper(*args, **kwargs):
+                return await function(RconCommandEngine.cogs, *args, **kwargs)
+            t = wrapper
+            RconCommandEngine.commands.append([name, t, function.__code__.co_varnames])
+            return t
+        return arguments
+
+
+# Registering functions, and interacting with the discord bot.
+class CommandRconIngameComs(commands.Cog):
+
+    def __init__(self, bot):
+        self.bot = bot
+        self.path = os.path.dirname(os.path.realpath(__file__))
+        self.playerList = None
+        
+        asyncio.ensure_future(self.on_ready())
+        RconCommandEngine.cogs = self
+        
+    async def on_ready(self):
+        await self.bot.wait_until_ready()
+        self.CommandRcon = self.bot.cogs["CommandRcon"]
+        self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
+    
+    async def getPlayerBEID(self, player: str):
+        print("fetch")
+        if(not player in Tools.column(self.playerList,4)):    #get updated player list, only if player not found
+            self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
+        for id, ip, guid, name, ping in self.playerList:
+            if(player == name):
+                print(id)
+                
+    @RconCommandEngine.command(name="ping")  
+    async def ping(self, channel, user):
+        beid = await self.getPlayerBEID(user)
+        print("Ping command:", channel, user)
+        self.CommandRcon.arma_rcon.sayPlayer(beid, "Pong!")
+
+def setup(bot):
+    bot.add_cog(CommandRcon(bot))
+    bot.add_cog(CommandRconTaskScheduler(bot))
+    #bot.add_cog(CommandRconIngameComs(bot))
+    bot.add_cog(CommandRconSettings(bot))

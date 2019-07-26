@@ -161,9 +161,6 @@ class CommandJMW(commands.Cog):
         admin = True
         await self.processGame(message.channel, admin, index)
 
-        
-        
-        
     @commands.command(  name='lastdata',
                         brief="sends the slected game as raw .json",
                         description="Takes up to 2 arguments, 1st: index of the game, 2nd: sending 'normal'",
@@ -173,6 +170,7 @@ class CommandJMW(commands.Cog):
         message = ctx.message
         admin = True
         await self.processGame(message.channel, admin, index, True)
+        
     @commands.command(name='dump',
         brief="dumps array data into a dump.json file",
         pass_context=True)
