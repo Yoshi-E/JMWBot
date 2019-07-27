@@ -982,15 +982,13 @@ class CommandRconIngameComs(commands.Cog):
         self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
     
     async def getPlayerBEID(self, player: str):
-        if(player.endswith(" (Lobby)")): #Strip lobby from name
-            player = player[:-8]
-        print(player)
-        if(not player in Tools.column(self.playerList,4)):    #get updated player list, only if player not found
+        #if(player.endswith(" (Lobby)")): #Strip lobby from name
+        #    player = player[:-8]
+         #get updated player list, only if player not found
+        if(not player in Tools.column(self.playerList,4)):   
             self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
         for id, ip, ping, guid, name  in self.playerList:
-            print(id, ip, ping, guid, name)
             if(player == name):
-                print(id)
                 return id
                 
     @RconCommandEngine.command(name="ping")  
