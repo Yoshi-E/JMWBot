@@ -982,7 +982,6 @@ class CommandRconIngameComs(commands.Cog):
         self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
     
     async def getPlayerBEID(self, player: str):
-        #
          #get updated player list, only if player not found
         if(not player in Tools.column(self.playerList,4)):   
             self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
@@ -995,7 +994,6 @@ class CommandRconIngameComs(commands.Cog):
     @RconCommandEngine.command(name="ping")  
     async def ping(self, channel, user):
         beid = await self.getPlayerBEID(user)
-        print("Ping command:", channel, user, beid)
         await self.CommandRcon.arma_rcon.sayPlayer(beid, "Pong!")
 
 def setup(bot):
