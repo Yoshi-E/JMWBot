@@ -988,6 +988,7 @@ class CommandRconIngameComs(commands.Cog):
         if(not player in Tools.column(self.playerList,4)):   
             self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
         for id, ip, ping, guid, name  in self.playerList:
+            print("'{}' '{}'".format(name, player))
             if(player == name):
                 return id
                 
