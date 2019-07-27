@@ -985,7 +985,7 @@ class CommandRconIngameComs(commands.Cog):
         print(player)
         if(not player in Tools.column(self.playerList,4)):    #get updated player list, only if player not found
             self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
-        for id, ip, guid, name, ping in self.playerList:
+        for id, ip, name, guid , ping in self.playerList:
             print(player, name)
             if(player == name):
                 print(id)
