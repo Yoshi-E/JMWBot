@@ -322,7 +322,7 @@ class CommandRcon(commands.Cog):
         message=self.escapeMarkdown(args[0])
 
         if("CommandRconIngameComs" in self.bot.cogs):
-            asyncio.ensure_future(RconCommandEngine.parseCommand(message))
+            asyncio.ensure_future(RconCommandEngine.parseCommand(args[0]))
         #example: getting player name
         if(":" in message):
             header, body = message.split(":", 1)
