@@ -987,10 +987,8 @@ class CommandRconIngameComs(commands.Cog):
         if(not player in Tools.column(self.playerList,4)):   
             self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
         for id, ip, ping, guid, name  in self.playerList:
-            print(name)
             if(name.endswith(" (Lobby)")): #Strip lobby from name
-                name = player[:-8]
-            print("'{}' '{}'".format(name, player))
+                name = name[:-8]
             if(player == name):
                 return id
                 
