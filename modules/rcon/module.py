@@ -998,5 +998,5 @@ class CommandRconIngameComs(commands.Cog):
 def setup(bot):
     bot.add_cog(CommandRcon(bot))
     bot.add_cog(CommandRconTaskScheduler(bot))
-    #bot.add_cog(CommandRconIngameComs(bot))
+    bot.add_cog(CommandRconIngameComs(bot))
     bot.add_cog(CommandRconSettings(bot))
