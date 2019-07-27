@@ -986,8 +986,10 @@ class CommandRconIngameComs(commands.Cog):
         if(not player in Tools.column(self.playerList,4)):    #get updated player list, only if player not found
             self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
         for id, ip, guid, name, ping in self.playerList:
+            print(player, name)
             if(player == name):
                 print(id)
+                return id
                 
     @RconCommandEngine.command(name="ping")  
     async def ping(self, channel, user):
