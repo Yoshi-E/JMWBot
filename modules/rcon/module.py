@@ -982,7 +982,7 @@ class CommandRconIngameComs(commands.Cog):
         self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
     
     async def getPlayerBEID(self, player: str):
-        print("fetch")
+        print(player)
         if(not player in Tools.column(self.playerList,4)):    #get updated player list, only if player not found
             self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
         for id, ip, guid, name, ping in self.playerList:
