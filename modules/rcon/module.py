@@ -994,7 +994,7 @@ class CommandRconIngameComs(commands.Cog):
     @RconCommandEngine.command(name="ping")  
     async def ping(self, channel, user):
         beid = await self.getPlayerBEID(user)
-        print("Ping command:", channel, user)
+        print("Ping command:", channel, user, beid)
         await self.CommandRcon.arma_rcon.sayPlayer(beid, "Pong!")
 
 def setup(bot):
