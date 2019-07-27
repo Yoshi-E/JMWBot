@@ -989,6 +989,7 @@ class CommandRconIngameComs(commands.Cog):
         for id, ip, ping, guid, name  in self.playerList:
             if(name.endswith(" (Lobby)")): #Strip lobby from name
                 name = player[:-8]
+            print("'{}' '{}'".format(name, player))
             if(player == name):
                 return id
                 
