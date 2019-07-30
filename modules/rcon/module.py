@@ -439,15 +439,21 @@ class CommandRcon(commands.Cog):
                     await self.arma_rcon.sayPlayer(player_id,  "Thank you for responding in chat.")
                 return
             if((i % 30) == 0):
-                for k in range(0, 3):
-                    await self.arma_rcon.sayPlayer(player_id, "Type something in chat or you will be kicked for being AFK. ("+str(round(i/30)+1)+"/10)")
+                try:
+                    for k in range(0, 3):
+                        await self.arma_rcon.sayPlayer(player_id, "Type something in chat or you will be kicked for being AFK. ("+str(round(i/30)+1)+"/10)")
+                except: 
+                    print("Failed to send command sayPlayer (checkAFK)")
             await asyncio.sleep(1)
         if(self.playerTypesMessage(player_name)):
             if(i==0):
                 already_active = True
             await ctx.send("Player responded in chat. Canceling AFK check.")  
             if(already_active == False):
-                await self.arma_rcon.sayPlayer(player_id, "Thank you for responding in chat.")
+                try:
+                    await self.arma_rcon.sayPlayer(player_id, "Thank you for responding in chat.")
+                except:
+                    print("Failed to send command sayPlayer")
             return
         else:
             await self.arma_rcon.kickPlayer(player_id, "AFK too long")
@@ -999,5 +1005,5 @@ class CommandRconIngameComs(commands.Cog):
 def setup(bot):
     bot.add_cog(CommandRcon(bot))
     bot.add_cog(CommandRconTaskScheduler(bot))
-    bot.add_cog(CommandRconIngameComs(bot))
+    #bot.add_cog(CommandRconIngameComs(bot))
     bot.add_cog(CommandRconSettings(bot))
