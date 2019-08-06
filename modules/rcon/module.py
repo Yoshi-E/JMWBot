@@ -382,11 +382,11 @@ class CommandRcon(commands.Cog):
 ###################################################################################################  
 
     @commands.command(name='reconnect',
-        brief="Streams the arma 3 chat live into the current channel",
+        brief="Reconnects to the Rcon Server",
         aliases=['reconnectrcon'],
         pass_context=True)
     @commands.check(CommandChecker.checkAdmin)
-    async def stream(self, ctx): 
+    async def reconnectrcon(self, ctx): 
         self.setupRcon(self.arma_rcon.serverMessage)
         await ctx.send("Reconnected Rcon")    
      
