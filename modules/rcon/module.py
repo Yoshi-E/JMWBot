@@ -221,6 +221,7 @@ class CommandRcon(commands.Cog):
 
         self.arma_chat_channels = ["Side", "Global", "Vehicle", "Direct", "Group", "Command"]
         
+        self.stayDisconnected = False
         self.rcon_settings = CoreConfig.cfg.new(self.path+"/rcon_cfg.json", self.path+"/rcon_cfg.default_json")
         self.lastReconnect = deque()
         self.ipReader = geoip2.database.Reader(self.path+"/GeoLite2-Country.mmdb")
@@ -229,7 +230,7 @@ class CommandRcon(commands.Cog):
         
     async def on_ready(self):
         await self.bot.wait_until_ready()
-        self.bot.change_presence(game=discord.Game(name="BECTI"))
+        
         self.CommandRconSettings = self.bot.cogs["CommandRconSettings"]
         
         self.RateBucket = RateBucket(self.streamMsg)
@@ -239,10 +240,9 @@ class CommandRcon(commands.Cog):
             #self.streamChat.send("TEST")
         else:
             self.streamChat = None
-        
-        self.setupRcon()
+        await self.setupRcon()
             
-    def setupRcon(self, serverMessage=None):
+    async def setupRcon(self, serverMessage=None):
         self.arma_rcon = bec_rcon.ARC(self.rcon_settings["ip"], 
                                  self.rcon_settings["password"], 
                                  self.rcon_settings["port"], 
@@ -261,7 +261,7 @@ class CommandRcon(commands.Cog):
             data.reverse()
             for d in data:
                 self.arma_rcon.serverMessage.append(d)
-        self.bot.change_presence(status=discord.Status('online'))
+        await self.bot.change_presence(activity=discord.Game(name="BECTI"), status=discord.Status.online)
 ###################################################################################################
 #####                                  common functions                                        ####
 ###################################################################################################
@@ -345,7 +345,11 @@ class CommandRcon(commands.Cog):
     #event supports async functions
     #function is called when rcon disconnects
     async def rcon_on_disconnect(self):
-        self.bot.change_presence(status=discord.Status('dnd'))
+        await self.bot.change_presence(activity=discord.Game(name="Nothing"), status=discord.Status.do_not_disturb)
+        
+        if(self.stayDisconnected==True):
+            return
+
         await asyncio.sleep(10)
 
         # cleanup old records
@@ -361,7 +365,7 @@ class CommandRcon(commands.Cog):
         else:
             self.lastReconnect.append(datetime.datetime.now())
             print("Reconnecting to BEC Rcon")
-            self.setupRcon(self.arma_rcon.serverMessage) #restarts form scratch (due to weird behaviour on reconnect)
+            await self.setupRcon(self.arma_rcon.serverMessage) #restarts form scratch (due to weird behaviour on reconnect)
 
 
     def generateChat(self, limit):
@@ -391,13 +395,13 @@ class CommandRcon(commands.Cog):
     @commands.check(CommandChecker.checkAdmin)
     async def reconnectrcon(self, ctx): 
         if(self.arma_rcon.disconnected==True):
-            self.setupRcon(self.arma_rcon.serverMessage)
+            await self.setupRcon(self.arma_rcon.serverMessage)
             await ctx.send("Reconnected Rcon")   
         else:
             self.arma_rcon.disconnect()
             await ctx.send("Disconnecting and waiting for 45s before reconnecting...")
             await asyncio.sleep(46)
-            self.setupRcon(self.arma_rcon.serverMessage)
+            await self.setupRcon(self.arma_rcon.serverMessage)
             await ctx.send("Reconnected.")    
             
     @commands.command(name='disconnect',
@@ -406,9 +410,11 @@ class CommandRcon(commands.Cog):
         pass_context=True)
     @commands.check(CommandChecker.checkAdmin)
     async def disconnectrcon(self, ctx): 
+        self.stayDisconnected = True
         self.arma_rcon.disconnect()
-        await ctx.send("Disconnect Rcon")   
-       
+        await ctx.send("Disconnected Rcon")
+        await asyncio.sleep(self.rcon_settings["timeoutSec"])
+        self.stayDisconnected = False
      
     @commands.command(name='streamChat',
         brief="Streams the arma 3 chat live into the current channel",
