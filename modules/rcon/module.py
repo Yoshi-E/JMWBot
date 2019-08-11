@@ -391,7 +391,11 @@ class CommandRcon(commands.Cog):
             self.setupRcon(self.arma_rcon.serverMessage)
             await ctx.send("Reconnected Rcon")   
         else:
-            await ctx.send("Please discconect and wait for 45s first!")    
+            self.arma_rcon.disconnect()
+            await ctx.send("Disconnecting and waiting for 45s before reconnecting...")
+            await asyncio.sleep(46)
+            self.setupRcon(self.arma_rcon.serverMessage)
+            await ctx.send("Reconnected.")    
             
     @commands.command(name='disconnect',
         brief="Terminates the connection to Rcon",
@@ -399,8 +403,8 @@ class CommandRcon(commands.Cog):
         pass_context=True)
     @commands.check(CommandChecker.checkAdmin)
     async def disconnectrcon(self, ctx): 
-        self.arma_rcon.discconect()
-        await ctx.send("Disconnected Rcon")   
+        self.arma_rcon.disconnect()
+        await ctx.send("Disconnect Rcon")   
        
      
     @commands.command(name='streamChat',
