@@ -229,6 +229,7 @@ class CommandRcon(commands.Cog):
         
     async def on_ready(self):
         await self.bot.wait_until_ready()
+        self.bot.change_presence(game=discord.Game(name="BECTI"))
         self.CommandRconSettings = self.bot.cogs["CommandRconSettings"]
         
         self.RateBucket = RateBucket(self.streamMsg)
@@ -260,6 +261,7 @@ class CommandRcon(commands.Cog):
             data.reverse()
             for d in data:
                 self.arma_rcon.serverMessage.append(d)
+        self.bot.change_presence(status=discord.Status('online'))
 ###################################################################################################
 #####                                  common functions                                        ####
 ###################################################################################################
@@ -343,6 +345,7 @@ class CommandRcon(commands.Cog):
     #event supports async functions
     #function is called when rcon disconnects
     async def rcon_on_disconnect(self):
+        self.bot.change_presence(status=discord.Status('dnd'))
         await asyncio.sleep(10)
 
         # cleanup old records
