@@ -23,10 +23,16 @@ async def sendLong(ctx, msg: str, enclosed=False):
             pos = t.find("\n", 0, 1000)
             if(pos > 0):
                 pos = len(t)-pos
-                await ctx.send("```"+msg[:pos]+"```")
+                if(enclosed==True):
+                    await ctx.send("```"+msg[:pos]+"```")
+                else:
+                    await ctx.send(msg[:pos])
                 msg = msg[pos:]
             else:
-                await ctx.send("```"+msg[:discord_limit]+"```")
+                if(enclosed==True):
+                    await ctx.send("```"+msg[:discord_limit]+"```")
+                else:
+                    await ctx.send(msg[:discord_limit])
                 msg = msg[discord_limit:]
         else:
             await ctx.send("```"+msg+"```")
