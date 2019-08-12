@@ -35,7 +35,10 @@ async def sendLong(ctx, msg: str, enclosed=False):
                     await ctx.send(msg[:discord_limit])
                 msg = msg[discord_limit:]
         else:
-            await ctx.send("```"+msg+"```")
+            if(enclosed==True):
+                await ctx.send("```"+msg+"```")
+            else:
+                await ctx.send(msg)
             msg = ""
 
 class Tools():
