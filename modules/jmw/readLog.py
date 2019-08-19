@@ -8,6 +8,13 @@ import json
 import builtins as __builtin__
 import logging
 import re
+from collections import deque
+import collections
+import traceback
+import sys
+import itertools
+import asyncio
+import inspect
 
 logging.basicConfig(filename='error.log',
                     level=logging.INFO, 
@@ -23,45 +30,139 @@ class readLog:
     def __init__(self, cfg):
         self.cfg = cfg
         self.path = os.path.dirname(os.path.realpath(__file__))
-                
+        self.maxDataRows = 10000
+        #all data rows are stored in here, limited to prevent memory leaks
+        self.dataRows=deque(maxlen=self.maxDataRows)
+        
+        #scan most recent log. Until enough data is collected
+        logs = self.getLogs()
+        tempdataRows = deque(maxlen=self.maxDataRows)
+        self.Events = []
+        for log in reversed(logs):
+            print("Pre-scanning: "+log)
+            self.scanfile(log)
+            if(len(tempdataRows)+len(self.dataRows) <= self.maxDataRows):
+                tempdataRows.extendleft(reversed(self.dataRows))
+                self.dataRows = deque(maxlen=self.maxDataRows)
+            else:
+                #TODO only merge some parts (to fill complelty)
+                break
+            if(len(tempdataRows)>=self.maxDataRows):
+                break
+        self.dataRows = tempdataRows
+        
+        #Start Watchlog
+        asyncio.ensure_future(self.watch_log())
+
     #get the log files from folder and sort them by oldest first
     def getLogs(self):
-        if(os.path.exists(self.cfg.get('logs_path'))):
+        if(os.path.exists(self.cfg['logs_path'])):
             files = []
-            for file in os.listdir(self.cfg.get('logs_path')):
+            for file in os.listdir(self.cfg['logs_path']):
                 if file.endswith(".log"):
                     files.append(file)
             return sorted(files)
         else:
             return []
 
-    #preconditon: GameOver was called at least once
+    #might fail needs try catch
+    #uses recent data entries to create a full game
     def readData(self, admin, gameindex):
-        logindex = -1
-        logs = self.getLogs()
-        if(len(logs)>0):
-            name = logs[logindex] #fetch last log file
-            #print("scanning: "+name)
-            collected_rows = self.scanfile(name)
-            #if data is also in previous logs, search there, until 2 game ends are found
-            #that way we cen be sure if found a complete game from start till the end
-            while((logindex*-1) < 10 and (logindex*-1) < len(logs) and (gameindex+1) >= len(collected_rows)): 
-                logindex -= 1
-                name = self.getLogs()[logindex] #fetch previous log file
-                #print("next scan: "+name)
-                p = self.scanfile(name)
-                if(len(p[-1][0]) > 0): #incase p is empty
-                    for data in collected_rows[0][0]:
-                        #adds the time from last session onto the current game to have consistent timeline
-                        data["time"] = data["time"]+p[-1][0][-1]["time"] 
-                    collected_rows[0][0] = (p[-1][0]) + (collected_rows[0][0]) #combine data from previous 
-                    collected_rows = p[:-1] + collected_rows  
-            #last element in collected_rows is the current game, 2nd last the the last finished game
-            if((gameindex+1) <= len(collected_rows)):
-                data = collected_rows[-(gameindex+1)]
-                return self.dataToGraph(data[0], data[1], data[2], data[3], data[4], admin)
-        return None
+        meta, game = self.generateGame(len(self.dataRows), gameindex)
+        return self.dataToGraph(meta, game, admin)
+
+
     
+    
+    # index: 0 = current game
+    # start = index is starts searching from
+    # returns false if not enough data to read log was present
+    def getGameEnd(self, start, index = 0):
+        ends = 0
+        if(index == 0):
+            return start
+        for i in range(start, 0, -1):
+            try:
+                if(self.dataRows[i]["CTI_DataPacket"] == "GameOver"):
+                    ends += 1
+                    if(ends >= index):
+                        return i
+            except: #IndexError
+                pass
+        return False
+    
+    
+    
+    
+    def getGameData(self, start, index=0):
+        #due to async scanning and the nature of deque,
+        #we need to make sure that the index of elements do not change while generating the game
+        #to do that we free on space in the queue
+        dl = len(self.dataRows)
+        if(dl>=self.maxDataRows):
+            self.dataRows.popleft()
+        #now we get the postion of our game in the queue
+        end = self.getGameEnd(dl, index)
+        if(end==False):
+            raise Exception("Failed generating game #{}. End not found".format(index))
+        start = self.getGameEnd(dl, index+1)
+        if(start==False):
+            raise Exception("Failed generating game #{}. Start not found".format(index))
+        return list(collections.deque(itertools.islice(self.dataRows, start+1, end+1)))
+    
+    
+            # 
+        # lastmap = datarow["Map"]
+  
+    def processGameData(self, data):
+        last_time = 0
+        last_time_iter = 0
+        first_line = True
+        set_new = False     #when game crashed and mission continues
+        
+        #values
+        meta = {
+                "map": "Unkown",
+                "winner": "currentGame",
+                "timestamp": str(datetime.now().strftime("%H-%M-%S")),
+                "date": str(datetime.now().strftime("%Y-%m-%d")) #TODO get log date
+        }
+        for val in data:
+            if(val["CTI_DataPacket"]=="Header"):
+                if(first_line==False):
+                    set_new = True   
+                meta["map"] = val["Map"]
+                
+            if(val["CTI_DataPacket"]=="Data"):
+                if(set_new == True):
+                    set_new = False
+                    last_time = last_time_iter
+
+                val["time"] = val["time"]+last_time
+                last_time_iter = val["time"] 
+            if(val["CTI_DataPacket"]=="GameOver"):
+                meta["timestamp"] = val["timestamp"]
+                #meta["map"] = val["Map"]
+                if(val["Lost"]):
+                    if(val["Side"] == "WEST"):
+                        meta["winner"] = "EAST"
+                    else:
+                        meta["winner"] = "WEST"
+                else:
+                    if(val["Side"] == "WEST"):
+                        meta["winner"] = "WEST"
+                    else:
+                        meta["winner"] = "EAST"  
+            first_line = False
+        return [meta, data]
+    #generates a game from recent entries    
+    # index: 0 = current game
+    def generateGame(self, start, index=0):
+        data = self.getGameData(start, index)
+        meta, data = self.processGameData(data)
+        return [meta, data]
+        
+        
     def updateDicArray(self, parent, data):
         if("players" in parent and "players" in data):
             parent["CTI_DataPacket"] = data["CTI_DataPacket"]
@@ -75,7 +176,7 @@ class readLog:
         splitat = pline.find("[")
         r = pline[splitat:]  #remove timestamp
         timestamp = pline[:splitat]
-        return [timestamp,r]
+        return [timestamp[:-1],r]
         
     def parseLine(self, line):
         r = self.splitTimestamp(line)[1]
@@ -91,170 +192,160 @@ class readLog:
         r = r.replace("true", "True")
         r = r.replace("false", "False")
         return r
-        
-    def lineHasPacket(self, line):
-        return (line.find("BattlEye") ==-1 and line.find("[") > 0 and "CTI_DataPacket" in line and line.rstrip()[-2:] == "]]")
-        
+            
+    def processLogLine(self, line, databuilder, active=False):
+        #check if line contains a datapacket
+        if(line.find("BattlEye") ==-1 and line.find("[") > 0 and "CTI_DataPacket" in line and line.rstrip()[-2:] == "]]"):
+            try:
+                datarow = ast.literal_eval(self.parseLine(line)) #convert string into array object
+                datarow = dict(datarow)
+                
+                if(datarow["CTI_DataPacket"] == "Header"):
+                    datarow["timestamp"] = self.splitTimestamp(line)[0]
+                    self.dataRows.append(datarow)
+                    if(active):
+                        self.on_missionHeader(datarow)
+                if("Data_" in datarow["CTI_DataPacket"]):
+                    if(len(databuilder)>0):
+                        #check if previous 'Data_x' is present
+                        if(int(databuilder["CTI_DataPacket"][-1])+1 == int(datarow["CTI_DataPacket"][-1])):
+                            databuilder = self.updateDicArray(databuilder, datarow)
+                            #If last element "Data_EOD" is present, 
+                            if("EOD" in datarow["CTI_DataPacket"]):
+                                databuilder["CTI_DataPacket"] = "Data"
+                                self.dataRows.append(databuilder.copy())
+                                if(active):
+                                    self.on_missionData(databuilder.copy())
+                                databuilder = {}
+                    elif(datarow["CTI_DataPacket"] == "Data_1"):
+                        #add first element
+                        databuilder = self.updateDicArray(databuilder, datarow)
+
+                if(datarow["CTI_DataPacket"] == "EOF"):
+                    pass
+                    #raise Exception("Read mission EOF")
+                    #self.dataRows.append(datarow) #Append EOF (should usually never be called)
+                if(datarow["CTI_DataPacket"] == "GameOver"):
+                    datarow["timestamp"] = self.splitTimestamp(line)[0] #finish time
+                    self.dataRows.append(datarow) #Append Gameover / End
+                    if(active):
+                        self.on_missionGameOver(datarow)
+                
+            except Exception as e:
+                print(e)
+                print(line)
+                line = "Error"
+                traceback.print_exc()
+        return databuilder
+
+    #this function will continusly scan a log for data entries. They are stored in self.dataRows
     def scanfile(self, name):
-        collected_rows = []
-        rows = []
-        lastwinner = "????"
-        lastmap = "unkown"
-        timestamp = "??:??:?? "
-        skip = False
-        date = os.path.getmtime(self.cfg.get('logs_path')+name)
-        with open(self.cfg.get('logs_path')+name) as fp: 
+        with open(self.cfg['logs_path']+name) as fp: 
             databuilder = {}
             try:
                 line = fp.readline()
             except:
-                line = "Error"
+                line = None
             while line:
-                if(self.lineHasPacket(line)):
-                #if("CTI_Mission_Performance: GameOver" in line):
-                    
-                    try:
-                        datarow = ast.literal_eval(self.parseLine(line)) #convert string into array object
-                        datarow = dict(datarow)
-                        if(datarow["CTI_DataPacket"] == "Header"):
-                            #print("Map starting: "+datarow["Map"])
-                            #rows.append(datarow)
-                            lastmap = datarow["Map"]
-                            skip = False
-                        if("Data_" in datarow["CTI_DataPacket"]):
-                            if(len(databuilder)>0):
-                                #check if previous 'Data_x' is present
-                                if(int(databuilder["CTI_DataPacket"][-1])+1 == int(datarow["CTI_DataPacket"][-1])):
-                                    
-                                    databuilder = self.updateDicArray(databuilder, datarow)
-                                    #If last element "Data_EOD" is present, 
-                                    if("EOD" in datarow["CTI_DataPacket"]):
-                                        databuilder["CTI_DataPacket"] = "Data"
-                                        rows.append(databuilder.copy())
-                                        databuilder = {}
-                            elif(datarow["CTI_DataPacket"] == "Data_1"):
-                                #add first element
-                                databuilder = self.updateDicArray(databuilder, datarow)
-                                
-
-                        if(datarow["CTI_DataPacket"] == "EOF"):
-                            lastmap = datarow["Map"]
-                            
-                        if(datarow["CTI_DataPacket"] == "GameOver"):
-                            timestamp = self.splitTimestamp(line)[0]
-                            lastmap = datarow["Map"]
-                            if(datarow["Lost"]):
-                                if(datarow["Side"] == "WEST"):
-                                    lastwinner = "EAST"
-                                else:
-                                    lastwinner = "WEST"
-                            else:
-                                if(datarow["Side"] == "WEST"):
-                                    lastwinner = "WEST"
-                                else:
-                                    lastwinner = "EAST"
-                                #rows.append(datarow)
-                            collected_rows.append([rows.copy(),  lastwinner, lastmap, timestamp[:-1], date])
-                            lastwinner = "????"
-                            lastmap = "unkown"
-                            timestamp = "??:??:?? "
-                            rows = []
-                            #seeks forward until a new mission start was found, to ensure entries between end - start will be skipped
-                            while line:
-                                try:
-                                    line = fp.readline()
-                                    if(self.lineHasPacket(line)):
-                                        datarow = ast.literal_eval(self.parseLine(line))
-                                        datarow = dict(datarow)
-                                        if(datarow["CTI_DataPacket"] == "Header"):
-                                            skip=True
-                                            break
-                                except:
-                                    line = "Error"
-                    except Exception as e:
-                        print(e)
-                        print(line)
-                        line = "Error"
+                databuilder = self.processLogLine(line, databuilder)
                 try:
-                    if(skip==False):
-                        line = fp.readline()
+                    line = fp.readline()
                 except:
-                    line = "Error"
-            collected_rows.append([rows.copy(),  "::currentGame::", lastmap,timestamp[:-1], date]) #get rows from current game
-        return collected_rows.copy()
-    
-    def featchValues(self, data,field):
-        if(len(data)>0 and field in data[0]):
-            return [item[field] for item in data]
+                    line = None
+                    
+    async def watch_log(self):
+        databuilder = {}
+        while(True): #Wait till a log file exsists
+            logs = self.getLogs()
+            if(len(logs) > 0):
+                current_log = logs[-1]
+                print("current log: "+current_log)
+                file = open(self.cfg["logs_path"]+current_log, "r")
+                file.seek(0, 2) #jump to the end of the file
+                try:
+                    while (True):
+                        #where = file.tell()
+                        try:
+                            line = file.readline()
+                        except:
+                            line = None
+                        if not line:
+                            await asyncio.sleep(10)
+                            #file.seek(where)
+                            if(current_log != self.getLogs()[-1]):
+                                old_log = current_log
+                                current_log = self.getLogs()[-1] #update to new recent log
+                                #self.scanfile(current_log) #Log most likely empty, but a quick scan cant hurt.
+                                file = open(self.cfg["logs_path"]+current_log, "r")
+                                print("current log: "+current_log)
+                                self.on_newLog(old_log, current_log)
+                        else:
+                            databuilder = self.processLogLine(line, databuilder, True)
+                except Exception as e:
+                    print(e)
+                    traceback.print_exc()
+            else:
+                await asyncio.sleep(10*60)
+###################################################################################################
+#####                                  Event Handeler                                          ####
+###################################################################################################   
+    def add_Event(self, name: str, func):
+        events = ["on_missionHeader", "on_missionData", "on_missionGameOver", "on_newLog"]
+        if(name in events):
+            self.Events.append([name,func])
         else:
-            return []
-        
+            raise Exception("Failed to add unkown event: "+name)
+
             
-    # this is an exmaple place holder fuction for other plot types
-    # ignore for now
-    def stackedBarchart(self):
-        # Set the vertical dimension to be smaller.. 
-        # 3.5 seems to work after a bit of experimenting.
-        plt.rcParams["figure.figsize"] = [10, 3.5]
-        fig, chart_ax = plt.subplots()
-        plt.rcdefaults()
-
-        # Sample Data
-        # -------------------
-
-        segment_values = [ {'value': 12, 'label': 'A', 'color': '#FF0000'},
-         {'value': 8, 'label': 'B', 'color': '#00FF00'},
-         {'value': 5, 'label': 'C', 'color': '#0000FF'},
-         {'value': 5, 'label': 'D', 'color': '#33A6CC'},
-         {'value': 16, 'label': 'E', 'color': '#A82279'}
-         ]
-
-        # Sum up the value total.
-        outer_bar_length = 0
-        for segitem in segment_values:
-            outer_bar_length += segitem['value']
-        outer_bar_label = 'Total Time'
-
-        # In this case we expect only 1 item in the entries list.
-        y_pos = [0]
-        width = 0.05
-
-        # Set the 'empty' bar .. this is here to coerce Matplotlib
-        # to keep the size of the bar smaller on our actual data.
-        # Otherwise the bar will use all available space.
-
-        chart_ax.barh(y_pos, 0, 1.0, align='center', color='white', ecolor='black', label=None)
-
-        # Is there an 'outer' or container bar?
-        if outer_bar_length != -1:
-            chart_ax.barh(y_pos, outer_bar_length, 0.12,
-            align='center', color='#D9DCDE', label=outer_bar_label, left=0)
-
-
-        # Now go through and add in the actual segments of data.
-        left_pos = 0
-        for idx in range(len(segment_values)):
-            segdata = segment_values[idx]
-            seglabel = segdata['label']
-            segval = segdata['value']
-            segcol = segdata['color']
-
-            chart_ax.barh(y_pos, [segval], width, align='center', color=segcol, label=seglabel, left=left_pos, edgecolor=['black', 'black'], linewidth=0.5)
-            left_pos += segval
-
-        chart_ax.set_yticks([1])
-        chart_ax.invert_yaxis()
-        chart_ax.set_xlabel('Time')
-        chart_ax.set_title('Single Stacked Bar Chart')
-        plt.tight_layout()
-
-        # Set up the legend so it is arranged across the top of the chart.
-        anchor_vals = (0.01, 0.6, 0.95, 0.2)
-        plt.legend(bbox_to_anchor=anchor_vals, loc=4, ncol=4, mode="expand", borderaxespad=0.0)
-
-        plt.show(block=False) 
+    def check_Event(self, parent, *args):
+        for event in self.Events:
+            func = event[1]
+            if(inspect.iscoroutinefunction(func)): #is async
+                if(event[0]==parent):
+                    if(len(args)>0):
+                        asyncio.ensure_future(func(args))
+                    else:
+                        asyncio.ensure_future(func())
+            else:
+                if(event[0]==parent):
+                    if(len(args)>0):
+                        func(args)
+                    else:
+                        func()
+###################################################################################################
+#####                                  Event functions                                         ####
+################################################################################################### 
+    def on_missionHeader(self, data):
+        self.check_Event("on_missionHeader", data)    
         
-    def dataToGraph(self, data, lastwinner, lastmap, timestamp, date, admin):
+    def on_missionData(self, data):
+        self.check_Event("on_missionData", data)    
+        
+    def on_missionGameOver(self, data):
+        self.check_Event("on_missionGameOver", data)    
+        
+    def on_newLog(self, oldLog, newLog):
+        self.check_Event("on_newLog", oldLog, newLog)
+
+   
+###################################################################################################
+#####                                  Graph Generation                                        ####
+###################################################################################################   
+
+    def featchValues(self, data,field):
+        list = []
+        for item in data:
+            if(field in item):
+                list.append(item[field])
+        return list
+   
+        
+    def dataToGraph(self, meta, data, admin):
+        lastwinner = meta["winner"]
+        lastmap = meta["map"]
+        timestamp = meta["timestamp"]
+        fdate = meta["date"]
+        
         #register plots
         plots = []
         v1 = self.featchValues(data, "score_east")
@@ -341,7 +432,6 @@ class readLog:
                     "title": "Total Objects count"
                     })  
 
-        fdate = datetime.utcfromtimestamp(date).strftime('%Y-%m-%d')
         #Calculate time in min
         time = self.featchValues(data, "time")
         for i in range(len(time)):
@@ -389,20 +479,19 @@ class readLog:
                 zplots[-1].set_title(pdata["title"])
         
         #create folders to for images / raw data
-        if not os.path.exists(self.path+"/"+self.cfg.get('data_path')):
-            os.makedirs(self.path+"/"+self.cfg.get('data_path'))
-        if not os.path.exists(self.path+"/"+self.cfg.get('image_path')):
-            os.makedirs(self.path+"/"+self.cfg.get('image_path'))
+        if not os.path.exists(self.path+"/"+self.cfg['data_path']):
+            os.makedirs(self.path+"/"+self.cfg['data_path'])
+        if not os.path.exists(self.path+"/"+self.cfg['image_path']):
+            os.makedirs(self.path+"/"+self.cfg['image_path'])
         
         t=""
-        if(lastwinner=="::currentGame::"):
-            lastwinner="currentGame"
+        if(lastwinner=="currentGame"):
             t = "-CUR"
         if(admin==True):
             t +="-ADV"
                         #path / date # time # duration # winner # addtional_tags
-        filename_pic =(self.path+"/"+self.cfg.get('image_path')+fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.png').replace("\\","/")
-        filename =    (self.path+"/"+self.cfg.get('data_path')+ fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.json').replace("\\","/")
+        filename_pic =(self.path+"/"+self.cfg['image_path']+fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.png').replace("\\","/")
+        filename =    (self.path+"/"+self.cfg['data_path']+ fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.json').replace("\\","/")
         
         #save image
         fig.savefig(filename_pic, dpi=100, pad_inches=3)
@@ -414,6 +503,4 @@ class readLog:
         
         return {"date": fdate, "time": timestamp, "lastwinner": lastwinner, "gameduration": gameduration, "picname": filename_pic, "dataname": filename, "data": data}
 
-    
-#readData()
 
