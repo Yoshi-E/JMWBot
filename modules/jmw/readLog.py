@@ -33,8 +33,6 @@ class readLog:
         self.maxDataRows = 10000
         #all data rows are stored in here, limited to prevent memory leaks
         self.dataRows=deque(maxlen=self.maxDataRows)
-        self.Log_ext = ".log"
-        self.Log_ext = ".rpt"
         #scan most recent log. Until enough data is collected
         logs = self.getLogs()
         tempdataRows = deque(maxlen=self.maxDataRows)
@@ -60,7 +58,7 @@ class readLog:
         if(os.path.exists(self.cfg['logs_path'])):
             files = []
             for file in os.listdir(self.cfg['logs_path']):
-                if file.endswith(self.Log_ext):
+                if (file.endswith(".log") or file.endswith(".rpt")):
                     files.append(file)
             return sorted(files)
         else:
