@@ -243,6 +243,9 @@ class CommandRcon(commands.Cog):
         await self.setupRcon()
             
     async def setupRcon(self, serverMessage=None):
+        self.stayDisconnected = True
+        if(self.arma_rcon != None):
+            self.arma_rcon.disconnect()
         self.arma_rcon = bec_rcon.ARC(self.rcon_settings["ip"], 
                                  self.rcon_settings["password"], 
                                  self.rcon_settings["port"], 
@@ -262,6 +265,7 @@ class CommandRcon(commands.Cog):
             for d in data:
                 self.arma_rcon.serverMessage.append(d)
         await self.bot.change_presence(activity=discord.Game(name="BECTI"), status=discord.Status.online)
+        self.stayDisconnected = False
 ###################################################################################################
 #####                                  common functions                                        ####
 ###################################################################################################
