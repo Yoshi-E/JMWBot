@@ -398,11 +398,13 @@ class CommandRcon(commands.Cog):
             await self.setupRcon(self.arma_rcon.serverMessage)
             await ctx.send("Reconnected Rcon")   
         else:
+            self.stayDisconnected = True
             self.arma_rcon.disconnect()
             await ctx.send("Disconnecting and waiting for 45s before reconnecting...")
-            await asyncio.sleep(46)
+            await asyncio.sleep(50)
             await self.setupRcon(self.arma_rcon.serverMessage)
             await ctx.send("Reconnected.")    
+            self.stayDisconnected = False
             
     @commands.command(name='disconnect',
         brief="Terminates the connection to Rcon",

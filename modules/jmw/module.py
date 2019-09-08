@@ -156,9 +156,12 @@ class CommandJMW(commands.Cog):
                         description="Takes up to 2 arguments, 1st: index of the game, 2nd: sending 'normal'",
                         pass_context=True)
     @commands.check(CommandChecker.checkAdmin)
-    async def command_lastgame(self, ctx, index=0):
+    async def command_lastgame(self, ctx, index=0, admin = "yes"):
         message = ctx.message
-        admin = True
+        if(admin=="yes"):
+            admin = True
+        else: 
+            admin = False
         await self.processGame(message.channel, admin, index)
 
     @commands.command(  name='lastdata',
