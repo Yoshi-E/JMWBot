@@ -221,6 +221,7 @@ class CommandRcon(commands.Cog):
 
         self.arma_chat_channels = ["Side", "Global", "Vehicle", "Direct", "Group", "Command"]
         
+        self.arma_rcon = None
         self.stayDisconnected = False
         self.rcon_settings = CoreConfig.cfg.new(self.path+"/rcon_cfg.json", self.path+"/rcon_cfg.default_json")
         self.lastReconnect = deque()
