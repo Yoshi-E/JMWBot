@@ -201,15 +201,16 @@ class CommandJMW(commands.Cog):
         pass_context=True)
     @commands.check(CommandChecker.checkAdmin)
     async def getData(self, ctx, *player_name):
+        await sendLong(ctx,"Generating data...")
+        
         player_name = " ".join(player_name)
         if(len(player_name)==0):
             player_name = "all"
         virtualFile = self.playerMapGenerator.generateMap(player_name, 100)
         if(virtualFile == False):
-            print("No data found!")
-        #msg = "There are {} packets: ```{}```".format(len(self.readLog.dataRows), self.readLog.dataRows[index])
-        #await sendLong(ctx,msg)
-        await ctx.send(file=discord.File(virtualFile, 'heatmap{}'.format(".jpg")))
+             await sendLong(ctx,"No data found")
+        else:
+            await ctx.send(file=discord.File(virtualFile, 'heatmap{}'.format(".jpg")))
                 
     @commands.command(name='r',
         brief="terminates the bot",
