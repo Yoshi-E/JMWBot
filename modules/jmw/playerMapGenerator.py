@@ -13,6 +13,7 @@ class playerMapGenerator():
     def __init__(self, path):
         self.MAP_SIZE = 30720
         self.mypath = path
+        self.path = os.path.dirname(os.path.realpath(__file__))
         
     def getPlayers(self, data, player_name="all"):
         p = []
@@ -85,7 +86,7 @@ class playerMapGenerator():
         return (int(color[0]), int(color[1]), int(color[2]))
 
     def generateMap(self, player_name="all", bins=50):
-        img = Image.open('/modules/jmwAltis_sat_s.jpg').convert('LA').convert("RGBA")
+        img = Image.open(self.path+'/jmwAltis_sat_s.jpg').convert('LA').convert("RGBA")
         players = self.generateData(player_name)
         print("Cords Count:", len(players))
 
