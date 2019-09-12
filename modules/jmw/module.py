@@ -205,6 +205,8 @@ class CommandJMW(commands.Cog):
         if(len(player_name)==0):
             player_name = "all"
         virtualFile = self.playerMapGenerator.generateMap(player_name, 100)
+        if(virtualFile == False):
+            print("No data found!")
         #msg = "There are {} packets: ```{}```".format(len(self.readLog.dataRows), self.readLog.dataRows[index])
         #await sendLong(ctx,msg)
         await ctx.send(file=discord.File(virtualFile, 'heatmap{}'.format(".jpg")))
