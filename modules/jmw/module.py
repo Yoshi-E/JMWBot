@@ -210,6 +210,7 @@ class CommandJMW(commands.Cog):
         if(virtualFile == False):
              await sendLong(ctx,"No data found")
         else:
+            await sendLong(ctx,"How often the location was visted: Green = 1-9, Blue = 10-99, Red = >99")
             await ctx.send(file=discord.File(virtualFile, 'heatmap{}'.format(".jpg")))
                 
     @commands.command(name='r',
