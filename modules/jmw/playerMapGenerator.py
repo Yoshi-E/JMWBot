@@ -102,8 +102,9 @@ class playerMapGenerator():
         img.save('dark-cat.jpg')
         #return img
         byteImgIO = io.BytesIO()
+        img.save(byteImgIO, "JPEG")
         byteImgIO.seek(0)
-
+        
         return byteImgIO
 
 # d = playerMapGenerator("D:/Dokumente/Arma 3/jmw2")
