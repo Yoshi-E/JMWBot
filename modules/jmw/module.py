@@ -200,8 +200,10 @@ class CommandJMW(commands.Cog):
         aliases=['heatMap'],
         pass_context=True)
     @commands.check(CommandChecker.checkAdmin)
-    async def getData(self, ctx, *player_name="all"):
+    async def getData(self, ctx, *player_name):
         player_name = " ".join(player_name)
+        if(len(player_name)==0):
+            player_name = "all"
         virtualFile = self.playerMapGenerator.generateMap(player_name, 100)
         #msg = "There are {} packets: ```{}```".format(len(self.readLog.dataRows), self.readLog.dataRows[index])
         #await sendLong(ctx,msg)
