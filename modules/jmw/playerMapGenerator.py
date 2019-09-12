@@ -3,11 +3,11 @@ from os import listdir
 from os.path import isfile, join
 import numpy as np
 import numpy.random
-from PIL import Image
+from PIL import Image, ImageDraw
 import sys
+import io
 
-
-# Usage: image = generateMap(self, player_name="all", bins=50)
+# Usage: img = generateMap(self, player_name="all", bins=50)
 
 class playerMapGenerator():
     def __init__(self, path):
@@ -23,7 +23,7 @@ class playerMapGenerator():
             if(player_name != "all" and player[0]!=player_name):
                 continue
             
-            if(player[3][0] >= 0 and player[3][0] <= MAP_SIZE and player[3][1] >= 0 and player[3][1] <= MAP_SIZE):
+            if(player[3][0] >= 0 and player[3][0] <= self.MAP_SIZE and player[3][1] >= 0 and player[3][1] <= self.MAP_SIZE):
                 p.append([player[3][0],player[3][1]])
             
             #if(player[3][0] > 50000 or player[3][1] > 50000):
@@ -31,9 +31,9 @@ class playerMapGenerator():
         return p
 
     def generateData(self, player_name="all"):
-        files = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+        files = [f for f in listdir(self.mypath) if isfile(join(self.mypath, f))]
 
-        players=[] #[[0,0],[MAP_SIZE,MAP_SIZE]]  
+        players=[] #[[0,0],[self.MAP_SIZE,self.MAP_SIZE]]  
         for file in files:
             if("CUR" not in file and "ADV" in file and "Altis" in file):
                 with open('jmw2/'+file) as f:
@@ -44,15 +44,16 @@ class playerMapGenerator():
                                 players += self.getPlayers(row, player_name)
         return np.array(players)
 
-    def drawheatmap(self, data, image):
-        TINT_COLOR = (0, 0, 0)  # Black
-        TRANSPARENCY = .25  # Degree of transparency, 0-100%
+    def drawheatmap(self, data, img):
+        color = (0, 0, 0)  # Black
+        TRANSPARENCY = .4  # Degree of transparency, 0-100%
         OPACITY = int(255 * TRANSPARENCY)
         
         data = np.rot90(data)
-        overlay = image.copy()
-
-        height, width, channels = image.shape
+        overlay = Image.new('RGBA', img.size, color+(0,))
+        draw = ImageDraw.Draw(overlay)  # Create a context for drawing things on it.
+        height = img.size[0]
+        width  = img.size[1]
         bins = len(data)
         
         x_size = int(height/bins)
@@ -63,15 +64,13 @@ class playerMapGenerator():
                 
                 x_pos = int(x_size * x)
                 y_pos = int(y_size * y)
+                if(not (color[0] == 0 and color[1] == 0 and color[2] == 0)):
+                    draw.rectangle(((x_pos, y_pos),(x_pos + x_size, y_pos + y_size)), fill=color+(OPACITY,))
 
-                overlay = Image.new('RGBA', img.size, color+(0,))
-                draw = ImageDraw.Draw(overlay)  # Create a context for drawing things on it.
-                draw.rectangle(((x_pos, y_pos),(x_pos + x_size, y_pos + y_size)), fill=color+(OPACITY,))
-
-                # Alpha composite these two images together to obtain the desired result.
-                img = Image.alpha_composite(img, overlay)
-                img = img.conve
-                
+        # Alpha composite these two imgs together to obtain the desired result.
+        img = Image.alpha_composite(img, overlay)
+        img = img.convert("RGB")
+        return img
 
     def colvF1(self, val):
         color = (0,0,0)        
@@ -83,11 +82,10 @@ class playerMapGenerator():
         if(val >= 100): 
             norm = (val - 100)/(300-100) * 10
             color = (0,0,50+norm*10)     
-        return (255-color[0], 255-color[1], 255-color[2])
+        return (int(color[0]), int(color[1]), int(color[2]))
 
     def generateMap(self, player_name="all", bins=50):
-        image = Image.open('Altis_sat_s.jpg').convert('LA')
-        image = cv2.cvtColor(image,cv2.COLOR_GRAY2RGB)
+        img = Image.open('Altis_sat_s.jpg').convert('LA').convert("RGBA")
         players = self.generateData(player_name)
         print("Cords Count:", len(players))
 
@@ -95,15 +93,17 @@ class playerMapGenerator():
         x = players[:,0]
         y = players[:,1]
         
-        heatmapD, xedges, yedges = np.histogram2d(x, y, bins=bins, range=[[0,MAP_SIZE],[0,MAP_SIZE]])
-        self.drawheatmap(heatmapD, image)
+        heatmapD, xedges, yedges = np.histogram2d(x, y, bins=bins, range=[[0,self.MAP_SIZE],[0,self.MAP_SIZE]])
+        img = self.drawheatmap(heatmapD, img)
         
+        #return img
         byteImgIO = io.BytesIO()
-        image.save(byteImgIO, "JPG")
+        img.save(byteImgIO, "JPG")
 
         return byteImgIO
 
-# image = generateMap("Yoshi_E", 100)
-# cv2.imshow('image',image)
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
+# d = playerMapGenerator("D:/Dokumente/Arma 3/jmw2")
+# img = d.generateMap("all", 100)
+
+# img = img.convert("RGB")
+# img.save('dark-cat.jpg')
