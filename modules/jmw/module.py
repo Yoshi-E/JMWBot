@@ -33,7 +33,7 @@ class CommandJMW(commands.Cog):
         self.readLog.add_Event("on_missionHeader", self.gameStart)
         self.readLog.add_Event("on_missionGameOver", self.gameEnd)
         
-        self.playerMapGenerator = playerMapGenerator(self.cfg["logs_path"])
+        self.playerMapGenerator = playerMapGenerator(self.cfg["data_path"])
         
         self.user_data = {}
         if(os.path.isfile(self.path+"/userdata.json")):
