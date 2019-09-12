@@ -3,7 +3,7 @@ from os import listdir
 from os.path import isfile, join
 import numpy as np
 import numpy.random
-import cv2
+from PIL import Image
 import sys
 
 
@@ -45,6 +45,10 @@ class playerMapGenerator():
         return np.array(players)
 
     def drawheatmap(self, data, image):
+        TINT_COLOR = (0, 0, 0)  # Black
+        TRANSPARENCY = .25  # Degree of transparency, 0-100%
+        OPACITY = int(255 * TRANSPARENCY)
+        
         data = np.rot90(data)
         overlay = image.copy()
 
@@ -59,10 +63,15 @@ class playerMapGenerator():
                 
                 x_pos = int(x_size * x)
                 y_pos = int(y_size * y)
-                cv2.rectangle(overlay,(x_pos, y_pos),(x_pos + x_size, y_pos + y_size), color, -1)
-        #blender with background
-        opacity = 0.4
-        cv2.addWeighted(overlay, opacity, image, 1 - opacity, 0, image)
+
+                overlay = Image.new('RGBA', img.size, color+(0,))
+                draw = ImageDraw.Draw(overlay)  # Create a context for drawing things on it.
+                draw.rectangle(((x_pos, y_pos),(x_pos + x_size, y_pos + y_size)), fill=color+(OPACITY,))
+
+                # Alpha composite these two images together to obtain the desired result.
+                img = Image.alpha_composite(img, overlay)
+                img = img.conve
+                
 
     def colvF1(self, val):
         color = (0,0,0)        
@@ -74,10 +83,10 @@ class playerMapGenerator():
         if(val >= 100): 
             norm = (val - 100)/(300-100) * 10
             color = (0,0,50+norm*10)     
-        return color
+        return (255-color[0], 255-color[1], 255-color[2])
 
     def generateMap(self, player_name="all", bins=50):
-        image = cv2.imread('Altis_sat_s.jpg',0)
+        image = Image.open('Altis_sat_s.jpg').convert('LA')
         image = cv2.cvtColor(image,cv2.COLOR_GRAY2RGB)
         players = self.generateData(player_name)
         print("Cords Count:", len(players))
@@ -89,15 +98,12 @@ class playerMapGenerator():
         heatmapD, xedges, yedges = np.histogram2d(x, y, bins=bins, range=[[0,MAP_SIZE],[0,MAP_SIZE]])
         self.drawheatmap(heatmapD, image)
         
-        #encode 
-        is_success, buffer = cv2.imencode(".jpg", image)
-        io_buf = io.BytesIO(buffer)
-        # decode
-        #decode_img = cv2.imdecode(np.frombuffer(io_buf.getbuffer(), np.uint8), -1)
+        byteImgIO = io.BytesIO()
+        image.save(byteImgIO, "JPG")
 
-        return buffer
+        return byteImgIO
 
-#image = generateMap("Yoshi_E", 100)
-#cv2.imshow('image',image)
-#cv2.waitKey(0)
-#cv2.destroyAllWindows()
+# image = generateMap("Yoshi_E", 100)
+# cv2.imshow('image',image)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
