@@ -80,10 +80,10 @@ class playerMapGenerator():
             color = (0,50+val*10,0)
         if(val >= 10 and val <100): 
             norm = (val - 10)/(100-10) * 10
-            color = (50+norm*10,0,0)       
+            color = (0,0,50+norm*10)       
         if(val >= 100): 
             norm = (val - 100)/(300-100) * 10
-            color = (0,0,50+norm*10)     
+            color = (50+norm*10,0,0)     
         return (int(color[0]), int(color[1]), int(color[2]))
 
     def generateMap(self, player_name="all", bins=50):
