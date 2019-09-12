@@ -13,7 +13,7 @@ import io
 class playerMapGenerator():
     def __init__(self, path):
         self.MAP_SIZE = 30720
-        self.mypath = path
+        self.data_path = path
         self.path = os.path.dirname(os.path.realpath(__file__))
         
     def getPlayers(self, data, player_name="all"):
@@ -33,12 +33,12 @@ class playerMapGenerator():
         return p
 
     def generateData(self, player_name="all"):
-        files = [f for f in listdir(self.mypath) if isfile(join(self.mypath, f))]
+        files = [f for f in listdir(self.data_path) if isfile(join(self.data_path, f))]
 
         players=[] #[[0,0],[self.MAP_SIZE,self.MAP_SIZE]]  
         for file in files:
             if("CUR" not in file and "ADV" in file and "Altis" in file):
-                with open('jmw2/'+file) as f:
+                with open(self.data_path+"/"+file) as f:
                     data = json.load(f)
                     if(len(data) > 0):
                         for row in data:
