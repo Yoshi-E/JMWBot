@@ -5,6 +5,7 @@ from collections import Counter
 import json
 import os
 from modules.jmw.readLog import readLog
+from modules.jmw.playerMapGenerator import playerMapGenerator
 import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions, CheckFailure
@@ -31,6 +32,8 @@ class CommandJMW(commands.Cog):
         self.readLog = readLog(self.cfg)    
         self.readLog.add_Event("on_missionHeader", self.gameStart)
         self.readLog.add_Event("on_missionGameOver", self.gameEnd)
+        
+        self.playerMapGenerator = playerMapGenerator(self.cfg["logs_path"])
         
         self.user_data = {}
         if(os.path.isfile(self.path+"/userdata.json")):
@@ -190,7 +193,19 @@ class CommandJMW(commands.Cog):
     @commands.check(CommandChecker.checkAdmin)
     async def getData(self, ctx, index=0):
         msg = "There are {} packets: ```{}```".format(len(self.readLog.dataRows), self.readLog.dataRows[index])
-        await sendLong(ctx,msg)
+        await sendLong(ctx,msg)    
+        
+    @commands.command(name='heatmap',
+        brief="generates a heatmap of a select player",
+        aliases=['heatMap'],
+        pass_context=True)
+    @commands.check(CommandChecker.checkAdmin)
+    async def getData(self, ctx, *player_name="all"):
+        player_name = " ".join(player_name)
+        virtualFile = self.playerMapGenerator.generateMap(player_name, 100)
+        #msg = "There are {} packets: ```{}```".format(len(self.readLog.dataRows), self.readLog.dataRows[index])
+        #await sendLong(ctx,msg)
+        await ctx.send(file=discord.File(virtualFile, 'heatmap{}'.format(".jpg")))
                 
     @commands.command(name='r',
         brief="terminates the bot",
