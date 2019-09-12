@@ -97,10 +97,9 @@ class playerMapGenerator():
         
         heatmapD, xedges, yedges = np.histogram2d(x, y, bins=bins, range=[[0,self.MAP_SIZE],[0,self.MAP_SIZE]])
         img = self.drawheatmap(heatmapD, img)
-        
         #return img
         byteImgIO = io.BytesIO()
-        img.save(byteImgIO, "JPG")
+        img.save(byteImgIO, "JPEG")
 
         return byteImgIO
 
