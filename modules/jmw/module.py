@@ -199,7 +199,7 @@ class CommandJMW(commands.Cog):
         brief="generates a heatmap of a select player",
         aliases=['heatMap'],
         pass_context=True)
-    @commands.check(CommandChecker.checkAdmin)
+    #@commands.check(CommandChecker.checkAdmin)
     async def getData(self, ctx, *player_name):
         await sendLong(ctx,"Generating data...")
         
