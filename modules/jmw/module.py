@@ -282,7 +282,7 @@ class CommandJMW(commands.Cog):
                 user=self.bot.get_user(165810842972061697)
                 await user.send("Caught exception")
                 await user.send(ex[:1800] + '..' if len(ex) > 1800 else ex)
-                logging.error('Caught exception')
+                print("Caught Error: ", ex)
                 await asyncio.sleep(10)  
                   
 
