@@ -89,7 +89,11 @@ class CommandJMW(commands.Cog):
             if(winner!="currentGame" or last_packet == None):
                 game_name = "Lobby"
             else:
-                game_name = "{} {}min {} players".format(map, time, players)
+                game_name = "{} {}min {}".format(map, time, players)
+                if(players!=1):
+                    game_name+="players"
+                else:
+                    game_name+="player"
         else:
             status = discord.Status.do_not_disturb
         await self.bot.change_presence(activity=discord.Game(name=game_name), status=status)
