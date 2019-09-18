@@ -65,7 +65,7 @@ class CommandJMW(commands.Cog):
         
         last_packet = None
         for packet in reversed(game):
-            if(val["CTI_DataPacket"]=="Data"):
+            if(packet["CTI_DataPacket"]=="Data"):
                 last_packet = packet
                 break
         
