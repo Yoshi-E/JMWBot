@@ -84,13 +84,13 @@ class CommandJMW(commands.Cog):
         if(self.CommandRcon.arma_rcon.disconnected==False):
             status = discord.Status.online
             if(winner!="currentGame" or last_packet == None):
-                game = "BECTI - Lobby"
+                game_name = "BECTI - Lobby"
             else:
-                game = "BECTI-{} {}min {} players".format(map, time, players)
+                game_name = "BECTI-{} {}min {} players".format(map, time, players)
         else:
             status = discord.Status.do_not_disturb
-            
-        await self.bot.change_presence(activity=discord.Game(name=game), status=status)
+        print("change status to:", game_name) 
+        await self.bot.change_presence(activity=discord.Game(name=game_name), status=status)
         
     
     async def set_user_data(self, user_id=0, field="", data=[]):
