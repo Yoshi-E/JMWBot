@@ -156,7 +156,9 @@ class readLog:
         return [meta, data]
     #generates a game from recent entries    
     # index: 0 = current game
-    def generateGame(self, start, index=0):
+    def generateGame(self, start=None, index=0):
+        if(start==None):
+            start = len(self.dataRows)
         data = self.getGameData(start, index)
         meta, data = self.processGameData(data)
         return [meta, data]

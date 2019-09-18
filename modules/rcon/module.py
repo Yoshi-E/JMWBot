@@ -265,7 +265,6 @@ class CommandRcon(commands.Cog):
             data.reverse()
             for d in data:
                 self.arma_rcon.serverMessage.append(d)
-        await self.bot.change_presence(activity=discord.Game(name="BECTI"), status=discord.Status.online)
         self.stayDisconnected = False
 ###################################################################################################
 #####                                  common functions                                        ####
@@ -345,13 +344,10 @@ class CommandRcon(commands.Cog):
         if(self.streamChat != None):
             self.RateBucket.add(message)
     
-        
-    
+
     #event supports async functions
     #function is called when rcon disconnects
     async def rcon_on_disconnect(self):
-        await self.bot.change_presence(activity=discord.Game(name="Nothing"), status=discord.Status.do_not_disturb)
-        
         if(self.stayDisconnected==True):
             return
 

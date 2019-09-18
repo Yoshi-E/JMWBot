@@ -38,11 +38,60 @@ class CommandJMW(commands.Cog):
         self.user_data = {}
         if(os.path.isfile(self.path+"/userdata.json")):
             self.user_data = json.load(open(self.path+"/userdata.json","r"))
-    
+        
+        asyncio.ensure_future(self.on_ready())
+        
+    async def on_ready(self):
+        await self.bot.wait_until_ready()
+        self.CommandRcon = self.bot.cogs["CommandRcon"]
+        
 ###################################################################################################
 #####                                  common functions                                        ####
 ###################################################################################################
-         
+    async def task_setStatus(self):
+        while True:
+            await asyncio.sleep(60)
+            await self.setStatus()
+            
+    async def setStatus(self):
+        game = ""
+        status = discord.Status.do_not_disturb #discord.Status.online
+        
+        #get current Game data
+        meta, game = self.readLog.generateGame()
+        
+        last_packet = None
+        for packet in reversed(game):
+            if(val["CTI_DataPacket"]=="Data"):
+                last_packet = packet
+                break
+        
+        #fetch data
+        players = 0
+        if("players" in last_packet):
+            players = len(packet["players"])
+        time = 0
+        if("time" in last_packet and packet["time"] > 0):
+            time = round(packet["time"])    
+        winner = "currentGame"
+        if("winner" in meta):
+            winner = meta["winner"]   
+        map = unkown
+        if("map" in meta):
+            map = meta["map"]
+            
+        #set checkRcon status
+        if(self.CommandRcon.arma_rcon.disconnected==False):
+            status = discord.Status.online
+            if(winner!="currentGame" or last_packet == None):
+                game = "BECTI - Lobby"
+            else:
+                game = "BECTI-{} {}min {} players".format(map, time, players)
+        else:
+            status = discord.Status.do_not_disturb
+            
+        await self.bot.change_presence(activity=discord.Game(name=game), status=status)
+        
     
     async def set_user_data(self, user_id=0, field="", data=[]):
         if(user_id != 0):
@@ -242,5 +291,6 @@ def setup(bot):
     global local_module
     module = CommandJMW(bot)
     bot.loop.create_task(module.handle_exception("watch_Log"))
+    bot.loop.create_task(module.handle_exception("task_setStatus"))
     bot.add_cog(module)
     
