@@ -75,7 +75,7 @@ class CommandJMW(commands.Cog):
             players = len(packet["players"])
         time = 0
         if("time" in last_packet and packet["time"] > 0):
-            time = round(packet["time"])    
+            time = round(packet["time"]/60)    
         winner = "currentGame"
         if("winner" in meta):
             winner = meta["winner"]   
