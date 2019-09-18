@@ -51,7 +51,7 @@ class CommandJMW(commands.Cog):
     async def task_setStatus(self):
         while True:
             try:
-                await asyncio.sleep(60)
+                await asyncio.sleep(20)
                 await self.setStatus()
             except Exception as e:
                 print("setting status failed", e)
