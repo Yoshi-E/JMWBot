@@ -50,8 +50,11 @@ class CommandJMW(commands.Cog):
 ###################################################################################################
     async def task_setStatus(self):
         while True:
-            await asyncio.sleep(60)
-            await self.setStatus()
+            try:
+                await asyncio.sleep(60)
+                await self.setStatus()
+            except Exception as e:
+                print("setting status failed", e)
             
     async def setStatus(self):
         game = ""
