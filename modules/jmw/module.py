@@ -79,7 +79,7 @@ class CommandJMW(commands.Cog):
         winner = "currentGame"
         if("winner" in meta):
             winner = meta["winner"]   
-        map = unkown
+        map = "unkown"
         if("map" in meta):
             map = meta["map"]
             
@@ -92,7 +92,6 @@ class CommandJMW(commands.Cog):
                 game_name = "BECTI-{} {}min {} players".format(map, time, players)
         else:
             status = discord.Status.do_not_disturb
-        print("change status to:", game_name) 
         await self.bot.change_presence(activity=discord.Game(name=game_name), status=status)
         
     
