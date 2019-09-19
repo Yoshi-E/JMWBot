@@ -86,6 +86,7 @@ class CommandJMW(commands.Cog):
         #set checkRcon status
         if(self.CommandRcon.arma_rcon.disconnected==False):
             status = discord.Status.online
+            game_name = ""
             if(winner!="currentGame" or last_packet == None):
                 game_name = "Lobby"
             else:
