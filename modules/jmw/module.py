@@ -84,10 +84,11 @@ class CommandJMW(commands.Cog):
             map = meta["map"]
             
         #set checkRcon status
+        game_name = "..."
         if(self.CommandRcon.arma_rcon.disconnected==False):
             status = discord.Status.online
-            game_name = ""
-            if(winner!="currentGame" or last_packet == None):
+            
+            if(winner!="currentGame" or last_packet == None or game[-1]["CTI_DataPacket"]=="GameOver"):
                 game_name = "Lobby"
             else:
                 game_name = "{} {}min {}".format(map, time, players)
