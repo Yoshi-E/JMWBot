@@ -55,7 +55,8 @@ class CommandJMW(commands.Cog):
                 await self.setStatus()
             except Exception as e:
                 print("setting status failed", e)
-            
+                traceback.print_exc()
+                
     async def setStatus(self):
         game = ""
         status = discord.Status.do_not_disturb #discord.Status.online
