@@ -11,6 +11,7 @@ from discord.ext import commands
 from discord.ext.commands import has_permissions, CheckFailure
 import ast
 import sys
+import traceback
 
 new_path = os.path.dirname(os.path.realpath(__file__))+'/../core/'
 if new_path not in sys.path:
