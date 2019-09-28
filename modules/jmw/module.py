@@ -73,10 +73,10 @@ class CommandJMW(commands.Cog):
         
         #fetch data
         players = 0
-        if("players" in last_packet):
+        if(last_packet != None and "players" in last_packet):
             players = len(packet["players"])
         time = 0
-        if("time" in last_packet and packet["time"] > 0):
+        if(last_packet != None and "time" in last_packet and packet["time"] > 0):
             time = round(packet["time"]/60)    
         winner = "currentGame"
         if("winner" in meta):
