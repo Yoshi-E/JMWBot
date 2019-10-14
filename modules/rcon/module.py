@@ -746,7 +746,7 @@ class CommandRcon(commands.Cog):
         message = " ".join(message)
         message = self.setEncoding(message)
         if(len(message)<2):
-            await self.arma_rcon.banPlayer(player=player, time=time)
+            await self.arma_rcon.banPlayer(player=player_id, time=time)
         else:
             await self.arma_rcon.banPlayer(player, message, time)
             
