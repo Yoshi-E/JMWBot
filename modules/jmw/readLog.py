@@ -41,7 +41,7 @@ class readLog:
             print("Pre-scanning: "+log)
             self.scanfile(log)
             if(len(tempdataRows)+len(self.dataRows) <= self.maxDataRows):
-                tempdataRows.extendleft(reversed(self.dataRows))
+                tempdataRows.extendleft(self.dataRows)
                 self.dataRows = deque(maxlen=self.maxDataRows)
             else:
                 #TODO only merge some parts (to fill complelty)
