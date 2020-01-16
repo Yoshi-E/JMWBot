@@ -179,9 +179,9 @@ class CommandJMW(commands.Cog):
 
     @commands.command(  name='ping',
                         pass_context=True)
-    async def command_ping(self, *args):
+    async def command_ping(self, ctx, *args):
         msg = 'Pong!'
-        await self.bot.say(msg)
+        await ctx.send(msg)
     
 
     ####################################

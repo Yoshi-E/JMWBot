@@ -17,13 +17,14 @@ import geoip2.database
 import datetime
 import shlex, subprocess
 import psutil
+import traceback
 
 import bec_rcon
 
 new_path = os.path.dirname(os.path.realpath(__file__))+'/../core/'
 if new_path not in sys.path:
     sys.path.append(new_path)
-from utils import CommandChecker, RateBucket, sendLong, CoreConfig, Tools
+from utils import CommandChecker, RateBucket, RateBucketLimit, sendLong, CoreConfig, Tools
 
 
 class CommandRconSettings(commands.Cog):
@@ -328,7 +329,7 @@ class CommandRcon(commands.Cog):
         message=self.escapeMarkdown(args[0])
 
         if("CommandRconIngameComs" in self.bot.cogs):
-            asyncio.ensure_future(RconCommandEngine.parseCommand(args[0]))
+            asyncio.ensure_future(self.process_parseCommand(args[0]))
         #example: getting player name
         if(":" in message):
             header, body = message.split(":", 1)
@@ -344,7 +345,19 @@ class CommandRcon(commands.Cog):
         if(self.streamChat != None):
             self.RateBucket.add(message)
     
-
+    async def process_parseCommand(self, msg):
+        func_name, parameters, args,  valid = await RconCommandEngine.parseCommand(msg)
+        parms =  dict(zip(parameters[3:], args))
+            
+        if(valid ==True):
+            msg = "Sucess"
+        elif(valid ==False):
+            msg = "Failed"
+        else:
+            msg = "{}: {}".format(func_name, valid)
+        if("beid" in parms):
+            await self.arma_rcon.sayPlayer(parms["beid"], "{}".format(msg))
+        
     #event supports async functions
     #function is called when rcon disconnects
     async def rcon_on_disconnect(self):
@@ -948,6 +961,10 @@ class RconCommandEngine(object):
     channels = ["Side", "Global", "Vehicle", "Direct", "Group", "Command"]
     command_prefix = "?"
     cogs = None
+    users = {}
+    rate_limit_commands = []
+    rate_limit = 900 #15min
+    admins = []
     
     @staticmethod
     def isChannel(msg):
@@ -972,13 +989,31 @@ class RconCommandEngine(object):
                     else:
                         args = None
                     for name, func, parameters in RconCommandEngine.commands:
-                        if(name==com):
-                            if(len(parameters) > 2):
-                                await func(channel, user, *args)
-                            else:
-                                await func(channel, user)
+                        try:
+                            if(name==com):
+                                valid = True
+                                now = datetime.datetime.now()
+                                print(now.strftime("%m/%d/%Y, %H:%M:%S"), message)
                                 
-                            return True
+                                if(user not in RconCommandEngine.admins):
+                                    #Create Rate limit
+                                    if(user not in RconCommandEngine.users):
+                                        RconCommandEngine.users[user] = RateBucketLimit(True, RconCommandEngine.rate_limit)
+                                    if(name in RconCommandEngine.rate_limit_commands):
+                                        valid = RconCommandEngine.users[user].check(name)
+                                #Only execute commands if valid == True.
+                                if(valid != True):
+                                    return [name, parameters, args, valid] #Valid is time remaining until it can be used again.
+                                
+                                if(len(parameters) > 2):
+                                    await func(channel, user, *args)
+                                else:
+                                    await func(channel, user)
+                                    
+                                return True
+                        except Exception as e:
+                            print(traceback.format_exc())
+                            print(e)
         return False
             
     @staticmethod
@@ -1010,6 +1045,10 @@ class CommandRconIngameComs(commands.Cog):
         
         asyncio.ensure_future(self.on_ready())
         RconCommandEngine.cogs = self
+        RconCommandEngine.rate_limit_commands.append("afk")
+        RconCommandEngine.admins.append("Yoshi_E")
+        RconCommandEngine.admins.append("[H] Tom")
+        RconCommandEngine.admins.append("zerty")
         
     async def on_ready(self):
         await self.bot.wait_until_ready()
@@ -1029,10 +1068,72 @@ class CommandRconIngameComs(commands.Cog):
     @RconCommandEngine.command(name="ping")  
     async def ping(self, channel, user):
         beid = await self.getPlayerBEID(user)
-        await self.CommandRcon.arma_rcon.sayPlayer(beid, "Pong!")
-
+        await self.CommandRcon.arma_rcon.sayPlayer(beid, "Pong!")    
+        
+    @RconCommandEngine.command(name="players")  
+    async def players(self, channel, user):
+        beid = await self.getPlayerBEID(user)
+        self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
+        msg = ""
+        for id, ip, ping, guid, name in self.playerList:
+            msg += "{} | {} \n".format(id, name[:22]) #.ljust(20, " ") #.rjust(3, " ")
+            if(len(msg)>200):
+                await self.CommandRcon.arma_rcon.sayPlayer(beid, msg)
+                msg = "\n"
+        if(msg != ""):
+            await self.CommandRcon.arma_rcon.sayPlayer(beid, msg)    
+            
+    @RconCommandEngine.command(name="afk")  
+    async def check_afk(self, channel, user, beid):
+        ctx_beid = await self.getPlayerBEID(user)
+        
+        
+        players = await self.CommandRcon.arma_rcon.getPlayersArray()
+        player_name = None
+        for player in players:
+            if(int(player[0]) == int(beid)):
+                player_name = player[4]
+        if(player_name!=None and player_name.endswith(" (Lobby)")): #Strip lobby from name
+            player_name = player_name[:-8]
+        
+        if(player_name==None):
+            await self.CommandRcon.arma_rcon.sayPlayer(ctx_beid, "Failed to find player with that ID")
+            return False
+        msg= "Starting AFK check for: {}".format(beid)
+        await self.CommandRcon.arma_rcon.sayPlayer(ctx_beid, msg)
+        
+        already_active = False
+        for i in range(0, 300): #checks for 5min (10*30s)
+            if(self.CommandRcon.playerTypesMessage(player_name)):
+                if(i==0):
+                    already_active = True
+                await self.CommandRcon.arma_rcon.sayPlayer(ctx_beid, "Player responded in chat. Canceling AFK check.")  
+                if(already_active == False):
+                    await self.CommandRcon.arma_rcon.sayPlayer(beid,  "Thank you for responding in chat.")
+                return
+            if((i % 30) == 0):
+                try:
+                    for k in range(0, 3):
+                        await self.CommandRcon.arma_rcon.sayPlayer(beid, "Type something in chat or you will be kicked for being AFK. ("+str(round(i/30)+1)+"/10)")
+                except: 
+                    print("Failed to send command sayPlayer (checkAFK)")
+            await asyncio.sleep(1)
+        if(self.CommandRcon.playerTypesMessage(player_name)):
+            if(i==0):
+                already_active = True
+            await self.CommandRcon.arma_rcon.sayPlayer(ctx_beid, "Player responded in chat. Canceling AFK check.")  
+            if(already_active == False):
+                try:
+                    await self.CommandRcon.arma_rcon.sayPlayer(beid, "Thank you for responding in chat.")
+                except:
+                    print("Failed to send command sayPlayer")
+            return
+        else:
+            await self.CommandRcon.arma_rcon.kickPlayer(beid, "AFK too long (user_check by {})".format(ctx_beid))
+            await self.CommandRcon.arma_rcon.sayPlayer(ctx_beid, "``{}`` did not respond and was kicked for being AFK".format(player_name))
+            
 def setup(bot):
     bot.add_cog(CommandRcon(bot))
     bot.add_cog(CommandRconTaskScheduler(bot))
-    #bot.add_cog(CommandRconIngameComs(bot))
+    bot.add_cog(CommandRconIngameComs(bot))
     bot.add_cog(CommandRconSettings(bot))
