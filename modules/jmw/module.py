@@ -300,7 +300,7 @@ local_module = None
 def setup(bot):
     global local_module
     module = CommandJMW(bot)
-    bot.loop.create_task(module.handle_exception("watch_Log"))
+    #bot.loop.create_task(module.handle_exception("watch_Log"))
     bot.loop.create_task(module.handle_exception("task_setStatus"))
     bot.add_cog(module)
     
