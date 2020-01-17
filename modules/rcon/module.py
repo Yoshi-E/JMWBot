@@ -1010,11 +1010,11 @@ class RconCommandEngine(object):
                                 else:
                                     await func(channel, user)
                                     
-                                return True
+                                return [name, parameters, args, valid]
                         except Exception as e:
                             print(traceback.format_exc())
                             print(e)
-        return False
+        return [message, [], [], "Failed to process message"]
             
     @staticmethod
     def command(*args, **kwargs):
