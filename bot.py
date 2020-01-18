@@ -45,8 +45,8 @@ async def on_ready():
 
 @bot.event
 async def on_disconnect():
-    await asyncio.sleep(60)
-    sys.exit("Connection to discord API lost...")
+    #await asyncio.sleep(60)
+    print("Connection to discord API lost...")
     
     
 @bot.event
