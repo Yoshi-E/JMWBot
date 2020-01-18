@@ -61,7 +61,7 @@ def main():
         cfg = bot.cogs["Commandconfig"].cfg
     else: 
         sys.exit("Module 'Commandconfig' not loaded, but required")
-    bot.run(cfg["TOKEN"])
+    bot.run(cfg["TOKEN"], reconnect=True)
     #while True:
     #    try:
     #        bot.loop.run_until_complete(bot.run(cfg["TOKEN"]))
