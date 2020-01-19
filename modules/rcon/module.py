@@ -44,6 +44,8 @@ class CommandRconSettings(commands.Cog):
 ###################################################################################################         
         
     async def sendPMNotification(self, id, keyword, msg):
+        if(self.bot.is_closed()):
+            return False
         ctx = self.bot.get_user(int(id))
         
         userEle = self.getAdminSettings(id)
@@ -331,6 +333,9 @@ class CommandRcon(commands.Cog):
         if("CommandRconIngameComs" in self.bot.cogs):
             asyncio.ensure_future(self.process_parseCommand(args[0]))
         #example: getting player name
+        
+        if(self.bot.is_closed()):
+            return False
         if(":" in message):
             header, body = message.split(":", 1)
             if(self.isChannel(header)): #was written in a channel

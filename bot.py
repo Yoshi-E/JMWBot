@@ -59,6 +59,7 @@ def main():
     #checking depencies 
     if("Commandconfig" in bot.cogs.keys()):
         cfg = bot.cogs["Commandconfig"].cfg
+        #bot.is_closed()
     else: 
         sys.exit("Module 'Commandconfig' not loaded, but required")
     bot.run(cfg["TOKEN"], reconnect=True)

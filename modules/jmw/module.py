@@ -59,6 +59,8 @@ class CommandJMW(commands.Cog):
                 traceback.print_exc()
                 
     async def setStatus(self):
+        if(self.bot.is_closed()):
+            return False
         game = ""
         status = discord.Status.do_not_disturb #discord.Status.online
         
@@ -111,6 +113,8 @@ class CommandJMW(commands.Cog):
             json.dump(self.user_data, outfile, sort_keys=True, indent=4, separators=(',', ': '))
     
     async def dm_users_new_game(self):
+        if(self.bot.is_closed()):
+            return False
         msg = "A game just ended, now is the best time to join for a new game!"
         for user in self.user_data:
             if "nextgame" in self.user_data[user] and self.user_data[user]["nextgame"] == True:
@@ -121,6 +125,8 @@ class CommandJMW(commands.Cog):
         await self.set_user_data() #save changes
     
     async def processGame(self, channel, admin=False, gameindex=1, sendraw=False):
+        if(self.bot.is_closed()):
+            return False
         try:
             game = self.readLog.readData(admin, gameindex)   
             timestamp = game["date"]+" "+game["time"]
@@ -163,12 +169,16 @@ class CommandJMW(commands.Cog):
 
 
     async def gameEnd(self, data):
+        if(self.bot.is_closed()):
+            return False
         channel = self.bot.get_channel(int(self.cfg["Channel_post_status"]))
         await self.dm_users_new_game()
         await self.processGame(channel)
         self.readLog.readData(True, 1) #Generate advaced data as well, for later use.  
         
     async def gameStart(self, data):
+        if(self.bot.is_closed()):
+            return False
         channel = self.bot.get_channel(int(self.cfg["Channel_post_status"]))
         msg="Let the game go on! The Server is now continuing the mission."
         await channel.send(msg)
@@ -288,6 +298,8 @@ class CommandJMW(commands.Cog):
             try:
                 await coro()
             except Exception as ex:
+                if(self.bot.is_closed()):
+                    return False
                 ex = str(ex)+"/n"+str(traceback.format_exc())
                 user=self.bot.get_user(165810842972061697)
                 await user.send("Caught exception")
