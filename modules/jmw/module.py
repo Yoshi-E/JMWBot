@@ -102,6 +102,9 @@ class CommandJMW(commands.Cog):
                     game_name+="player"
         else:
             status = discord.Status.do_not_disturb
+            
+        if(self.bot.is_closed()):
+            return False
         await self.bot.change_presence(activity=discord.Game(name=game_name), status=status)
         
     
