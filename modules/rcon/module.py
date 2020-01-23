@@ -987,7 +987,7 @@ class RconCommandEngine(object):
                 user = header.split(") ")[1]
                 msg = body.split(" ")
                 com = msg[0]
-                if(RconCommandEngine.command_prefix==com[0]):
+                if(len(msg) > 0 and RconCommandEngine.command_prefix==com[0]):
                     com = com[1:]
                     if(len(msg)>0):
                         args = msg[1:]
