@@ -1033,7 +1033,7 @@ class RconCommandEngine(object):
                             check_data = RconCommandEngine.users[rctx["user"]].check(func_name)
                             if(check_data != True):
                                 cctx["executed"] = False
-                                await RconCommandEngine.cogs.CommandRcon.arma_rcon.sayPlayer(cctx["rcxt"]["user_beid"], "Error in command '{}'".format(msg))
+                                await RconCommandEngine.cogs.CommandRcon.arma_rcon.sayPlayer(cctx["rctx"]["user_beid"], "Error: '{}'".format(check_data))
                                 return cctx
                     
                     if(len(parameters) > 0):
