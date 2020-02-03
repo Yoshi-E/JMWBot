@@ -18,7 +18,7 @@ import datetime
 import shlex, subprocess
 import psutil
 import traceback
-
+import inspect
 import bec_rcon
 
 new_path = os.path.dirname(os.path.realpath(__file__))+'/../core/'
@@ -351,18 +351,19 @@ class CommandRcon(commands.Cog):
             self.RateBucket.add(message)
     
     async def process_parseCommand(self, msg):
-        func_name, parameters, args,  valid = await RconCommandEngine.parseCommand(msg)
-        parms =  dict(zip(parameters[3:], args))
-            
-        if(valid ==True):
-            msg = "Sucess"
-        elif(valid ==False):
-            msg = "Failed"
-        else:
-            msg = "{}: {}".format(func_name, valid)
-        if("beid" in parms):
+        cctx = await RconCommandEngine.parseCommand(msg)
+        if(cctx == None):
+            return cctx
+        #Handle failed executions and errors
+        if(cctx["executed"]==False and cctx["error"]==False):
             await self.arma_rcon.sayPlayer(parms["beid"], "{}".format(msg))
         
+        if(cctx["error"] != False):
+            if(int(cctx["rctx"]["user_beid"]) > -1):
+                await self.arma_rcon.sayPlayer(cctx["rctx"]["user_beid"], "Error '{}'".format(cctx["error"]))
+            raise Exception("Error in: {}".format(cctx))
+
+  
     #event supports async functions
     #function is called when rcon disconnects
     async def rcon_on_disconnect(self):
@@ -972,6 +973,18 @@ class RconCommandEngine(object):
     admins = []
     
     @staticmethod
+    async def getPlayerBEID(player: str):
+         #get updated player list, only if player not found
+        #if(not player in Tools.column(self.playerList,4)):   
+        playerList = await RconCommandEngine.cogs.CommandRcon.arma_rcon.getPlayersArray()
+        for id, ip, ping, guid, name  in playerList:
+            if(name.endswith(" (Lobby)")): #Strip lobby from name
+                name = name[:-8]
+            if(player == name):
+                return id
+        raise LookupError("Player '{}' not found".format(player))
+        
+    @staticmethod
     def isChannel(msg):
         for channel in RconCommandEngine.channels:
             if(channel in msg):
@@ -984,42 +997,71 @@ class RconCommandEngine(object):
             header, body = message.split(": ", 1)
             channel = RconCommandEngine.isChannel(header)
             if(channel): #was written in a channel
-                user = header.split(") ")[1]
-                msg = body.split(" ")
-                com = msg[0]
-                if(len(msg) > 0 and RconCommandEngine.command_prefix==com[0]):
-                    com = com[1:]
-                    if(len(msg)>0):
-                        args = msg[1:]
+                rctx = {}
+                rctx["user"] = header.split(") ")[1]
+                rctx["args"] = body.split(" ")
+                rctx["command"] = rctx["args"][0]
+                rctx["channel"] = channel
+                rctx["user_beid"] = -1
+                rctx["error"] = False
+                if(len(rctx["args"]) > 0 and RconCommandEngine.command_prefix==rctx["command"][0]):
+                    rctx["command"] = rctx["command"][1:]
+                    return await RconCommandEngine.processCommand(rctx)
+                        
+    async def processCommand(rctx):
+        cctx = {}
+        rctx["user_beid"] = await RconCommandEngine.getPlayerBEID(rctx["user"])
+        
+        for func_name, func, parameters in RconCommandEngine.commands:
+            cctx["func_name"] = func_name 
+            cctx["parameters"] = parameters 
+            cctx["args"] = rctx["args"][1:]
+            cctx["data"] = False 
+            cctx["rctx"] = rctx 
+            cctx["error"] = False 
+            cctx["executed"] = False 
+            try:
+                if(func_name==rctx["command"]):
+                    now = datetime.datetime.now()
+                    print(now.strftime("%m/%d/%Y, %H:%M:%S"), cctx)
+                    
+                    if( rctx["user"]  not in RconCommandEngine.admins):
+                        #Create Rate limit
+                        if( rctx["user"]  not in RconCommandEngine.users):
+                            RconCommandEngine.users[rctx["user"]] = RateBucketLimit(True, RconCommandEngine.rate_limit)
+                        if(func_name in RconCommandEngine.rate_limit_commands):
+                            check_data = RconCommandEngine.users[rctx["user"]].check(func_name)
+                            if(check_data != True):
+                                cctx["executed"] = False
+                                await RconCommandEngine.cogs.CommandRcon.arma_rcon.sayPlayer(cctx["rcxt"]["user_beid"], "Error in command '{}'".format(msg))
+                                return cctx
+                    
+                    if(len(parameters) > 0):
+                        await func(rctx, *cctx["args"])
                     else:
-                        args = None
-                    for name, func, parameters in RconCommandEngine.commands:
-                        try:
-                            if(name==com):
-                                valid = True
-                                now = datetime.datetime.now()
-                                print(now.strftime("%m/%d/%Y, %H:%M:%S"), message)
-                                
-                                if(user not in RconCommandEngine.admins):
-                                    #Create Rate limit
-                                    if(user not in RconCommandEngine.users):
-                                        RconCommandEngine.users[user] = RateBucketLimit(True, RconCommandEngine.rate_limit)
-                                    if(name in RconCommandEngine.rate_limit_commands):
-                                        valid = RconCommandEngine.users[user].check(name)
-                                #Only execute commands if valid == True.
-                                if(valid != True):
-                                    return [name, parameters, args, valid] #Valid is time remaining until it can be used again.
-                                
-                                if(len(parameters) > 2):
-                                    await func(channel, user, *args)
-                                else:
-                                    await func(channel, user)
-                                    
-                                return [name, parameters, args, valid]
-                        except Exception as e:
-                            print(traceback.format_exc())
-                            print(e)
-        return [message, [], [], "Failed to process message"]
+                        await func(rctx)
+                        
+                    cctx["executed"] = True
+                    return cctx
+            except TypeError as e:
+                #print(traceback.format_exc())
+                cctx["data"] = e 
+                cctx["error"] = "Invalid arguments: Given {}, expected {}".format(len(cctx["args"]), len(parameters)-2)
+                cctx["executed"] = False
+                print("Error in:", cctx)
+                return cctx
+            except Exception as e:
+                print(traceback.format_exc())
+                cctx["data"] = e 
+                cctx["error"] = "Failed to process message"
+                cctx["executed"] = False
+                print("Error in:", cctx)
+                return cctx
+        #Command not found
+        cctx["error"] = "Command '{}' not found".format(rctx["command"])
+        cctx["executed"] = False
+        print(cctx)
+        return cctx
             
     @staticmethod
     def command(*args, **kwargs):
@@ -1035,7 +1077,7 @@ class RconCommandEngine(object):
             async def wrapper(*args, **kwargs):
                 return await function(RconCommandEngine.cogs, *args, **kwargs)
             t = wrapper
-            RconCommandEngine.commands.append([name, t, function.__code__.co_varnames])
+            RconCommandEngine.commands.append([name, t, inspect.getfullargspec(function)[0]])
             return t
         return arguments
 
@@ -1048,6 +1090,7 @@ class CommandRconIngameComs(commands.Cog):
         self.path = os.path.dirname(os.path.realpath(__file__))
         self.playerList = None
         
+        self.afkLock = False
         asyncio.ensure_future(self.on_ready())
         RconCommandEngine.cogs = self
         RconCommandEngine.rate_limit_commands.append("afk")
@@ -1060,24 +1103,24 @@ class CommandRconIngameComs(commands.Cog):
         self.CommandRcon = self.bot.cogs["CommandRcon"]
         self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
     
-    async def getPlayerBEID(self, player: str):
-         #get updated player list, only if player not found
-        if(not player in Tools.column(self.playerList,4)):   
-            self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
-        for id, ip, ping, guid, name  in self.playerList:
-            if(name.endswith(" (Lobby)")): #Strip lobby from name
-                name = name[:-8]
-            if(player == name):
-                return id
-                
+        
     @RconCommandEngine.command(name="ping")  
-    async def ping(self, channel, user):
-        beid = await self.getPlayerBEID(user)
+    async def ping(self, rctx):
+        beid = rctx["user_beid"]
         await self.CommandRcon.arma_rcon.sayPlayer(beid, "Pong!")    
+
+    @RconCommandEngine.command(name="help")  
+    async def ping(self, rctx):
+        beid = rctx["user_beid"]
+        for func_name, func, parameters in RconCommandEngine.commands:
+            if(len(parameters) > 2):
+                await self.CommandRcon.arma_rcon.sayPlayer(beid, "{} {}".format(func_name, parameters[2:]))   
+            else:
+                await self.CommandRcon.arma_rcon.sayPlayer(beid, "{}".format(func_name))    
         
     @RconCommandEngine.command(name="players")  
-    async def players(self, channel, user):
-        beid = await self.getPlayerBEID(user)
+    async def players(self, rctx):
+        beid = rctx["user_beid"]
         self.playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
         msg = ""
         for id, ip, ping, guid, name in self.playerList:
@@ -1089,9 +1132,16 @@ class CommandRconIngameComs(commands.Cog):
             await self.CommandRcon.arma_rcon.sayPlayer(beid, msg)    
             
     @RconCommandEngine.command(name="afk")  
-    async def check_afk(self, channel, user, beid):
-        ctx_beid = await self.getPlayerBEID(user)
+    async def check_afk(self, rctx, beid):
+        channel = rctx["channel"]
+        user = rctx["user"]
+        ctx_beid = rctx["user_beid"]
         
+        
+        if(self.afkLock == True):
+            await self.CommandRcon.arma_rcon.sayPlayer(ctx_beid, "An AFK check is already in progess, please wait until its complete.")
+            return False
+        self.afkLock = True
         
         players = await self.CommandRcon.arma_rcon.getPlayersArray()
         player_name = None
@@ -1103,8 +1153,9 @@ class CommandRconIngameComs(commands.Cog):
         
         if(player_name==None):
             await self.CommandRcon.arma_rcon.sayPlayer(ctx_beid, "Failed to find player with that ID")
+            self.afkLock = False
             return False
-        msg= "Starting AFK check for: {}".format(beid)
+        msg= "Starting AFK check for: {} - {}".format(player_name, beid)
         await self.CommandRcon.arma_rcon.sayPlayer(ctx_beid, msg)
         
         already_active = False
@@ -1115,7 +1166,8 @@ class CommandRconIngameComs(commands.Cog):
                 await self.CommandRcon.arma_rcon.sayPlayer(ctx_beid, "Player responded in chat. Canceling AFK check.")  
                 if(already_active == False):
                     await self.CommandRcon.arma_rcon.sayPlayer(beid,  "Thank you for responding in chat.")
-                return
+                self.afkLock = False
+                return True
             if((i % 30) == 0):
                 try:
                     for k in range(0, 3):
@@ -1132,10 +1184,12 @@ class CommandRconIngameComs(commands.Cog):
                     await self.CommandRcon.arma_rcon.sayPlayer(beid, "Thank you for responding in chat.")
                 except:
                     print("Failed to send command sayPlayer")
-            return
+            self.afkLock = False        
+            return False
         else:
-            await self.CommandRcon.arma_rcon.kickPlayer(beid, "AFK too long (user_check by {})".format(ctx_beid))
+            await self.CommandRcon.arma_rcon.kickPlayer(beid, "AFK too long (user_check by {})".format(user))
             await self.CommandRcon.arma_rcon.sayPlayer(ctx_beid, "``{}`` did not respond and was kicked for being AFK".format(player_name))
+        self.afkLock = False
             
 def setup(bot):
     bot.add_cog(CommandRcon(bot))
