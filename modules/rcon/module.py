@@ -354,17 +354,17 @@ class CommandRcon(commands.Cog):
             self.RateBucket.add(message)
     
     async def process_parseCommand(self, msg):
-        cctx = await RconCommandEngine.parseCommand(msg)
-        if(cctx == None):
-            return cctx
+        ctx = await RconCommandEngine.parseCommand(msg)
+        if(ctx == None):
+            return ctx
         #Handle failed executions and errors
-        if(cctx["executed"]==False and cctx["error"]==False):
-            await self.arma_rcon.sayPlayer(parms["beid"], "{}".format(msg))
+        if(ctx.executed==False and ctx.error==False):
+            await ctx.say("{}".format(msg))
         
-        if(cctx["error"] != False):
-            if(int(cctx["rctx"]["user_beid"]) > -1):
-                await self.arma_rcon.sayPlayer(cctx["rctx"]["user_beid"], "Error '{}'".format(cctx["error"]))
-            raise Exception("Error in: {}".format(cctx))
+        if(ctx.error != False):
+            if(int(ctx.user_beid) > -1):
+                await ctx.say("Error '{}'".format(ctx.error))
+            raise Exception("Error in: {}".format(ctx))
 
   
     #event supports async functions
@@ -1101,7 +1101,7 @@ class RconCommandEngine(object):
                     print("Error in:", ctx)
                 return ctx
         #Command not found
-        ctx.error = "Command '{}' not found".format(rctx["command"])
+        ctx.error = "Command '{}' not found".format(ctx.command)
         ctx.executed = False
         if(RconCommandEngine.logging==True):
             print(ctx)
