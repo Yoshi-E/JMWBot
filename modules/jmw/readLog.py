@@ -33,7 +33,6 @@ class readLog:
         self.maxDataRows = 10000
         #all data rows are stored in here, limited to prevent memory leaks
         self.dataRows=deque(maxlen=self.maxDataRows)
-        
         #scan most recent log. Until enough data is collected
         logs = self.getLogs()
         tempdataRows = deque(maxlen=self.maxDataRows)
@@ -59,7 +58,7 @@ class readLog:
         if(os.path.exists(self.cfg['logs_path'])):
             files = []
             for file in os.listdir(self.cfg['logs_path']):
-                if file.endswith(".log"):
+                if (file.endswith(".log") or file.endswith(".rpt")):
                     files.append(file)
             return sorted(files)
         else:
@@ -157,7 +156,9 @@ class readLog:
         return [meta, data]
     #generates a game from recent entries    
     # index: 0 = current game
-    def generateGame(self, start, index=0):
+    def generateGame(self, start=None, index=0):
+        if(start==None):
+            start = len(self.dataRows)
         data = self.getGameData(start, index)
         meta, data = self.processGameData(data)
         return [meta, data]
@@ -479,10 +480,10 @@ class readLog:
                 zplots[-1].set_title(pdata["title"])
         
         #create folders to for images / raw data
-        if not os.path.exists(self.path+"/"+self.cfg['data_path']):
-            os.makedirs(self.path+"/"+self.cfg['data_path'])
-        if not os.path.exists(self.path+"/"+self.cfg['image_path']):
-            os.makedirs(self.path+"/"+self.cfg['image_path'])
+        if not os.path.exists(self.cfg['data_path']):
+            os.makedirs(self.cfg['data_path'])
+        if not os.path.exists(self.cfg['image_path']):
+            os.makedirs(self.cfg['image_path'])
         
         t=""
         if(lastwinner=="currentGame"):
@@ -490,8 +491,8 @@ class readLog:
         if(admin==True):
             t +="-ADV"
                         #path / date # time # duration # winner # addtional_tags
-        filename_pic =(self.path+"/"+self.cfg['image_path']+fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.png').replace("\\","/")
-        filename =    (self.path+"/"+self.cfg['data_path']+ fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.json').replace("\\","/")
+        filename_pic =(self.cfg['image_path']+fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.png').replace("\\","/")
+        filename =    (self.cfg['data_path']+ fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.json').replace("\\","/")
         
         #save image
         fig.savefig(filename_pic, dpi=100, pad_inches=3)

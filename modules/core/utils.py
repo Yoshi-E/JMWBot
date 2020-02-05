@@ -74,6 +74,28 @@ class RateBucket():
     def add(self, value):
         self.list.append(value)
         self._add()
+        
+        
+#Limits commands to X per second
+class RateBucketLimit():
+    def __init__(self, per_function = False, limit = 30):
+        self.limit = limit
+        self.last = 0 #time.time()-(limit+1)
+        self.per_function = per_function
+        self.functions = {}
+        
+    def check(self, func_name):
+        if(self.per_function == True):
+            if(func_name not in self.functions):
+                self.functions[func_name] = RateBucketLimit(False, self.limit)
+            return self.functions[func_name].check(func_name)
+        else:    
+            if((time.time()-self.last) >= self.limit):
+                self.last = time.time()
+                return True
+            else:
+                return "You have to wait {} seconds before you can use this command again.".format(round(abs(time.time()-self.last-self.limit)))
+                
 
 
 class CoreConfig():

@@ -6,6 +6,7 @@ from discord.ext import commands
 import time
 import builtins as __builtin__
 import logging
+import sys
 
 logging.basicConfig(filename='error.log',
                     level=logging.INFO, 
@@ -40,6 +41,17 @@ async def on_ready():
     print(bot.user.name)
     print(bot.user.id)
     print('------------')
+    
+
+@bot.event
+async def on_disconnect():
+    #await asyncio.sleep(60)
+    print("Connection to discord API lost...")
+    
+    
+@bot.event
+async def on_error(event, args, kwargs):
+    print("Discord Error at '{}' {} - {}".format(event, args, kwargs))
 
 def main():
     load_modules()
@@ -47,9 +59,10 @@ def main():
     #checking depencies 
     if("Commandconfig" in bot.cogs.keys()):
         cfg = bot.cogs["Commandconfig"].cfg
+        #bot.is_closed()
     else: 
         sys.exit("Module 'Commandconfig' not loaded, but required")
-    bot.run(cfg["TOKEN"])
+    bot.run(cfg["TOKEN"], reconnect=True)
     #while True:
     #    try:
     #        bot.loop.run_until_complete(bot.run(cfg["TOKEN"]))
@@ -58,6 +71,7 @@ def main():
     #        time.sleep(5)
             
 if __name__ == '__main__':
+    print("Starting...")
     main() 
     #print("The bot has crashed. Attemping to restart it...")
         

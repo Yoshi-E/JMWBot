@@ -5,11 +5,13 @@ from collections import Counter
 import json
 import os
 from modules.jmw.readLog import readLog
+from modules.jmw.playerMapGenerator import playerMapGenerator
 import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions, CheckFailure
 import ast
 import sys
+import traceback
 
 new_path = os.path.dirname(os.path.realpath(__file__))+'/../core/'
 if new_path not in sys.path:
@@ -32,14 +34,79 @@ class CommandJMW(commands.Cog):
         self.readLog.add_Event("on_missionHeader", self.gameStart)
         self.readLog.add_Event("on_missionGameOver", self.gameEnd)
         
+        self.playerMapGenerator = playerMapGenerator(self.cfg["data_path"])
+        
         self.user_data = {}
         if(os.path.isfile(self.path+"/userdata.json")):
             self.user_data = json.load(open(self.path+"/userdata.json","r"))
-    
+        
+        asyncio.ensure_future(self.on_ready())
+        
+    async def on_ready(self):
+        await self.bot.wait_until_ready()
+        self.CommandRcon = self.bot.cogs["CommandRcon"]
+        
 ###################################################################################################
 #####                                  common functions                                        ####
 ###################################################################################################
-         
+    async def task_setStatus(self):
+        while True:
+            try:
+                await asyncio.sleep(50)
+                await self.setStatus()
+            except Exception as e:
+                print("setting status failed", e)
+                traceback.print_exc()
+                
+    async def setStatus(self):
+        if(self.bot.is_closed()):
+            return False
+        game = ""
+        status = discord.Status.do_not_disturb #discord.Status.online
+        
+        #get current Game data
+        meta, game = self.readLog.generateGame()
+        
+        last_packet = None
+        for packet in reversed(game):
+            if(packet["CTI_DataPacket"]=="Data"):
+                last_packet = packet
+                break
+        
+        #fetch data
+        players = 0
+        if(last_packet != None and "players" in last_packet):
+            players = len(packet["players"])
+        time = 0
+        if(last_packet != None and "time" in last_packet and packet["time"] > 0):
+            time = round(packet["time"]/60)    
+        winner = "currentGame"
+        if("winner" in meta):
+            winner = meta["winner"]   
+        map = "unkown"
+        if("map" in meta):
+            map = meta["map"]
+            
+        #set checkRcon status
+        game_name = "..."
+        if(self.CommandRcon.arma_rcon.disconnected==False):
+            status = discord.Status.online
+            
+            if(winner!="currentGame" or last_packet == None or game[-1]["CTI_DataPacket"]=="GameOver"):
+                game_name = "Lobby"
+            else:
+                game_name = "{} {}min {}".format(map, time, players)
+                if(players!=1):
+                    game_name+="players"
+                else:
+                    game_name+="player"
+        else:
+            status = discord.Status.do_not_disturb
+            
+        if(self.bot.is_closed()):
+            return False
+        await self.bot.change_presence(activity=discord.Game(name=game_name), status=status)
+        
     
     async def set_user_data(self, user_id=0, field="", data=[]):
         if(user_id != 0):
@@ -49,6 +116,8 @@ class CommandJMW(commands.Cog):
             json.dump(self.user_data, outfile, sort_keys=True, indent=4, separators=(',', ': '))
     
     async def dm_users_new_game(self):
+        if(self.bot.is_closed()):
+            return False
         msg = "A game just ended, now is the best time to join for a new game!"
         for user in self.user_data:
             if "nextgame" in self.user_data[user] and self.user_data[user]["nextgame"] == True:
@@ -59,6 +128,8 @@ class CommandJMW(commands.Cog):
         await self.set_user_data() #save changes
     
     async def processGame(self, channel, admin=False, gameindex=1, sendraw=False):
+        if(self.bot.is_closed()):
+            return False
         try:
             game = self.readLog.readData(admin, gameindex)   
             timestamp = game["date"]+" "+game["time"]
@@ -101,12 +172,16 @@ class CommandJMW(commands.Cog):
 
 
     async def gameEnd(self, data):
+        if(self.bot.is_closed()):
+            return False
         channel = self.bot.get_channel(int(self.cfg["Channel_post_status"]))
         await self.dm_users_new_game()
         await self.processGame(channel)
         self.readLog.readData(True, 1) #Generate advaced data as well, for later use.  
         
     async def gameStart(self, data):
+        if(self.bot.is_closed()):
+            return False
         channel = self.bot.get_channel(int(self.cfg["Channel_post_status"]))
         msg="Let the game go on! The Server is now continuing the mission."
         await channel.send(msg)
@@ -117,9 +192,9 @@ class CommandJMW(commands.Cog):
 
     @commands.command(  name='ping',
                         pass_context=True)
-    async def command_ping(self, *args):
+    async def command_ping(self, ctx, *args):
         msg = 'Pong!'
-        await self.bot.say(msg)
+        await ctx.send(msg)
     
 
     ####################################
@@ -156,9 +231,12 @@ class CommandJMW(commands.Cog):
                         description="Takes up to 2 arguments, 1st: index of the game, 2nd: sending 'normal'",
                         pass_context=True)
     @commands.check(CommandChecker.checkAdmin)
-    async def command_lastgame(self, ctx, index=0):
+    async def command_lastgame(self, ctx, index=0, admin = "yes"):
         message = ctx.message
-        admin = True
+        if(admin=="yes"):
+            admin = True
+        else: 
+            admin = False
         await self.processGame(message.channel, admin, index)
 
     @commands.command(  name='lastdata',
@@ -187,7 +265,25 @@ class CommandJMW(commands.Cog):
     @commands.check(CommandChecker.checkAdmin)
     async def getData(self, ctx, index=0):
         msg = "There are {} packets: ```{}```".format(len(self.readLog.dataRows), self.readLog.dataRows[index])
-        await sendLong(ctx,msg)
+        await sendLong(ctx,msg)    
+        
+    @commands.command(name='heatmap',
+        brief="generates a heatmap of a select player",
+        aliases=['heatMap'],
+        pass_context=True)
+    #@commands.check(CommandChecker.checkAdmin)
+    async def getData(self, ctx, *player_name):
+        await sendLong(ctx,"Generating data...")
+        
+        player_name = " ".join(player_name)
+        if(len(player_name)==0):
+            player_name = "all"
+        virtualFile = self.playerMapGenerator.generateMap(player_name, 100)
+        if(virtualFile == False):
+             await sendLong(ctx,"No data found")
+        else:
+            await sendLong(ctx,"How often the location was visted: Green = 1-9, Blue = 10-99, Red = >99")
+            await ctx.send(file=discord.File(virtualFile, 'heatmap{}'.format(".jpg")))
                 
     @commands.command(name='r',
         brief="terminates the bot",
@@ -205,11 +301,13 @@ class CommandJMW(commands.Cog):
             try:
                 await coro()
             except Exception as ex:
+                if(self.bot.is_closed()):
+                    return False
                 ex = str(ex)+"/n"+str(traceback.format_exc())
                 user=self.bot.get_user(165810842972061697)
                 await user.send("Caught exception")
                 await user.send(ex[:1800] + '..' if len(ex) > 1800 else ex)
-                logging.error('Caught exception')
+                print("Caught Error: ", ex)
                 await asyncio.sleep(10)  
                   
 
@@ -217,6 +315,7 @@ local_module = None
 def setup(bot):
     global local_module
     module = CommandJMW(bot)
-    bot.loop.create_task(module.handle_exception("watch_Log"))
+    #bot.loop.create_task(module.handle_exception("watch_Log"))
+    bot.loop.create_task(module.handle_exception("task_setStatus"))
     bot.add_cog(module)
     
