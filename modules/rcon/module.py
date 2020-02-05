@@ -1011,6 +1011,12 @@ class RconCommandEngine(object):
     rate_limit = 900 #15min
     admins = []
     
+    
+    def log(self, msg):
+        if(RconCommandEngine.logging==True):
+            now = datetime.datetime.now()
+            print(now.strftime("%m/%d/%Y, %H:%M:%S"), ctx)    
+            
     @staticmethod
     async def getPlayerBEID(player: str):
         #get updated player list, only if player not found
@@ -1050,21 +1056,17 @@ class RconCommandEngine(object):
                         ctx.command = ctx.command[1:]
                         return await RconCommandEngine.processCommand(ctx)
         except Exception as e:
-            print(traceback.format_exc())
-            print(e)
+            self.log(traceback.format_exc())
+            self.log(e)
                         
     async def processCommand(ctx):
         ctx.user_beid = await RconCommandEngine.getPlayerBEID(ctx.user)
-        print(ctx)
         for func_name, func, parameters in RconCommandEngine.commands:
             ctx.func_name = func_name 
             ctx.parameters = parameters 
             try:
                 if(func_name==ctx.command):
-                    if(RconCommandEngine.logging==True):
-                        now = datetime.datetime.now()
-                        print(now.strftime("%m/%d/%Y, %H:%M:%S"), ctx)     
-                    
+                    self.log(ctx)
                     if( ctx.user  not in RconCommandEngine.admins):
                         #Create Rate limit
                         if( ctx.user  not in RconCommandEngine.users):
@@ -1087,18 +1089,15 @@ class RconCommandEngine(object):
                 ctx.data = e 
                 ctx.error = "Invalid arguments: Given {}, expected {}".format(len(ctx.args), len(parameters)-2)
                 ctx.executed = False
-                if(RconCommandEngine.logging==True):
-                    print(traceback.format_exc())
-                    print("Error in:", ctx)
+                self.log(traceback.format_exc())
+                self.log("Error in: {}".format(ctx))
                 return ctx
             except Exception as e:
-                if(RconCommandEngine.logging==True):
-                    print(traceback.format_exc())
+                self.log(traceback.format_exc())
                 ctx.data = e 
                 ctx.error = "Failed to process message"
                 ctx.executed = False
-                if(RconCommandEngine.logging==True):
-                    print("Error in:", ctx)
+                self.log("Error in: {}".format(ctx))
                 return ctx
         #Command not found
         ctx.error = "Command '{}' not found".format(ctx.command)
@@ -1163,7 +1162,7 @@ class CommandRconIngameComs(commands.Cog):
         playerList = await self.CommandRcon.arma_rcon.getPlayersArray()
         msg = ""
         for id, ip, ping, guid, name in playerList:
-            msg += "{} | {} \n".format(id, name[:22]) #.ljust(20, " ") #.rjust(3, " ")
+            msg += "\n{} | {}".format(id, name[:22]) #.ljust(20, " ") #.rjust(3, " ")
             if(len(msg)>200):
                 await rctx.say(msg)
                 msg = "\n"
