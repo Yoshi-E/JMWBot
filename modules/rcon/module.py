@@ -976,7 +976,6 @@ class RconCommandEngine(object):
             self.func_name = None
             self.parameters = None
             self.args = None
-            self.data = None
             self.rctx = None
             self.error = False
             self.executed = False
@@ -1052,7 +1051,7 @@ class RconCommandEngine(object):
                     ctx.args = ctx.args[1:]
                     
                     ctx.channel = channel
-                    if(RconCommandEngine.command_prefix==ctx.command[0]):
+                    if(len(ctx.command) > 0 and RconCommandEngine.command_prefix==ctx.command[0]):
                         ctx.command = ctx.command[1:]
                         return await RconCommandEngine.processCommand(ctx)
         except Exception as e:
@@ -1085,8 +1084,6 @@ class RconCommandEngine(object):
                     ctx.executed = True
                     return ctx
             except TypeError as e:
-                
-                ctx.data = e 
                 ctx.error = "Invalid arguments: Given {}, expected {}".format(len(ctx.args), len(parameters)-2)
                 ctx.executed = False
                 self.log(traceback.format_exc())
@@ -1096,16 +1093,14 @@ class RconCommandEngine(object):
                 if(ctx.command == "afk"):
                     self.afkLock = False
                 self.log(traceback.format_exc())
-                ctx.data = e 
-                ctx.error = "Failed to process message"
+                ctx.error = "Error: '{}'".format(e)
                 ctx.executed = False
                 self.log("Error in: {}".format(ctx))
                 return ctx
         #Command not found
         ctx.error = "Command '{}' not found".format(ctx.command)
         ctx.executed = False
-        if(RconCommandEngine.logging==True):
-            print(ctx)
+        self.log(ctx)
         return ctx
             
     @staticmethod
@@ -1135,6 +1130,7 @@ class CommandRconIngameComs(commands.Cog):
         self.path = os.path.dirname(os.path.realpath(__file__))
         
         self.afkLock = False
+        self.afkTime = -1
         asyncio.ensure_future(self.on_ready())
         RconCommandEngine.cogs = self
         RconCommandEngine.rate_limit_commands.append("afk")
@@ -1180,7 +1176,7 @@ class CommandRconIngameComs(commands.Cog):
         
         
         if(self.afkLock == True):
-            await rctx.say("An AFK check is already in progess, please wait until its complete.")
+            await rctx.say("An AFK check is already in progess, please wait {}s.".format(self.afkTime))
             return False
         self.afkLock = True
         
@@ -1201,10 +1197,13 @@ class CommandRconIngameComs(commands.Cog):
         
         already_active = False
         for i in range(0, time_to_respond): 
+            self.afkTime = time_to_respond-i
             if(self.CommandRcon.playerTypesMessage(player_name)):
                 if(i==0):
                     already_active = True
-                await rctx.say("Player responded in chat. Canceling AFK check.")  
+                    await rctx.say("Player was recently active. Canceling AFK check.")  
+                else:
+                    await rctx.say("Player responded in chat. Canceling AFK check.")  
                 if(already_active == False):
                     await self.CommandRcon.arma_rcon.sayPlayer(beid,  "Thank you for responding in chat.")
                 self.afkLock = False
