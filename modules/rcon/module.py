@@ -1093,6 +1093,8 @@ class RconCommandEngine(object):
                 self.log("Error in: {}".format(ctx))
                 return ctx
             except Exception as e:
+                if(ctx.command == "afk"):
+                    self.afkLock = False
                 self.log(traceback.format_exc())
                 ctx.data = e 
                 ctx.error = "Failed to process message"
