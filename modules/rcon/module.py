@@ -1055,8 +1055,8 @@ class RconCommandEngine(object):
                         ctx.command = ctx.command[1:]
                         return await RconCommandEngine.processCommand(ctx)
         except Exception as e:
-            self.log(traceback.format_exc())
-            self.log(e)
+            RconCommandEngine.log(traceback.format_exc())
+            RconCommandEngine.log(e)
                         
     async def processCommand(ctx):
         ctx.user_beid = await RconCommandEngine.getPlayerBEID(ctx.user)
