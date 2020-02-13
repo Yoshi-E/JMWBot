@@ -1015,12 +1015,12 @@ class RconCommandEngine(object):
     def log_s(msg):
         if(RconCommandEngine.logging==True):
             now = datetime.datetime.now()
-            print(now.strftime("%m/%d/%Y, %H:%M:%S"), ctx)  
+            print(now.strftime("%m/%d/%Y, %H:%M:%S"), msg)  
             
     def log(self, msg):
         if(RconCommandEngine.logging==True):
             now = datetime.datetime.now()
-            print(now.strftime("%m/%d/%Y, %H:%M:%S"), ctx)    
+            print(now.strftime("%m/%d/%Y, %H:%M:%S"), msg)    
             
     @staticmethod
     async def getPlayerBEID(player: str):
