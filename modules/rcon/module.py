@@ -1011,6 +1011,12 @@ class RconCommandEngine(object):
     admins = []
     
     
+    @staticmethod
+    def log_s(msg):
+        if(RconCommandEngine.logging==True):
+            now = datetime.datetime.now()
+            print(now.strftime("%m/%d/%Y, %H:%M:%S"), ctx)  
+            
     def log(self, msg):
         if(RconCommandEngine.logging==True):
             now = datetime.datetime.now()
@@ -1055,8 +1061,8 @@ class RconCommandEngine(object):
                         ctx.command = ctx.command[1:]
                         return await RconCommandEngine.processCommand(ctx)
         except Exception as e:
-            RconCommandEngine.log(traceback.format_exc())
-            RconCommandEngine.log(e)
+            RconCommandEngine.log_s(traceback.format_exc())
+            RconCommandEngine.log_s(e)
                         
     async def processCommand(ctx):
         ctx.user_beid = await RconCommandEngine.getPlayerBEID(ctx.user)
