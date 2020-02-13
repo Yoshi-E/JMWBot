@@ -1071,7 +1071,7 @@ class RconCommandEngine(object):
             ctx.parameters = parameters 
             try:
                 if(func_name==ctx.command):
-                    self.log(ctx)
+                    RconCommandEngine.log_s(ctx)
                     if( ctx.user  not in RconCommandEngine.admins):
                         #Create Rate limit
                         if( ctx.user  not in RconCommandEngine.users):
@@ -1092,21 +1092,21 @@ class RconCommandEngine(object):
             except TypeError as e:
                 ctx.error = "Invalid arguments: Given {}, expected {}".format(len(ctx.args), len(parameters)-2)
                 ctx.executed = False
-                self.log(traceback.format_exc())
-                self.log("Error in: {}".format(ctx))
+                RconCommandEngine.log_s(traceback.format_exc())
+                RconCommandEngine.log_s("Error in: {}".format(ctx))
                 return ctx
             except Exception as e:
                 if(ctx.command == "afk"):
                     self.afkLock = False
-                self.log(traceback.format_exc())
+                RconCommandEngine.log_s(traceback.format_exc())
                 ctx.error = "Error: '{}'".format(e)
                 ctx.executed = False
-                self.log("Error in: {}".format(ctx))
+                RconCommandEngine.log_s("Error in: {}".format(ctx))
                 return ctx
         #Command not found
         ctx.error = "Command '{}' not found".format(ctx.command)
         ctx.executed = False
-        self.log(ctx)
+        RconCommandEngine.log_s(ctx)
         return ctx
             
     @staticmethod
