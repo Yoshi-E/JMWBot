@@ -1097,7 +1097,7 @@ class RconCommandEngine(object):
                 return ctx
             except Exception as e:
                 if(ctx.command == "afk"):
-                    self.afkLock = False
+                    RconCommandEngine.cogs.afkLock = False #set Rconcommand engine 
                 RconCommandEngine.log_s(traceback.format_exc())
                 ctx.error = "Error: '{}'".format(e)
                 ctx.executed = False
