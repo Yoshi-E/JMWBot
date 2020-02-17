@@ -1140,7 +1140,7 @@ class CommandRconIngameComs(commands.Cog):
         asyncio.ensure_future(self.on_ready())
         RconCommandEngine.cogs = self
         RconCommandEngine.rate_limit_commands.append("afk")
-        RconCommandEngine.admins.append("Yoshi_E")
+        #RconCommandEngine.admins.append("Yoshi_E")
         RconCommandEngine.admins.append("[H] Tom")
         RconCommandEngine.admins.append("zerty")
         
