@@ -1105,10 +1105,12 @@ class RconCommandEngine(object):
                 RconCommandEngine.log_s("Error in: {}".format(ctx))
                 return ctx
         #Command not found
-        ctx.error = "Command '{}' not found".format(ctx.command)
-        ctx.executed = False
-        RconCommandEngine.log_s(ctx)
-        return ctx
+        if(func_name[0] != "?" and func_name[0] != ""):
+            ctx.error = "Command '{}' not found".format(ctx.command)
+            ctx.executed = False
+            RconCommandEngine.log_s(ctx)
+            return ctx
+        return None
             
     @staticmethod
     def command(*args, **kwargs):
