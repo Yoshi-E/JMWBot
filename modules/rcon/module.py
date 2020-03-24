@@ -388,6 +388,7 @@ class CommandRcon(commands.Cog):
         else:
             self.lastReconnect.append(datetime.datetime.now())
             print("Reconnecting to BEC Rcon")
+            RconCommandEngine.users = {} #clear ratebucket on connection lose / error
             await self.setupRcon(self.arma_rcon.serverMessage) #restarts form scratch (due to weird behaviour on reconnect)
 
 
@@ -988,7 +989,7 @@ class RconCommandEngine(object):
         async def say(self, msg):
             if(int(self.user_beid) > 0):
                 if(RconCommandEngine.logging==True):
-                    print(msg)
+                    RconCommandEngine.log_s(msg)
                 await RconCommandEngine.cogs.CommandRcon.arma_rcon.sayPlayer(self.user_beid, msg)
             else:
                 self.error = "Invalid BEID"
