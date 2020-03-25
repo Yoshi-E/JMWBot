@@ -1106,7 +1106,7 @@ class RconCommandEngine(object):
                 RconCommandEngine.log_s("Error in: {}".format(ctx))
                 return ctx
         #Command not found
-        if(func_name[0] != "?" and func_name[0] != ""):
+        if(ctx.command[0] != "?" and ctx.command != "" and ctx.command != None):
             ctx.error = "Command '{}' not found".format(ctx.command)
             ctx.executed = False
             RconCommandEngine.log_s(ctx)
