@@ -207,13 +207,11 @@ class CommandRconSettings(commands.Cog):
         brief="Toggles RCon debug mode",
         pass_context=True)
     @commands.check(CommandChecker.checkAdmin)
-    async def cmd_debug(self, ctx, limit=20): 
-        if(self.CommandRcon.arma_rcon.options['debug']==True):
-            self.CommandRcon.arma_rcon.options['debug'] = False
-        else:
-            self.CommandRcon.arma_rcon.options['debug'] = True
-        msg= "Set debug mode to:"+str(self.CommandRcon.arma_rcon.options['debug'])
+    async def cmd_debug(self, ctx, value): 
+        self.CommandRcon.arma_rcon.setlogging(value)
+        msg= "Set debug mode to:"+str(value)
         await ctx.send(msg)     
+   
 
 
 class CommandRcon(commands.Cog):
@@ -1106,7 +1104,7 @@ class RconCommandEngine(object):
                 RconCommandEngine.log_s("Error in: {}".format(ctx))
                 return ctx
         #Command not found
-        if(ctx.command[0] != "?" and ctx.command != "" and ctx.command != None):
+        if(len(ctx.command) > 0 and ctx.command[0] != "?" and ctx.command != "" and ctx.command != None):
             ctx.error = "Command '{}' not found".format(ctx.command)
             ctx.executed = False
             RconCommandEngine.log_s(ctx)
