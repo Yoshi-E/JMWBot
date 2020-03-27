@@ -986,7 +986,7 @@ class RconCommandEngine(object):
             self.user_beid = -1
         
         async def say(self, msg):
-            if(int(self.user_beid) > 0):
+            if(int(self.user_beid) >= 0):
                 if(RconCommandEngine.logging==True):
                     RconCommandEngine.log_s(msg)
                 await RconCommandEngine.cogs.CommandRcon.arma_rcon.sayPlayer(self.user_beid, msg)
