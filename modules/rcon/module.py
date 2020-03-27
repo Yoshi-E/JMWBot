@@ -1071,7 +1071,6 @@ class RconCommandEngine(object):
             ctx.parameters = parameters 
             try:
                 if(func_name==ctx.command):
-                    RconCommandEngine.log_s(ctx)
                     if( ctx.user  not in RconCommandEngine.admins):
                         #Create Rate limit
                         if( ctx.user  not in RconCommandEngine.users):
@@ -1088,6 +1087,7 @@ class RconCommandEngine(object):
                     else:
                         await func(ctx)
                     ctx.executed = True
+                    RconCommandEngine.log_s(ctx)
                     return ctx
             except TypeError as e:
                 ctx.error = "Invalid arguments: Given {}, expected {}".format(len(ctx.args), len(parameters)-2)
