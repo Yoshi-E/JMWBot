@@ -96,7 +96,7 @@ class readLog:
     def getGameData(self, start, index=0):
         #due to async scanning and the nature of deque,
         #we need to make sure that the index of elements do not change while generating the game
-        #to do that we free on space in the queue
+        #to do that we free one space in the queue
         dl = len(self.dataRows)
         if(dl>=self.maxDataRows):
             self.dataRows.popleft()
@@ -152,8 +152,11 @@ class readLog:
                         meta["winner"] = "WEST"
                     else:
                         meta["winner"] = "EAST"  
+                last_time = 0
+                last_time_iter = 0
             first_line = False
         return [meta, data]
+        
     #generates a game from recent entries    
     # index: 0 = current game
     def generateGame(self, start=None, index=0):

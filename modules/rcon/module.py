@@ -388,7 +388,7 @@ class CommandRcon(commands.Cog):
             print("Reconnecting to BEC Rcon")
             RconCommandEngine.users = {} #clear ratebucket on connection lose / error
             await self.setupRcon(self.arma_rcon.serverMessage) #restarts form scratch (due to weird behaviour on reconnect)
-            await self.arma_rcon.sayGlobal("JMWBot crashed - reconnected.")
+            await self.arma_rcon.sayGlobal("JMWBot lost connection - reconnected.")
 
 
     def generateChat(self, limit):

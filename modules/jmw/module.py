@@ -46,6 +46,7 @@ class CommandJMW(commands.Cog):
         await self.bot.wait_until_ready()
         self.CommandRcon = self.bot.cogs["CommandRcon"]
         
+        
 ###################################################################################################
 #####                                  common functions                                        ####
 ###################################################################################################
@@ -89,20 +90,23 @@ class CommandJMW(commands.Cog):
             
         #set checkRcon status
         game_name = "..."
-        if(self.CommandRcon.arma_rcon.disconnected==False):
-            status = discord.Status.online
-            
-            if(winner!="currentGame" or last_packet == None or game[-1]["CTI_DataPacket"]=="GameOver"):
-                game_name = "Lobby"
-            else:
-                game_name = "{} {}min {}".format(map, time, players)
-                if(players!=1):
-                    game_name+="players"
+        if("CommandRcon" in self.bot.cogs):
+            if(self.CommandRcon.arma_rcon.disconnected==False):
+                status = discord.Status.online
+                
+                if(winner!="currentGame" or last_packet == None or game[-1]["CTI_DataPacket"]=="GameOver"):
+                    game_name = "Lobby"
                 else:
-                    game_name+="player"
+                    game_name = "{} {}min {}".format(map, time, players)
+                    if(players!=1):
+                        game_name+="players"
+                    else:
+                        game_name+="player"
+            else:
+                status = discord.Status.do_not_disturb
         else:
-            status = discord.Status.do_not_disturb
-            
+            status = discord.Status.online
+            game_name = "Online"
         if(self.bot.is_closed()):
             return False
         await self.bot.change_presence(activity=discord.Game(name=game_name), status=status)

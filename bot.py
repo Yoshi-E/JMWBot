@@ -18,7 +18,7 @@ def print(*args, **kwargs):
         logging.info(args[0])
     return __builtin__.print(*args, **kwargs)
 
-modules = ["core", "errorhandle", "jmw", "rcon"]
+modules = ["core", "errorhandle", "jmw"] #, "rcon"
 bot = commands.Bot(command_prefix="!", pm_help=True)
  
 def load_modules():
