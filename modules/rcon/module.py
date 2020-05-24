@@ -940,7 +940,7 @@ class CommandRcon(commands.Cog):
     async def monitords(self, ctx, interval = -1): 
         if(interval < 0):
             await self.arma_rcon.monitords(1)
-            await asyncio.sleep(5)
+            await asyncio.sleep(2)
             for i in range(0,5):
                 if(len(self.log_reader.dataRows)==0):
                     await ctx.send("Failed to acquire data")
@@ -952,7 +952,6 @@ class CommandRcon(commands.Cog):
             await self.arma_rcon.monitords(interval)
             msg = "Performance will be logged every {} seconds.".format(interval)
             await ctx.send(msg)    
-        print(self.log_reader.dataRows)
 
     @commands.command(name='goVote',
         brief="Users can vote for the mission selection.",
