@@ -47,7 +47,7 @@ class readLog:
         if(self.lastLogCheck == None or (datetime.now() - self.lastLogCheck).total_seconds() > 60):
             self.lastLogCheck = datetime.now()
             
-            if(os.path.exists(selaf.cfg['logs_path'])):
+            if(os.path.exists(self.cfg['logs_path'])):
                 files = []
                 for file in os.listdir(self.cfg['logs_path']):
                     if (file.endswith(".log") or file.endswith(".rpt")):
