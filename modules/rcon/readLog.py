@@ -60,10 +60,9 @@ class readLog:
         
             
     def processLogLine(self, line):
-        print("line:", line)
         if(" Server load: FPS " in line):
             data = line.split("Server load: ")
-            return data[1]
+            self.dataRows.append(data[1])
         return None
         
     #this function will continusly scan a log for data entries. They are stored in self.dataRows
@@ -75,7 +74,7 @@ class readLog:
             except:
                 line = None
             while line:
-                data = self.processLogLine(line)
+                self.processLogLine(line)
                 self.dataRows.append(data)
                 try:
                     line = fp.readline()
@@ -109,7 +108,7 @@ class readLog:
                                 print("current log: "+current_log)
                                 self.on_newLog(old_log, current_log)
                         else:
-                            data = self.processLogLine(line)
+                            self.processLogLine(line)
                 except Exception as e:
                     print(e)
                     traceback.print_exc()
