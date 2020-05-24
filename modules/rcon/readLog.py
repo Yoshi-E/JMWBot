@@ -60,6 +60,7 @@ class readLog:
         
             
     def processLogLine(self, line):
+        print("line:", line)
         if(" Server load: FPS " in line):
             data = line.split("Server load: ")
             return data[1]
