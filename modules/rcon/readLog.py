@@ -23,7 +23,7 @@ class readLog:
         #all data rows are stored in here, limited to prevent memory leaks
         self.dataRows=deque(maxlen=self.maxDataRows)
         #scan most recent log. Until enough data is collected
-        logs = self.getLogs()
+        #logs = self.getLogs()
         self.Events = []
         # tempdataRows = deque(maxlen=self.maxDataRows)
         # for log in reversed(logs):
@@ -98,7 +98,7 @@ class readLog:
                         except:
                             line = None
                         if not line:
-                            await asyncio.sleep(10)
+                            await asyncio.sleep(1)
                             #file.seek(where)
                             if(current_log != self.getLogs()[-1]):
                                 old_log = current_log
