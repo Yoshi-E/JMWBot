@@ -103,10 +103,10 @@ class readLog:
                         if not line:
                             await asyncio.sleep(1)
                             #file.seek(where)
-                            new_log = self.getLogs()[-1]
-                            if(current_log != new_log):
+                            new_log = self.getLogs()
+                            if(len(new_log) > 0 and current_log != new_log[-1]):
                                 old_log = current_log
-                                current_log = new_log #update to new recent log
+                                current_log = new_log[-1] #update to new recent log
                                 #self.scanfile(current_log) #Log most likely empty, but a quick scan cant hurt.
                                 file = open(self.cfg["logs_path"]+current_log, "r")
                                 print("current log: "+current_log)
