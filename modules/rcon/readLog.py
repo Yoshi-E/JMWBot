@@ -44,8 +44,8 @@ class readLog:
 
     #get the log files from folder and sort them by oldest first
     def getLogs(self):
-        if(self.lastLogCheck == None or (datetime.datetime.now() - self.lastLogCheck).total_seconds() > 60):
-            self.lastLogCheck = datetime.datetime.now()
+        if(self.lastLogCheck == None or (datetime.now() - self.lastLogCheck).total_seconds() > 60):
+            self.lastLogCheck = datetime.now()
             
             if(os.path.exists(selaf.cfg['logs_path'])):
                 files = []
