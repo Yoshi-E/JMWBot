@@ -145,6 +145,11 @@ class readLog:
 
                 val["time"] = val["time"]+last_time
                 last_time_iter = val["time"] 
+                if(val["time"] > 100000):
+                    print("[WARNING] Data timeframe out of bounds: {}".format(val))
+                    f = open("dataframe.json", "a+")
+                    f.write(data)
+                    f.close()
             if(val["CTI_DataPacket"]=="GameOver"):
                 meta["timestamp"] = val["timestamp"]
                 #meta["map"] = val["Map"]
@@ -300,6 +305,7 @@ class readLog:
                     traceback.print_exc()
             else:
                 await asyncio.sleep(10*60)
+                
 ###################################################################################################
 #####                                  Event Handeler                                          ####
 ###################################################################################################   
