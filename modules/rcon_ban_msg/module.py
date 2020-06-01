@@ -25,6 +25,7 @@ class CommandRcon_Custom(commands.Cog):
     async def on_ready(self):
         await self.bot.wait_until_ready()
         try:
+            await asyncio.sleep(60) #wait addional time for everything to be ready
             self.CommandRcon = self.bot.cogs["CommandRcon"]
         
             self.post_channel = self.bot.get_channel(CoreConfig.cfg["PUSH_CHANNEL"]) #channel id
