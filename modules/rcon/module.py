@@ -718,14 +718,14 @@ class CommandRcon(commands.Cog):
     async def addBan(self, ctx, GUID: str, time=0, *message): 
         message = " ".join(message)
         message = self.setEncoding(message)
-        player = GUID
+        player_id = GUID
         matches = ["?"]
         if(len(GUID) != 32):
             raise Exception("Invalid GUID")
         if(len(message)<2):
-            await self.arma_rcon.addBan(player=GUID, time=time)
+            await self.arma_rcon.addBan(player_id=GUID, time=time)
         else:
-            await self.arma_rcon.addBan(player, message, time)
+            await self.arma_rcon.addBan(player_id, message, time)
             
         msg = "Banned player: ``"+str(player)+" - "+matches[0]+"`` with reason: "+message
         await ctx.send(msg)   
