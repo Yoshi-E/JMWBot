@@ -77,14 +77,15 @@ class CommandRconDatabase(commands.Cog):
         if(len(linked["beids"])>1):
             await ctx.send(":warning: Player '{name}' with BEID '{beid}' might be using >=2 accounts from the same ip".format(**row))
         
-        
-    
     def in_data(self, row):
+        if(row["beid"] not in self.player_db):
+            return False
         data = self.player_db[row["beid"]]
         for d in data:
             if(row["name"]==d["name"] and row["ip"]==d["ip"]):
                 return True
         return False
+                
                 
     def import_epm_csv(self, file='Players.csv'):
         #disable auto saving, so the files is not written for every data entry
