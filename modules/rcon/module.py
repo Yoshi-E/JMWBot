@@ -727,7 +727,7 @@ class CommandRcon(commands.Cog):
         else:
             await self.arma_rcon.addBan(player_id, message, time)
             
-        msg = "Banned player: ``"+str(player)+" - "+matches[0]+"`` with reason: "+message
+        msg = "Banned player: ``"+str(player_id)+" - "+matches[0]+"`` with reason: "+message
         await ctx.send(msg)   
 
     @CommandChecker.command(name='removeBan',
