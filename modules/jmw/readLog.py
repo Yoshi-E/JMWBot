@@ -147,9 +147,8 @@ class readLog:
                 last_time_iter = val["time"] 
                 if(val["time"] > 100000):
                     print("[WARNING] Data timeframe out of bounds: {}".format(val))
-                    f = open("dataframe.json", "a+")
-                    f.write(data)
-                    f.close()
+                    with open('dataframe.json', 'a+') as outfile:
+                        json.dump(data, outfile)
             if(val["CTI_DataPacket"]=="GameOver"):
                 meta["timestamp"] = val["timestamp"]
                 #meta["map"] = val["Map"]
