@@ -37,6 +37,8 @@ class readLog:
         logs = self.getLogs()
         tempdataRows = deque(maxlen=self.maxDataRows)
         self.Events = []
+        if(len(logs)==0):
+            print("[Warning]: No logs found in path '{}'".format(self.cfg['logs_path']))
         for log in reversed(logs):
             print("Pre-scanning: "+log)
             self.scanfile(log)
