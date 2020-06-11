@@ -1,8 +1,5 @@
 # JMWBot
 
-The this repo has been refactored and is now included as a sub module in the ArmaDiscordBot:<br>
-https://github.com/Yoshi-E/ArmaRconDiscordBot/tree/jmwBOT
-
 ## Monetization
 This Bot (or code that I own inside) __cannot__ be used in a monetization process.
 

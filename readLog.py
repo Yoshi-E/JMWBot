@@ -27,8 +27,9 @@ def print(*args, **kwargs):
     return __builtin__.print(*args, **kwargs)
     
 class readLog:
-    def __init__(self, cfg):
-        self.cfg = cfg
+    def __init__(self, cfg, cfg_jmw):
+        self.cfg_arma = cfg
+        self.cfg_jmw = cfg_jmw
         self.path = os.path.dirname(os.path.realpath(__file__))
         self.maxDataRows = 10000
         #all data rows are stored in here, limited to prevent memory leaks
@@ -38,7 +39,7 @@ class readLog:
         tempdataRows = deque(maxlen=self.maxDataRows)
         self.Events = []
         if(len(logs)==0):
-            print("[Warning]: No logs found in path '{}'".format(self.cfg['logs_path']))
+            print("[Warning]: No logs found in path '{}'".format(self.cfg_arma['log_path']))
         for log in reversed(logs):
             print("Pre-scanning: "+log)
             self.scanfile(log)
@@ -57,9 +58,9 @@ class readLog:
 
     #get the log files from folder and sort them by oldest first
     def getLogs(self):
-        if(os.path.exists(self.cfg['logs_path'])):
+        if(os.path.exists(self.cfg_arma['log_path'])):
             files = []
-            for file in os.listdir(self.cfg['logs_path']):
+            for file in os.listdir(self.cfg_arma['log_path']):
                 if (file.endswith(".log") or file.endswith(".rpt")):
                     files.append(file)
             return sorted(files)
@@ -109,10 +110,10 @@ class readLog:
         #now we get the postion of our game in the queue
         end = self.getGameEnd(dl, index)
         if(end==False):
-            raise Exception("Failed generating game #{}. End not found".format(index))
+            raise EOFError("Failed generating game #{}. End not found".format(index))
         start = self.getGameEnd(dl, index+1)
         if(start==False):
-            raise Exception("Failed generating game #{}. Start not found".format(index))
+            raise EOFError("Failed generating game #{}. Start not found".format(index))
         return list(collections.deque(itertools.islice(self.dataRows, start+1, end+1)))
     
     
@@ -259,7 +260,7 @@ class readLog:
 
     #this function will continusly scan a log for data entries. They are stored in self.dataRows
     def scanfile(self, name):
-        with open(self.cfg['logs_path']+name) as fp: 
+        with open(self.cfg_arma['log_path']+name) as fp: 
             databuilder = {}
             try:
                 line = fp.readline()
@@ -279,7 +280,7 @@ class readLog:
             if(len(logs) > 0):
                 current_log = logs[-1]
                 print("current log: "+current_log)
-                file = open(self.cfg["logs_path"]+current_log, "r")
+                file = open(self.cfg_arma["log_path"]+current_log, "r")
                 file.seek(0, 2) #jump to the end of the file
                 try:
                     while (True):
@@ -295,7 +296,7 @@ class readLog:
                                 old_log = current_log
                                 current_log = self.getLogs()[-1] #update to new recent log
                                 #self.scanfile(current_log) #Log most likely empty, but a quick scan cant hurt.
-                                file = open(self.cfg["logs_path"]+current_log, "r")
+                                file = open(self.cfg_arma["log_path"]+current_log, "r")
                                 print("current log: "+current_log)
                                 self.on_newLog(old_log, current_log)
                         else:
@@ -499,10 +500,10 @@ class readLog:
                 zplots[-1].set_title(pdata["title"])
         
         #create folders to for images / raw data
-        if not os.path.exists(self.cfg['data_path']):
-            os.makedirs(self.cfg['data_path'])
-        if not os.path.exists(self.cfg['image_path']):
-            os.makedirs(self.cfg['image_path'])
+        if not os.path.exists(self.self.cfg_jmw['data_path']):
+            os.makedirs(self.self.cfg_jmw['data_path'])
+        if not os.path.exists(self.self.cfg_jmw['image_path']):
+            os.makedirs(self.self.cfg_jmw['image_path'])
         
         t=""
         if(lastwinner=="currentGame"):
@@ -510,8 +511,8 @@ class readLog:
         if(admin==True):
             t +="-ADV"
                         #path / date # time # duration # winner # addtional_tags
-        filename_pic =(self.cfg['image_path']+fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.png').replace("\\","/")
-        filename =    (self.cfg['data_path']+ fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.json').replace("\\","/")
+        filename_pic =(self.self.cfg_jmw['image_path']+fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.png').replace("\\","/")
+        filename =    (self.self.cfg_jmw['data_path']+ fdate+"#"+timestamp.replace(":","-")+"#"+str(gameduration)+"#"+lastwinner+"#"+lastmap+"#"+t+'.json').replace("\\","/")
         
         #save image
         fig.savefig(filename_pic, dpi=100, pad_inches=3)

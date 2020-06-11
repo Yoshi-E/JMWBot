@@ -4,8 +4,8 @@ import asyncio
 from collections import Counter
 import json
 import os
-from modules.jmw.readLog import readLog
-from modules.jmw.playerMapGenerator import playerMapGenerator
+from .readLog import readLog
+from .playerMapGenerator import playerMapGenerator
 import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions, CheckFailure
@@ -13,19 +13,14 @@ import ast
 import sys
 import traceback
 
-from modules.core.utils import CommandChecker, sendLong
+from modules.core.utils import CommandChecker, sendLong, CoreConfig
 
 class CommandJMW(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.path = os.path.dirname(os.path.realpath(__file__))
         
-        #checking depencies 
-        if("Commandconfig" in bot.cogs.keys()):
-            self.cfg = bot.cogs["Commandconfig"].cfg
-        else: 
-            sys.exit("Module 'Commandconfig' not loaded, but required")
-        
+        self.cfg = CoreConfig.modules["modules/rcon_jmw"]["general"]
         
         self.readLog = None
         self.user_data = {}
@@ -38,11 +33,11 @@ class CommandJMW(commands.Cog):
         await self.bot.wait_until_ready()
         try:
             self.CommandRcon = self.bot.cogs["CommandRcon"]
-            self.readLog = readLog(self.CommandRcon.rcon_settings.cfg)            
+            self.readLog = readLog(CoreConfig.modules["modules/arma"]["general"], self.cfg)            
             self.readLog.add_Event("on_missionHeader", self.gameStart)
             self.readLog.add_Event("on_missionGameOver", self.gameEnd)
             
-            self.playerMapGenerator = playerMapGenerator(self.CommandRcon.rcon_settings.cfg["data_path"])
+            self.playerMapGenerator = playerMapGenerator(self.cfg["data_path"])
         except Exception as e:
             traceback.print_exc()
             print(e)
@@ -69,8 +64,11 @@ class CommandJMW(commands.Cog):
         if(not self.readLog):
             return
         #get current Game data
-        meta, game = self.readLog.generateGame()
-        
+        try:
+            meta, game = self.readLog.generateGame()
+        except EOFError:
+            return #No valid logs found, just return
+            
         last_packet = None
         for packet in reversed(game):
             if(packet["CTI_DataPacket"]=="Data"):
@@ -181,7 +179,7 @@ class CommandJMW(commands.Cog):
     async def gameEnd(self, data):
         if(self.bot.is_closed()):
             return False
-        channel = self.bot.get_channel(int(self.cfg["Channel_post_status"]))
+        channel = self.bot.get_channel(int(self.cfg["post_channel"]))
         await self.dm_users_new_game()
         await self.processGame(channel)
         self.readLog.readData(True, 1) #Generate advaced data as well, for later use.  
@@ -189,7 +187,7 @@ class CommandJMW(commands.Cog):
     async def gameStart(self, data):
         if(self.bot.is_closed()):
             return False
-        channel = self.bot.get_channel(int(self.cfg["Channel_post_status"]))
+        channel = self.bot.get_channel(int(self.cfg["post_channel"]))
         msg="Let the game go on! The Server is now continuing the mission."
         await channel.send(msg)
         
