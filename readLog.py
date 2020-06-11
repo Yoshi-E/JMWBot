@@ -37,6 +37,8 @@ class readLog:
         logs = self.getLogs()
         tempdataRows = deque(maxlen=self.maxDataRows)
         self.Events = []
+        if(len(logs)==0):
+            print("[Warning]: No logs found in path '{}'".format(self.cfg['logs_path']))
         for log in reversed(logs):
             print("Pre-scanning: "+log)
             self.scanfile(log)
@@ -76,7 +78,9 @@ class readLog:
     # index: 0 = current game
     # start = index is starts searching from
     # returns false if not enough data to read log was present
-    def getGameEnd(self, start, index = 0):
+    def getGameEnd(self, start, index = None):
+        if(index == None):
+            index = 0
         ends = 0
         if(index == 0):
             return start
@@ -93,10 +97,12 @@ class readLog:
     
     
     
-    def getGameData(self, start, index=0):
+    def getGameData(self, start, index=None):
+        if(index == None):
+            index = 0
         #due to async scanning and the nature of deque,
         #we need to make sure that the index of elements do not change while generating the game
-        #to do that we free on space in the queue
+        #to do that we free one space in the queue
         dl = len(self.dataRows)
         if(dl>=self.maxDataRows):
             self.dataRows.popleft()
@@ -118,7 +124,7 @@ class readLog:
         last_time_iter = 0
         first_line = True
         set_new = False     #when game crashed and mission continues
-        
+        created_df = False
         #values
         meta = {
                 "map": "Unkown",
@@ -139,6 +145,11 @@ class readLog:
 
                 val["time"] = val["time"]+last_time
                 last_time_iter = val["time"] 
+                if(val["time"] > 100000 and created_df == False):
+                    print("[WARNING] Data timeframe out of bounds: {}".format(val))
+                    with open('dataframe.json', 'a+') as outfile:
+                        json.dump(data, outfile)
+                    created_df = True
             if(val["CTI_DataPacket"]=="GameOver"):
                 meta["timestamp"] = val["timestamp"]
                 #meta["map"] = val["Map"]
@@ -152,11 +163,16 @@ class readLog:
                         meta["winner"] = "WEST"
                     else:
                         meta["winner"] = "EAST"  
+                last_time = 0
+                last_time_iter = 0
             first_line = False
         return [meta, data]
+        
     #generates a game from recent entries    
     # index: 0 = current game
-    def generateGame(self, start=None, index=0):
+    def generateGame(self, start=None, index=None):
+        if(index == None):
+            index = 0
         if(start==None):
             start = len(self.dataRows)
         data = self.getGameData(start, index)
@@ -194,7 +210,9 @@ class readLog:
         r = r.replace("false", "False")
         return r
             
-    def processLogLine(self, line, databuilder, active=False):
+    def processLogLine(self, line, databuilder, active=None):
+        if(active==None):
+            active=False
         #check if line contains a datapacket
         if(line.find("BattlEye") ==-1 and line.find("[") > 0 and "CTI_DataPacket" in line and line.rstrip()[-2:] == "]]"):
             try:
@@ -287,6 +305,7 @@ class readLog:
                     traceback.print_exc()
             else:
                 await asyncio.sleep(10*60)
+                
 ###################################################################################################
 #####                                  Event Handeler                                          ####
 ###################################################################################################   
