@@ -13,11 +13,7 @@ import ast
 import sys
 import traceback
 
-new_path = os.path.dirname(os.path.realpath(__file__))+'/../core/'
-if new_path not in sys.path:
-    sys.path.append(new_path)
-from utils import CommandChecker, sendLong
-
+from modules.core.utils import CommandChecker, sendLong
 
 class CommandJMW(commands.Cog):
     def __init__(self, bot):
@@ -30,12 +26,8 @@ class CommandJMW(commands.Cog):
         else: 
             sys.exit("Module 'Commandconfig' not loaded, but required")
         
-        self.readLog = readLog(self.cfg)    
-        self.readLog.add_Event("on_missionHeader", self.gameStart)
-        self.readLog.add_Event("on_missionGameOver", self.gameEnd)
         
-        self.playerMapGenerator = playerMapGenerator(self.cfg["data_path"])
-        
+        self.readLog = None
         self.user_data = {}
         if(os.path.isfile(self.path+"/userdata.json")):
             self.user_data = json.load(open(self.path+"/userdata.json","r"))
@@ -44,7 +36,17 @@ class CommandJMW(commands.Cog):
         
     async def on_ready(self):
         await self.bot.wait_until_ready()
-        self.CommandRcon = self.bot.cogs["CommandRcon"]
+        try:
+            self.CommandRcon = self.bot.cogs["CommandRcon"]
+            self.readLog = readLog(self.CommandRcon.rcon_settings.cfg)            
+            self.readLog.add_Event("on_missionHeader", self.gameStart)
+            self.readLog.add_Event("on_missionGameOver", self.gameEnd)
+            
+            self.playerMapGenerator = playerMapGenerator(self.CommandRcon.rcon_settings.cfg["data_path"])
+        except Exception as e:
+            traceback.print_exc()
+            print(e)
+        
         
 ###################################################################################################
 #####                                  common functions                                        ####
@@ -64,6 +66,8 @@ class CommandJMW(commands.Cog):
         game = ""
         status = discord.Status.do_not_disturb #discord.Status.online
         
+        if(not self.readLog):
+            return
         #get current Game data
         meta, game = self.readLog.generateGame()
         
@@ -89,20 +93,23 @@ class CommandJMW(commands.Cog):
             
         #set checkRcon status
         game_name = "..."
-        if(self.CommandRcon.arma_rcon.disconnected==False):
-            status = discord.Status.online
-            
-            if(winner!="currentGame" or last_packet == None or game[-1]["CTI_DataPacket"]=="GameOver"):
-                game_name = "Lobby"
-            else:
-                game_name = "{} {}min {}".format(map, time, players)
-                if(players!=1):
-                    game_name+="players"
+        if("CommandRcon" in self.bot.cogs):
+            if(self.CommandRcon.arma_rcon.disconnected==False):
+                status = discord.Status.online
+                
+                if(winner!="currentGame" or last_packet == None or game[-1]["CTI_DataPacket"]=="GameOver"):
+                    game_name = "Lobby"
                 else:
-                    game_name+="player"
+                    game_name = "{} {}min {}".format(map, time, players)
+                    if(players!=1):
+                        game_name+="players"
+                    else:
+                        game_name+="player"
+            else:
+                status = discord.Status.do_not_disturb
         else:
-            status = discord.Status.do_not_disturb
-            
+            status = discord.Status.online
+            game_name = "Online"
         if(self.bot.is_closed()):
             return False
         await self.bot.change_presence(activity=discord.Game(name=game_name), status=status)
@@ -190,7 +197,7 @@ class CommandJMW(commands.Cog):
     #####                                   Bot commands                                           ####
     ###################################################################################################
 
-    @commands.command(  name='ping',
+    @CommandChecker.command(  name='ping',
                         pass_context=True)
     async def command_ping(self, ctx, *args):
         msg = 'Pong!'
@@ -200,7 +207,7 @@ class CommandJMW(commands.Cog):
     ####################################
     #Game tools                        #
     ####################################
-    @commands.command(  name='nextgame',
+    @CommandChecker.command(  name='nextgame',
                         brief="You'll receive a DM when a game has ended",
                         description="Send 'nextgame stop' to stop the notification",
                         pass_context=True)
@@ -226,11 +233,10 @@ class CommandJMW(commands.Cog):
         await puser.send(msg)  
 
         
-    @commands.command(  name='lastgame',
+    @CommandChecker.command(  name='lastgame',
                         brief="Posts a summary of select game",
                         description="Takes up to 2 arguments, 1st: index of the game, 2nd: sending 'normal'",
                         pass_context=True)
-    @commands.check(CommandChecker.checkAdmin)
     async def command_lastgame(self, ctx, index=0, admin = "yes"):
         message = ctx.message
         if(admin=="yes"):
@@ -239,39 +245,35 @@ class CommandJMW(commands.Cog):
             admin = False
         await self.processGame(message.channel, admin, index)
 
-    @commands.command(  name='lastdata',
+    @CommandChecker.command(  name='lastdata',
                         brief="sends the slected game as raw .json",
                         description="Takes up to 2 arguments, 1st: index of the game, 2nd: sending 'normal'",
                         pass_context=True)
-    @commands.check(CommandChecker.checkAdmin)
     async def command_lastdata(self, ctx, index=0):
         message = ctx.message
         admin = True
         await self.processGame(message.channel, admin, index, True)
         
-    @commands.command(name='dump',
+    @CommandChecker.command(name='dump',
         brief="dumps array data into a dump.json file",
         pass_context=True)
-    @commands.check(CommandChecker.checkAdmin)
     async def dump(self, ctx):
         await ctx.send("Dumping {} packets to file".format(len(self.readLog.dataRows)))
         with open(self.path+"/dump.json", 'w') as outfile:
             json.dump(list(self.readLog.dataRows), outfile)      
     
-    @commands.command(name='getData',
+    @CommandChecker.command(name='getData',
         brief="gets recent log entry (0 = first, -1 = last)",
         aliases=['getdata'],
         pass_context=True)
-    @commands.check(CommandChecker.checkAdmin)
     async def getData(self, ctx, index=0):
         msg = "There are {} packets: ```{}```".format(len(self.readLog.dataRows), self.readLog.dataRows[index])
         await sendLong(ctx,msg)    
         
-    @commands.command(name='heatmap',
+    @CommandChecker.command(name='heatmap',
         brief="generates a heatmap of a select player",
         aliases=['heatMap'],
         pass_context=True)
-    #@commands.check(CommandChecker.checkAdmin)
     async def getData(self, ctx, *player_name):
         await sendLong(ctx,"Generating data...")
         
@@ -285,10 +287,9 @@ class CommandJMW(commands.Cog):
             await sendLong(ctx,"How often the location was visted: Green = 1-9, Blue = 10-99, Red = >99")
             await ctx.send(file=discord.File(virtualFile, 'heatmap{}'.format(".jpg")))
                 
-    @commands.command(name='r',
+    @CommandChecker.command(name='r',
         brief="terminates the bot",
         pass_context=True)
-    @commands.check(CommandChecker.checkAdmin)
     async def setRestart(self, ctx):
         await ctx.send("Restarting...")
         sys.exit()     

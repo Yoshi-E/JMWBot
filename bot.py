@@ -1,33 +1,40 @@
-import asyncio
 import discord
 import traceback
-import os
 from discord.ext import commands
+from modules.core import utils
 import time
-import builtins as __builtin__
-import logging
-import sys
+import subprocess
+import inspect
+# Make bot join server:
+# https://discordapp.com/oauth2/authorize?client_id=xxxxxx&scope=bot
+# API Reference
+#https://discordpy.readthedocs.io/en/rewrite/ext/commands/api.html#event-reference
 
-logging.basicConfig(filename='error.log',
-                    level=logging.INFO, 
-                    format='%(asctime)s %(levelname)-8s %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+#Order of modules is important
+#Partent modules have to be loaded first
+#modules = ["errorhandle","core", "rcon", "rcon_database"]
+modules = ["errorhandle","core", "rcon", "rcon_ban_msg", "rcon_ingamge_cmd", "rcon_database", "jmw"]
 
-def print(*args, **kwargs):
-    if(len(args)>0):
-        logging.info(args[0])
-    return __builtin__.print(*args, **kwargs)
-
-modules = ["core", "errorhandle", "jmw", "rcon"]
 bot = commands.Bot(command_prefix="!", pm_help=True)
+bot.CoreConfig = utils.CoreConfig(bot)
  
 def load_modules():
     for extension in modules:
         try:
             bot.load_extension("modules."+extension+".module")
         except (discord.ClientException, ModuleNotFoundError):
-            print(f'Failed to load extension {extension}.')
+            print('Failed to load extension: '+extension)
             traceback.print_exc()
+
+    #We are using a custom wrapper for the discord.ext.commands
+    #In the process the commands are losing information about the parameters
+    #We are setting the parameters from cache:
+    for cmd in utils.CoreConfig.bot.commands:
+        for func in utils.CommandChecker.registered_func:
+            if(str(cmd) == str(func.name)):
+                signature = inspect.signature(func)
+                cmd.params = signature.parameters.copy() 
+                break
 
 ###################################################################################################
 #####                                  Initialization                                          ####
@@ -40,18 +47,10 @@ async def on_ready():
     print('Logged in as')
     print(bot.user.name)
     print(bot.user.id)
+    print(bot.guilds)
+    
     print('------------')
-    
-
-@bot.event
-async def on_disconnect():
-    #await asyncio.sleep(60)
-    print("Connection to discord API lost...")
-    
-    
-@bot.event
-async def on_error(event, args, kwargs):
-    print("Discord Error at '{}' {} - {}".format(event, args, kwargs))
+    bot.CoreConfig.load_role_permissions()
 
 def main():
     load_modules()
@@ -59,25 +58,23 @@ def main():
     #checking depencies 
     if("Commandconfig" in bot.cogs.keys()):
         cfg = bot.cogs["Commandconfig"].cfg
-        #bot.is_closed()
     else: 
         sys.exit("Module 'Commandconfig' not loaded, but required")
-    bot.run(cfg["TOKEN"], reconnect=True)
-    #while True:
-    #    try:
-    #        bot.loop.run_until_complete(bot.run(cfg["TOKEN"]))
-    #    except Exception as e:
-    #        print(e)
-    #        time.sleep(5)
-            
+    try:
+        bot.run(cfg["TOKEN"])
+    except KeyError:
+        print("")
+        input("Please configure the bot on the settings page. [ENTER to terminte the bot]")
+     
+
+     
 if __name__ == '__main__':
-    print("Starting...")
-    main() 
-    #print("The bot has crashed. Attemping to restart it...")
+    while True:
+        main()
+        if(hasattr(bot, "restarting") and bot.restarting == True):
+            print("Restarting")
+            
+            time.sleep(1)
+            subprocess.Popen("python" + " bot.py", shell=True)
         
             
-#make bot join server:
-# https://discordapp.com/oauth2/authorize?client_id=xxxxxx&scope=bot
-
-#https://discordpy.readthedocs.io/en/rewrite/ext/commands/api.html#event-reference
-
