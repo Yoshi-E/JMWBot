@@ -1,6 +1,6 @@
 # JMWBot
 
-The this repo has been refactored and is now included as a sub module in the ArmaDiscordBot:
+The this repo has been refactored and is now included as a sub module in the ArmaDiscordBot:<br>
 https://github.com/Yoshi-E/ArmaRconDiscordBot/tree/jmwBOT
 
 ## Monetization
